@@ -63,7 +63,7 @@ const itemSchema = new Schema({
 });
 
 // Indexes
-itemSchema.index({ name: "text", scientificName: "text" });
+itemSchema.index({ name: "text" });
 itemSchema.index({ category: 1 });
 itemSchema.index({ popularityScore: -1 });
 

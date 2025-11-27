@@ -27,20 +27,8 @@ const userSchema = new Schema({
   dateOfBirth: { type: Date },
   gender: {
     type: String,
-    enum: ["male", "female", "other", "prefer-not"],
+    enum: ["male", "female", "prefer-not"],
   },
-  addresses: [
-    {
-      type: {
-        type: String,
-        enum: ["home", "work", "other"],
-        default: "home",
-      },
-      street: String,
-      city: String,
-      isDefault: { type: Boolean, default: false },
-    },
-  ],
 
   // Favorites
   favoritePharmacies: [
