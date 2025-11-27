@@ -10,7 +10,8 @@ router.get('/:id', async (req, res) => {
     try {
         const user = await User.findById(req.params.id)
             .select('-password')
-            .populate('favorites', 'name address rating');
+            .populate('favoritePharmacies', 'name address averageRating')
+            .populate('favoriteItems', 'name category imageUrl');
 
         if (!user) {
             return res.status(404).json({ 
@@ -198,10 +199,10 @@ router.delete('/:id/addresses/:addressId', async (req, res) => {
     }
 });
 
-// @route   POST /api/users/:id/favorites/:pharmacyId
+// @route   POST /api/users/:id/favorite-pharmacies/:pharmacyId
 // @desc    Add pharmacy to favorites
 // @access  Private
-router.post('/:id/favorites/:pharmacyId', async (req, res) => {
+router.post('/:id/favorite-pharmacies/:pharmacyId', async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
 
@@ -222,23 +223,23 @@ router.post('/:id/favorites/:pharmacyId', async (req, res) => {
         }
 
         // Check if already in favorites
-        if (user.favorites.includes(req.params.pharmacyId)) {
+        if (user.favoritePharmacies.includes(req.params.pharmacyId)) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Pharmacy already in favorites' 
             });
         }
 
-        user.favorites.push(req.params.pharmacyId);
+        user.favoritePharmacies.push(req.params.pharmacyId);
         await user.save();
 
         res.json({
             success: true,
             message: 'Pharmacy added to favorites',
-            favorites: user.favorites
+            favoritePharmacies: user.favoritePharmacies
         });
     } catch (error) {
-        console.error('Add favorite error:', error);
+        console.error('Add favorite pharmacy error:', error);
         res.status(500).json({ 
             success: false, 
             message: 'Error adding to favorites',
@@ -247,10 +248,10 @@ router.post('/:id/favorites/:pharmacyId', async (req, res) => {
     }
 });
 
-// @route   DELETE /api/users/:id/favorites/:pharmacyId
+// @route   DELETE /api/users/:id/favorite-pharmacies/:pharmacyId
 // @desc    Remove pharmacy from favorites
 // @access  Private
-router.delete('/:id/favorites/:pharmacyId', async (req, res) => {
+router.delete('/:id/favorite-pharmacies/:pharmacyId', async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
 
@@ -261,16 +262,98 @@ router.delete('/:id/favorites/:pharmacyId', async (req, res) => {
             });
         }
 
-        user.favorites.pull(req.params.pharmacyId);
+        user.favoritePharmacies.pull(req.params.pharmacyId);
         await user.save();
 
         res.json({
             success: true,
             message: 'Pharmacy removed from favorites',
-            favorites: user.favorites
+            favoritePharmacies: user.favoritePharmacies
         });
     } catch (error) {
-        console.error('Remove favorite error:', error);
+        console.error('Remove favorite pharmacy error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error removing from favorites',
+            error: error.message 
+        });
+    }
+});
+
+// @route   POST /api/users/:id/favorite-items/:itemId
+// @desc    Add item to favorites
+// @access  Private
+router.post('/:id/favorite-items/:itemId', async (req, res) => {
+    try {
+        const Item = require('../models/Item');
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found' 
+            });
+        }
+
+        const item = await Item.findById(req.params.itemId);
+
+        if (!item) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Item not found' 
+            });
+        }
+
+        // Check if already in favorites
+        if (user.favoriteItems.includes(req.params.itemId)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Item already in favorites' 
+            });
+        }
+
+        user.favoriteItems.push(req.params.itemId);
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Item added to favorites',
+            favoriteItems: user.favoriteItems
+        });
+    } catch (error) {
+        console.error('Add favorite item error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error adding to favorites',
+            error: error.message 
+        });
+    }
+});
+
+// @route   DELETE /api/users/:id/favorite-items/:itemId
+// @desc    Remove item from favorites
+// @access  Private
+router.delete('/:id/favorite-items/:itemId', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found' 
+            });
+        }
+
+        user.favoriteItems.pull(req.params.itemId);
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Item removed from favorites',
+            favoriteItems: user.favoriteItems
+        });
+    } catch (error) {
+        console.error('Remove favorite item error:', error);
         res.status(500).json({ 
             success: false, 
             message: 'Error removing from favorites',
