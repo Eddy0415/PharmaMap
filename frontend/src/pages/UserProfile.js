@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Box,
@@ -18,7 +18,7 @@ import {
   IconButton,
   Paper,
   Divider,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Person,
   ShoppingBag,
@@ -32,40 +32,40 @@ import {
   Work,
   Add,
   Replay,
-} from '@mui/icons-material';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import { userAPI, orderAPI, authAPI } from '../services/api';
+} from "@mui/icons-material";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import { userAPI, orderAPI, authAPI } from "../services/api";
 
 const UserProfile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [activeSection, setActiveSection] = useState('profile');
+  const [activeSection, setActiveSection] = useState("profile");
   const [orders, setOrders] = useState([]);
   const [profileData, setProfileData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    dateOfBirth: '',
-    gender: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    gender: "",
   });
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   useEffect(() => {
     // Load user from localStorage
-    const storedUser = localStorage.getItem('user');
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       setUser(userData);
       fetchUserProfile(userData.id);
       fetchOrders(userData.id);
     } else {
-      navigate('/login');
+      navigate("/login");
     }
   }, [navigate]);
 
@@ -74,15 +74,17 @@ const UserProfile = () => {
       const response = await userAPI.getProfile(userId);
       const profile = response.data.user;
       setProfileData({
-        firstName: profile.firstName || '',
-        lastName: profile.lastName || '',
-        email: profile.email || '',
-        phone: profile.phone || '',
-        dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : '',
-        gender: profile.gender || '',
+        firstName: profile.firstName || "",
+        lastName: profile.lastName || "",
+        email: profile.email || "",
+        phone: profile.phone || "",
+        dateOfBirth: profile.dateOfBirth
+          ? profile.dateOfBirth.split("T")[0]
+          : "",
+        gender: profile.gender || "",
       });
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error("Error fetching profile:", error);
     }
   };
 
@@ -91,7 +93,7 @@ const UserProfile = () => {
       const response = await orderAPI.getAll({ userId });
       setOrders(response.data.orders || []);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error);
     }
   };
 
@@ -99,55 +101,60 @@ const UserProfile = () => {
     e.preventDefault();
     try {
       await userAPI.updateProfile(user.id, profileData);
-      alert('Profile updated successfully!');
+      alert("Profile updated successfully!");
     } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Failed to update profile');
+      console.error("Error updating profile:", error);
+      alert("Failed to update profile");
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/");
   };
 
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     try {
       // Validate passwords
-      if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-        alert('Please fill in all password fields');
+      if (
+        !passwordData.currentPassword ||
+        !passwordData.newPassword ||
+        !passwordData.confirmPassword
+      ) {
+        alert("Please fill in all password fields");
         return;
       }
 
       if (passwordData.newPassword !== passwordData.confirmPassword) {
-        alert('New password and confirmation do not match');
+        alert("New password and confirmation do not match");
         return;
       }
 
       if (passwordData.newPassword.length < 8) {
-        alert('New password must be at least 8 characters long');
+        alert("New password must be at least 8 characters long");
         return;
       }
 
       await authAPI.updatePassword(passwordData);
-      alert('Password updated successfully!');
+      alert("Password updated successfully!");
       setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
     } catch (error) {
-      console.error('Error updating password:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to update password';
+      console.error("Error updating password:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to update password";
       alert(errorMessage);
     }
   };
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
-      'Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently deleted.'
+      "Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently deleted."
     );
 
     if (!confirmed) {
@@ -155,7 +162,7 @@ const UserProfile = () => {
     }
 
     const doubleConfirm = window.confirm(
-      'This is your last chance. Are you absolutely sure you want to delete your account?'
+      "This is your last chance. Are you absolutely sure you want to delete your account?"
     );
 
     if (!doubleConfirm) {
@@ -164,11 +171,12 @@ const UserProfile = () => {
 
     try {
       await authAPI.deleteAccount();
-      alert('Your account has been deleted successfully.');
+      alert("Your account has been deleted successfully.");
       handleLogout();
     } catch (error) {
-      console.error('Error deleting account:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to delete account';
+      console.error("Error deleting account:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to delete account";
       alert(errorMessage);
     }
   };
@@ -176,8 +184,8 @@ const UserProfile = () => {
   const renderProfileSection = () => (
     <Card>
       <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <Person sx={{ mr: 1, color: 'primary.main' }} />
+        <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+          <Person sx={{ mr: 1, color: "primary.main" }} />
           <Typography variant="h5" fontWeight={700}>
             Personal Details
           </Typography>
@@ -190,7 +198,9 @@ const UserProfile = () => {
                 fullWidth
                 label="First Name"
                 value={profileData.firstName}
-                onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, firstName: e.target.value })
+                }
                 required
               />
             </Grid>
@@ -199,7 +209,9 @@ const UserProfile = () => {
                 fullWidth
                 label="Last Name"
                 value={profileData.lastName}
-                onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, lastName: e.target.value })
+                }
                 required
               />
             </Grid>
@@ -209,7 +221,9 @@ const UserProfile = () => {
                 label="Email Address"
                 type="email"
                 value={profileData.email}
-                onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, email: e.target.value })
+                }
                 required
               />
             </Grid>
@@ -218,7 +232,9 @@ const UserProfile = () => {
                 fullWidth
                 label="Phone Number"
                 value={profileData.phone}
-                onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, phone: e.target.value })
+                }
                 required
               />
             </Grid>
@@ -228,7 +244,12 @@ const UserProfile = () => {
                 label="Date of Birth"
                 type="date"
                 value={profileData.dateOfBirth}
-                onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
+                onChange={(e) =>
+                  setProfileData({
+                    ...profileData,
+                    dateOfBirth: e.target.value,
+                  })
+                }
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
@@ -238,7 +259,9 @@ const UserProfile = () => {
                 select
                 label="Gender"
                 value={profileData.gender}
-                onChange={(e) => setProfileData({ ...profileData, gender: e.target.value })}
+                onChange={(e) =>
+                  setProfileData({ ...profileData, gender: e.target.value })
+                }
                 SelectProps={{ native: true }}
               >
                 <option value=""></option>
@@ -250,19 +273,17 @@ const UserProfile = () => {
             </Grid>
           </Grid>
 
-          <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+          <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
             <Button
               type="submit"
               variant="contained"
               sx={{
-                background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+                background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
               }}
             >
               Save Changes
             </Button>
-            <Button variant="outlined">
-              Reset
-            </Button>
+            <Button variant="outlined">Reset</Button>
           </Box>
         </form>
       </CardContent>
@@ -277,24 +298,24 @@ const UserProfile = () => {
         </Typography>
 
         {orders.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <ShoppingBag sx={{ fontSize: 64, color: '#e0e0e0', mb: 2 }} />
+          <Box sx={{ textAlign: "center", py: 4 }}>
+            <ShoppingBag sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />
             <Typography variant="h6" color="text.secondary">
               No orders yet
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {orders.map((order) => (
               <Paper
                 key={order._id}
                 sx={{
                   p: 2.5,
-                  border: '2px solid #f0f0f0',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    borderColor: 'primary.main',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  border: "2px solid #f0f0f0",
+                  transition: "all 0.3s",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                   },
                 }}
               >
@@ -305,25 +326,35 @@ const UserProfile = () => {
                         width: 60,
                         height: 60,
                         borderRadius: 3,
-                        background: 'linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        background:
+                          "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      <ShoppingBag sx={{ fontSize: 32, color: 'primary.main' }} />
+                      <ShoppingBag
+                        sx={{ fontSize: 32, color: "primary.main" }}
+                      />
                     </Box>
                   </Grid>
                   <Grid item xs>
                     <Typography variant="h6" fontWeight={600}>
-                      {order.medications.map(m => m.name).join(', ')}
+                      {order.medications.map((m) => m.name).join(", ")}
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 0.5 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 2,
+                        flexWrap: "wrap",
+                        mt: 0.5,
+                      }}
+                    >
                       <Typography variant="body2" color="text.secondary">
                         📅 {new Date(order.createdAt).toLocaleDateString()}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        🏪 {order.pharmacy?.name || 'Pharmacy'}
+                        🏪 {order.pharmacy?.name || "Pharmacy"}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         📦 Order #{order.orderNumber}
@@ -334,15 +365,22 @@ const UserProfile = () => {
                       size="small"
                       sx={{
                         mt: 1,
-                        bgcolor: order.status === 'completed' ? '#c8e6c9' : '#fff9c4',
-                        color: order.status === 'completed' ? '#2e7d32' : '#f57f17',
+                        bgcolor:
+                          order.status === "completed" ? "#c8e6c9" : "#fff9c4",
+                        color:
+                          order.status === "completed" ? "#2e7d32" : "#f57f17",
                         fontWeight: 600,
-                        textTransform: 'capitalize',
+                        textTransform: "capitalize",
                       }}
                     />
                   </Grid>
-                  <Grid item sx={{ textAlign: 'right' }}>
-                    <Typography variant="h6" fontWeight={700} color="primary.main" mb={1}>
+                  <Grid item sx={{ textAlign: "right" }}>
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                      color="primary.main"
+                      mb={1}
+                    >
                       {order.totalAmount} LBP
                     </Typography>
                     <Button
@@ -365,7 +403,14 @@ const UserProfile = () => {
   const renderAddressesSection = () => (
     <Card>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 3,
+          }}
+        >
           <Typography variant="h5" fontWeight={700}>
             Your Addresses
           </Typography>
@@ -373,7 +418,7 @@ const UserProfile = () => {
             variant="contained"
             startIcon={<Add />}
             sx={{
-              background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
             }}
           >
             Add New Address
@@ -385,30 +430,44 @@ const UserProfile = () => {
             <Paper
               sx={{
                 p: 2.5,
-                border: '2px solid',
-                borderColor: 'primary.main',
-                bgcolor: '#f0f9f9',
+                border: "2px solid",
+                borderColor: "primary.main",
+                bgcolor: "#f0f9f9",
               }}
             >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Home sx={{ color: 'primary.main' }} />
+              <Box
+                sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Home sx={{ color: "primary.main" }} />
                   <Typography variant="h6" fontWeight={700}>
                     Home
                   </Typography>
                 </Box>
-                <Chip label="DEFAULT" size="small" sx={{ bgcolor: 'primary.main', color: 'white' }} />
+                <Chip
+                  label="DEFAULT"
+                  size="small"
+                  sx={{ bgcolor: "primary.main", color: "white" }}
+                />
               </Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Sassine Square, Building 12<br />
-                Achrafieh, Beirut<br />
+                Sassine Square, Building 12
+                <br />
+                Achrafieh, Beirut
+                <br />
                 Lebanon
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <IconButton size="small" sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <IconButton
+                  size="small"
+                  sx={{ bgcolor: "#e3f2fd", color: "#1976d2" }}
+                >
                   <Edit fontSize="small" />
                 </IconButton>
-                <IconButton size="small" sx={{ bgcolor: '#ffebee', color: '#d32f2f' }}>
+                <IconButton
+                  size="small"
+                  sx={{ bgcolor: "#ffebee", color: "#d32f2f" }}
+                >
                   <Delete fontSize="small" />
                 </IconButton>
               </Box>
@@ -419,25 +478,35 @@ const UserProfile = () => {
             <Paper
               sx={{
                 p: 2.5,
-                border: '2px solid #f0f0f0',
+                border: "2px solid #f0f0f0",
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Work sx={{ color: 'primary.main' }} />
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
+              >
+                <Work sx={{ color: "primary.main" }} />
                 <Typography variant="h6" fontWeight={700}>
                   Work
                 </Typography>
               </Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                ABC Tower, 5th Floor<br />
-                Hamra Street, Beirut<br />
+                ABC Tower, 5th Floor
+                <br />
+                Hamra Street, Beirut
+                <br />
                 Lebanon
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <IconButton size="small" sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <IconButton
+                  size="small"
+                  sx={{ bgcolor: "#e3f2fd", color: "#1976d2" }}
+                >
                   <Edit fontSize="small" />
                 </IconButton>
-                <IconButton size="small" sx={{ bgcolor: '#ffebee', color: '#d32f2f' }}>
+                <IconButton
+                  size="small"
+                  sx={{ bgcolor: "#ffebee", color: "#d32f2f" }}
+                >
                   <Delete fontSize="small" />
                 </IconButton>
               </Box>
@@ -455,8 +524,8 @@ const UserProfile = () => {
           Favorite Pharmacies
         </Typography>
 
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Favorite sx={{ fontSize: 80, color: '#e0e0e0', mb: 2 }} />
+        <Box sx={{ textAlign: "center", py: 8 }}>
+          <Favorite sx={{ fontSize: 80, color: "#e0e0e0", mb: 2 }} />
           <Typography variant="h6" color="text.secondary" mb={1}>
             No Favorites Yet
           </Typography>
@@ -465,9 +534,9 @@ const UserProfile = () => {
           </Typography>
           <Button
             variant="contained"
-            onClick={() => navigate('/search')}
+            onClick={() => navigate("/search")}
             sx={{
-              background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
             }}
           >
             Browse Pharmacies
@@ -481,8 +550,8 @@ const UserProfile = () => {
     <Card>
       <CardContent>
         <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Security sx={{ mr: 1, color: 'primary.main' }} />
+          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <Security sx={{ mr: 1, color: "primary.main" }} />
             <Typography variant="h5" fontWeight={700}>
               Change Password
             </Typography>
@@ -498,7 +567,10 @@ const UserProfile = () => {
                   placeholder="Enter current password"
                   value={passwordData.currentPassword}
                   onChange={(e) =>
-                    setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                    setPasswordData({
+                      ...passwordData,
+                      currentPassword: e.target.value,
+                    })
                   }
                   required
                 />
@@ -511,7 +583,10 @@ const UserProfile = () => {
                   placeholder="Enter new password"
                   value={passwordData.newPassword}
                   onChange={(e) =>
-                    setPasswordData({ ...passwordData, newPassword: e.target.value })
+                    setPasswordData({
+                      ...passwordData,
+                      newPassword: e.target.value,
+                    })
                   }
                   required
                   helperText="Password must be at least 8 characters long"
@@ -525,7 +600,10 @@ const UserProfile = () => {
                   placeholder="Confirm new password"
                   value={passwordData.confirmPassword}
                   onChange={(e) =>
-                    setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                    setPasswordData({
+                      ...passwordData,
+                      confirmPassword: e.target.value,
+                    })
                   }
                   required
                 />
@@ -537,7 +615,7 @@ const UserProfile = () => {
               variant="contained"
               sx={{
                 mt: 2,
-                background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+                background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
               }}
             >
               Update Password
@@ -552,16 +630,17 @@ const UserProfile = () => {
             Delete Account
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Once you delete your account, there is no going back. Please be certain.
+            Once you delete your account, there is no going back. Please be
+            certain.
           </Typography>
           <Button
             variant="contained"
             onClick={handleDeleteAccount}
             sx={{
-              bgcolor: '#ffebee',
-              color: '#d32f2f',
-              '&:hover': {
-                bgcolor: '#ffcdd2',
+              bgcolor: "#ffebee",
+              color: "#d32f2f",
+              "&:hover": {
+                bgcolor: "#ffcdd2",
               },
             }}
           >
@@ -577,26 +656,38 @@ const UserProfile = () => {
   }
 
   return (
-    <Box component="main" sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
+    <Box
+      component="main"
+      sx={{ bgcolor: "background.default", minHeight: "100vh" }}
+    >
       <Header user={user} onLogout={handleLogout} />
 
       <Container component="section" maxWidth="xl" sx={{ py: 5 }}>
         <Grid container spacing={4}>
           {/* Sidebar */}
           <Grid item xs={12} md={3}>
-            <Card sx={{ position: 'sticky', top: 90 }}>
+            <Card sx={{ position: "sticky", top: 90 }}>
               <CardContent>
-                <Box sx={{ textAlign: 'center', mb: 3, pb: 3, borderBottom: '2px solid #f0f0f0' }}>
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    mb: 3,
+                    pb: 3,
+                    borderBottom: "2px solid #f0f0f0",
+                  }}
+                >
                   <Avatar
                     sx={{
                       width: 100,
                       height: 100,
-                      margin: '0 auto 15px',
-                      background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+                      margin: "0 auto 15px",
+                      background:
+                        "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
                       fontSize: 42,
                     }}
                   >
-                    {user.firstName?.[0]}{user.lastName?.[0]}
+                    {user.firstName?.[0]}
+                    {user.lastName?.[0]}
                   </Avatar>
                   <Typography variant="h6" fontWeight={700} color="secondary">
                     {user.firstName} {user.lastName}
@@ -609,87 +700,102 @@ const UserProfile = () => {
                 <List>
                   <ListItem
                     button
-                    selected={activeSection === 'profile'}
-                    onClick={() => setActiveSection('profile')}
+                    selected={activeSection === "profile"}
+                    onClick={() => setActiveSection("profile")}
                     sx={{
                       borderRadius: 2,
                       mb: 1,
-                      '&.Mui-selected': {
-                        background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                        color: 'white',
-                        '& .MuiListItemIcon-root': { color: 'white' },
+                      "&.Mui-selected": {
+                        background:
+                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                        color: "white",
+                        "& .MuiListItemIcon-root": { color: "white" },
                       },
                     }}
                   >
-                    <ListItemIcon><Person /></ListItemIcon>
+                    <ListItemIcon>
+                      <Person />
+                    </ListItemIcon>
                     <ListItemText primary="Profile Info" />
                   </ListItem>
                   <ListItem
                     button
-                    selected={activeSection === 'orders'}
-                    onClick={() => setActiveSection('orders')}
+                    selected={activeSection === "orders"}
+                    onClick={() => setActiveSection("orders")}
                     sx={{
                       borderRadius: 2,
                       mb: 1,
-                      '&.Mui-selected': {
-                        background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                        color: 'white',
-                        '& .MuiListItemIcon-root': { color: 'white' },
+                      "&.Mui-selected": {
+                        background:
+                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                        color: "white",
+                        "& .MuiListItemIcon-root": { color: "white" },
                       },
                     }}
                   >
-                    <ListItemIcon><ShoppingBag /></ListItemIcon>
+                    <ListItemIcon>
+                      <ShoppingBag />
+                    </ListItemIcon>
                     <ListItemText primary="My Orders" />
                   </ListItem>
                   <ListItem
                     button
-                    selected={activeSection === 'addresses'}
-                    onClick={() => setActiveSection('addresses')}
+                    selected={activeSection === "addresses"}
+                    onClick={() => setActiveSection("addresses")}
                     sx={{
                       borderRadius: 2,
                       mb: 1,
-                      '&.Mui-selected': {
-                        background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                        color: 'white',
-                        '& .MuiListItemIcon-root': { color: 'white' },
+                      "&.Mui-selected": {
+                        background:
+                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                        color: "white",
+                        "& .MuiListItemIcon-root": { color: "white" },
                       },
                     }}
                   >
-                    <ListItemIcon><Room /></ListItemIcon>
+                    <ListItemIcon>
+                      <Room />
+                    </ListItemIcon>
                     <ListItemText primary="Addresses" />
                   </ListItem>
                   <ListItem
                     button
-                    selected={activeSection === 'favorites'}
-                    onClick={() => setActiveSection('favorites')}
+                    selected={activeSection === "favorites"}
+                    onClick={() => setActiveSection("favorites")}
                     sx={{
                       borderRadius: 2,
                       mb: 1,
-                      '&.Mui-selected': {
-                        background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                        color: 'white',
-                        '& .MuiListItemIcon-root': { color: 'white' },
+                      "&.Mui-selected": {
+                        background:
+                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                        color: "white",
+                        "& .MuiListItemIcon-root": { color: "white" },
                       },
                     }}
                   >
-                    <ListItemIcon><Favorite /></ListItemIcon>
+                    <ListItemIcon>
+                      <Favorite />
+                    </ListItemIcon>
                     <ListItemText primary="Favorites" />
                   </ListItem>
                   <ListItem
                     button
-                    selected={activeSection === 'security'}
-                    onClick={() => setActiveSection('security')}
+                    selected={activeSection === "security"}
+                    onClick={() => setActiveSection("security")}
                     sx={{
                       borderRadius: 2,
                       mb: 1,
-                      '&.Mui-selected': {
-                        background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                        color: 'white',
-                        '& .MuiListItemIcon-root': { color: 'white' },
+                      "&.Mui-selected": {
+                        background:
+                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                        color: "white",
+                        "& .MuiListItemIcon-root": { color: "white" },
                       },
                     }}
                   >
-                    <ListItemIcon><Security /></ListItemIcon>
+                    <ListItemIcon>
+                      <Security />
+                    </ListItemIcon>
                     <ListItemText primary="Security" />
                   </ListItem>
                   <ListItem
@@ -699,7 +805,9 @@ const UserProfile = () => {
                       borderRadius: 2,
                     }}
                   >
-                    <ListItemIcon><Logout /></ListItemIcon>
+                    <ListItemIcon>
+                      <Logout />
+                    </ListItemIcon>
                     <ListItemText primary="Logout" />
                   </ListItem>
                 </List>
@@ -710,27 +818,37 @@ const UserProfile = () => {
           {/* Main Content */}
           <Grid item xs={12} md={9}>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
-                {activeSection === 'profile' && 'Profile Information'}
-                {activeSection === 'orders' && 'My Orders'}
-                {activeSection === 'addresses' && 'Saved Addresses'}
-                {activeSection === 'favorites' && 'Favorite Pharmacies'}
-                {activeSection === 'security' && 'Security Settings'}
+              <Typography
+                variant="h4"
+                fontWeight={700}
+                color="secondary"
+                mb={0.5}
+              >
+                {activeSection === "profile" && "Profile Information"}
+                {activeSection === "orders" && "My Orders"}
+                {activeSection === "addresses" && "Saved Addresses"}
+                {activeSection === "favorites" && "Favorite Pharmacies"}
+                {activeSection === "security" && "Security Settings"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {activeSection === 'profile' && 'Manage your personal information and preferences'}
-                {activeSection === 'orders' && 'View and track your medication orders'}
-                {activeSection === 'addresses' && 'Manage your delivery addresses'}
-                {activeSection === 'favorites' && 'Quick access to your preferred pharmacies'}
-                {activeSection === 'security' && 'Manage your password and security preferences'}
+                {activeSection === "profile" &&
+                  "Manage your personal information and preferences"}
+                {activeSection === "orders" &&
+                  "View and track your medication orders"}
+                {activeSection === "addresses" &&
+                  "Manage your delivery addresses"}
+                {activeSection === "favorites" &&
+                  "Quick access to your preferred pharmacies"}
+                {activeSection === "security" &&
+                  "Manage your password and security preferences"}
               </Typography>
             </Box>
 
-            {activeSection === 'profile' && renderProfileSection()}
-            {activeSection === 'orders' && renderOrdersSection()}
-            {activeSection === 'addresses' && renderAddressesSection()}
-            {activeSection === 'favorites' && renderFavoritesSection()}
-            {activeSection === 'security' && renderSecuritySection()}
+            {activeSection === "profile" && renderProfileSection()}
+            {activeSection === "orders" && renderOrdersSection()}
+            {activeSection === "addresses" && renderAddressesSection()}
+            {activeSection === "favorites" && renderFavoritesSection()}
+            {activeSection === "security" && renderSecuritySection()}
           </Grid>
         </Grid>
       </Container>
@@ -741,4 +859,3 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
-

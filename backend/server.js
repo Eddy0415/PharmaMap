@@ -29,7 +29,7 @@ const pharmacyRoutes = require("./routes/pharmacies");
 const medicationRoutes = require("./routes/medications");
 const orderRoutes = require("./routes/orders");
 const userRoutes = require("./routes/users");
-const reviewRoutes = require("./routes/reviews");
+const inventoryRoutes = require("./routes/inventory");
 
 // API Routes
 app.use("/api/auth", authRoutes);
@@ -37,7 +37,7 @@ app.use("/api/pharmacies", pharmacyRoutes);
 app.use("/api/medications", medicationRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/reviews", reviewRoutes);
+app.use("/api/inventory", inventoryRoutes);
 
 // Root route
 app.get("/", (req, res) => {
@@ -50,7 +50,7 @@ app.get("/", (req, res) => {
       medications: "/api/medications",
       orders: "/api/orders",
       users: "/api/users",
-      reviews: "/api/reviews",
+      inventory: "/api/inventory",
     },
   });
 });
