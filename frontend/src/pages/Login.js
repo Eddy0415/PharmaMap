@@ -78,7 +78,7 @@ const Login = () => {
   return (
     <>
       <Home />
-      
+
       <Dialog
         open={true}
         onClose={handleClose}

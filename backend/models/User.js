@@ -49,14 +49,6 @@ const userSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Pharmacy",
   },
-
-  dateOfBirth: {
-    type: Date,
-  },
-  gender: {
-    type: String,
-    enum: ["male", "female", "other", "prefer-not"],
-  },
   // Account status
   isActive: { type: Boolean, default: true },
   isVerified: { type: Boolean, default: false },
@@ -67,7 +59,7 @@ const userSchema = new Schema({
 });
 
 // Index for faster queries
-userSchema.index({ email: 1 });
+// Note: email index is automatically created by unique: true
 userSchema.index({ userType: 1 });
 
 // Hash password before saving

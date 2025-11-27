@@ -14,7 +14,15 @@ const Order = require("./models/Order");
 const Review = require("./models/Review");
 
 // Dummy data arrays
-const cities = ["Beirut", "Tripoli", "Sidon", "Tyre", "Byblos", "Zahle", "Baalbek"];
+const cities = [
+  "Beirut",
+  "Tripoli",
+  "Sidon",
+  "Tyre",
+  "Byblos",
+  "Zahle",
+  "Baalbek",
+];
 const streets = [
   "Hamra Street",
   "Corniche El Mazraa",
@@ -75,40 +83,180 @@ const pharmacyNames = [
 
 const medications = [
   // Pain Relief
-  { name: "Paracetamol 500mg", category: "Pain Relief", dosage: "500mg", form: "tablet", requiresPrescription: false, basePrice: 2.5 },
-  { name: "Ibuprofen 400mg", category: "Pain Relief", dosage: "400mg", form: "tablet", requiresPrescription: false, basePrice: 3.0 },
-  { name: "Aspirin 100mg", category: "Pain Relief", dosage: "100mg", form: "tablet", requiresPrescription: false, basePrice: 1.5 },
-  { name: "Diclofenac Gel", category: "Pain Relief", dosage: "1%", form: "cream", requiresPrescription: false, basePrice: 5.0 },
-  
+  {
+    name: "Paracetamol 500mg",
+    category: "Pain Relief",
+    dosage: "500mg",
+    form: "tablet",
+    requiresPrescription: false,
+    basePrice: 2.5,
+  },
+  {
+    name: "Ibuprofen 400mg",
+    category: "Pain Relief",
+    dosage: "400mg",
+    form: "tablet",
+    requiresPrescription: false,
+    basePrice: 3.0,
+  },
+  {
+    name: "Aspirin 100mg",
+    category: "Pain Relief",
+    dosage: "100mg",
+    form: "tablet",
+    requiresPrescription: false,
+    basePrice: 1.5,
+  },
+  {
+    name: "Diclofenac Gel",
+    category: "Pain Relief",
+    dosage: "1%",
+    form: "cream",
+    requiresPrescription: false,
+    basePrice: 5.0,
+  },
+
   // Antibiotics
-  { name: "Amoxicillin 500mg", category: "Antibiotics", dosage: "500mg", form: "capsule", requiresPrescription: true, basePrice: 8.0 },
-  { name: "Azithromycin 250mg", category: "Antibiotics", dosage: "250mg", form: "tablet", requiresPrescription: true, basePrice: 12.0 },
-  { name: "Ciprofloxacin 500mg", category: "Antibiotics", dosage: "500mg", form: "tablet", requiresPrescription: true, basePrice: 10.0 },
-  
+  {
+    name: "Amoxicillin 500mg",
+    category: "Antibiotics",
+    dosage: "500mg",
+    form: "capsule",
+    requiresPrescription: true,
+    basePrice: 8.0,
+  },
+  {
+    name: "Azithromycin 250mg",
+    category: "Antibiotics",
+    dosage: "250mg",
+    form: "tablet",
+    requiresPrescription: true,
+    basePrice: 12.0,
+  },
+  {
+    name: "Ciprofloxacin 500mg",
+    category: "Antibiotics",
+    dosage: "500mg",
+    form: "tablet",
+    requiresPrescription: true,
+    basePrice: 10.0,
+  },
+
   // Respiratory
-  { name: "Ventolin Inhaler", category: "Respiratory", dosage: "100mcg", form: "inhaler", requiresPrescription: true, basePrice: 15.0 },
-  { name: "Cough Syrup", category: "Respiratory", dosage: "100ml", form: "syrup", requiresPrescription: false, basePrice: 6.0 },
-  { name: "Nasal Drops", category: "Respiratory", dosage: "10ml", form: "drops", requiresPrescription: false, basePrice: 4.0 },
-  
+  {
+    name: "Ventolin Inhaler",
+    category: "Respiratory",
+    dosage: "100mcg",
+    form: "inhaler",
+    requiresPrescription: true,
+    basePrice: 15.0,
+  },
+  {
+    name: "Cough Syrup",
+    category: "Respiratory",
+    dosage: "100ml",
+    form: "syrup",
+    requiresPrescription: false,
+    basePrice: 6.0,
+  },
+  {
+    name: "Nasal Drops",
+    category: "Respiratory",
+    dosage: "10ml",
+    form: "drops",
+    requiresPrescription: false,
+    basePrice: 4.0,
+  },
+
   // Cardiac Care
-  { name: "Aspirin Cardio 100mg", category: "Cardiac Care", dosage: "100mg", form: "tablet", requiresPrescription: false, basePrice: 3.5 },
-  { name: "Atorvastatin 20mg", category: "Cardiac Care", dosage: "20mg", form: "tablet", requiresPrescription: true, basePrice: 18.0 },
-  
+  {
+    name: "Aspirin Cardio 100mg",
+    category: "Cardiac Care",
+    dosage: "100mg",
+    form: "tablet",
+    requiresPrescription: false,
+    basePrice: 3.5,
+  },
+  {
+    name: "Atorvastatin 20mg",
+    category: "Cardiac Care",
+    dosage: "20mg",
+    form: "tablet",
+    requiresPrescription: true,
+    basePrice: 18.0,
+  },
+
   // Stomach Care
-  { name: "Omeprazole 20mg", category: "Stomach Care", dosage: "20mg", form: "capsule", requiresPrescription: false, basePrice: 7.0 },
-  { name: "Antacid Tablets", category: "Stomach Care", dosage: "500mg", form: "tablet", requiresPrescription: false, basePrice: 3.0 },
-  
+  {
+    name: "Omeprazole 20mg",
+    category: "Stomach Care",
+    dosage: "20mg",
+    form: "capsule",
+    requiresPrescription: false,
+    basePrice: 7.0,
+  },
+  {
+    name: "Antacid Tablets",
+    category: "Stomach Care",
+    dosage: "500mg",
+    form: "tablet",
+    requiresPrescription: false,
+    basePrice: 3.0,
+  },
+
   // Derma Products
-  { name: "Moisturizing Cream", category: "Derma Products", dosage: "100g", form: "cream", requiresPrescription: false, basePrice: 8.0 },
-  { name: "Sunscreen SPF 50", category: "Derma Products", dosage: "50ml", form: "cream", requiresPrescription: false, basePrice: 12.0 },
-  
+  {
+    name: "Moisturizing Cream",
+    category: "Derma Products",
+    dosage: "100g",
+    form: "cream",
+    requiresPrescription: false,
+    basePrice: 8.0,
+  },
+  {
+    name: "Sunscreen SPF 50",
+    category: "Derma Products",
+    dosage: "50ml",
+    form: "cream",
+    requiresPrescription: false,
+    basePrice: 12.0,
+  },
+
   // Oral Care
-  { name: "Toothpaste", category: "Oral Care", dosage: "100g", form: "other", requiresPrescription: false, basePrice: 4.0 },
-  { name: "Mouthwash", category: "Oral Care", dosage: "500ml", form: "other", requiresPrescription: false, basePrice: 5.0 },
-  
+  {
+    name: "Toothpaste",
+    category: "Oral Care",
+    dosage: "100g",
+    form: "other",
+    requiresPrescription: false,
+    basePrice: 4.0,
+  },
+  {
+    name: "Mouthwash",
+    category: "Oral Care",
+    dosage: "500ml",
+    form: "other",
+    requiresPrescription: false,
+    basePrice: 5.0,
+  },
+
   // Cold & Immunity
-  { name: "Vitamin C 1000mg", category: "Cold & Immunity", dosage: "1000mg", form: "tablet", requiresPrescription: false, basePrice: 6.0 },
-  { name: "Zinc Supplements", category: "Cold & Immunity", dosage: "50mg", form: "tablet", requiresPrescription: false, basePrice: 8.0 },
+  {
+    name: "Vitamin C 1000mg",
+    category: "Cold & Immunity",
+    dosage: "1000mg",
+    form: "tablet",
+    requiresPrescription: false,
+    basePrice: 6.0,
+  },
+  {
+    name: "Zinc Supplements",
+    category: "Cold & Immunity",
+    dosage: "50mg",
+    form: "tablet",
+    requiresPrescription: false,
+    basePrice: 8.0,
+  },
 ];
 
 // Connect to MongoDB
@@ -124,11 +272,14 @@ const connectDB = async () => {
 
 // Generate random date within last year
 const randomDate = (start, end) => {
-  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+  return new Date(
+    start.getTime() + Math.random() * (end.getTime() - start.getTime())
+  );
 };
 
 // Generate random number in range
-const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randomInt = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
 
 // Generate random element from array
 const randomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -166,14 +317,6 @@ const seedDatabase = async () => {
         userType: "customer",
         dateOfBirth: randomDate(new Date(1970, 0, 1), new Date(2005, 11, 31)),
         gender: randomElement(["male", "female", "prefer-not"]),
-        addresses: [
-          {
-            type: "home",
-            street: randomElement(streets),
-            city: randomElement(cities),
-            isDefault: true,
-          },
-        ],
         isActive: true,
         isVerified: Math.random() > 0.3, // 70% verified
       });
@@ -209,7 +352,9 @@ const seedDatabase = async () => {
         ...med,
         description: `${med.name} - High quality medication`,
         manufacturer: "PharmaLebanon",
-        imageUrl: `https://via.placeholder.com/300x300?text=${encodeURIComponent(med.name)}`,
+        imageUrl: `https://via.placeholder.com/300x300?text=${encodeURIComponent(
+          med.name
+        )}`,
         searchCount: randomInt(0, 500),
         popularityScore: randomInt(0, 100),
       });
@@ -221,14 +366,23 @@ const seedDatabase = async () => {
     // 3. Create Pharmacies
     console.log("🏥 Creating pharmacies...");
     const pharmacies = [];
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    
+    const days = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+
     for (let i = 0; i < pharmacists.length; i++) {
       const pharmacist = pharmacists[i];
       const workingHours = days.map((day) => ({
         day,
         openTime: day === "Sunday" ? "09:00" : "08:00",
-        closeTime: day === "Sunday" ? "18:00" : day === "Saturday" ? "21:00" : "22:00",
+        closeTime:
+          day === "Sunday" ? "18:00" : day === "Saturday" ? "21:00" : "22:00",
         isClosed: false,
       }));
 
@@ -271,12 +425,12 @@ const seedDatabase = async () => {
     for (const pharmacy of pharmacies) {
       // Each pharmacy gets 60-80% of items
       const itemsForPharmacy = items.filter(() => Math.random() > 0.3);
-      
+
       for (const item of itemsForPharmacy) {
         const priceVariation = 0.8 + Math.random() * 0.4; // 80% to 120% of base price
         const price = Math.round(item.basePrice * priceVariation * 100) / 100;
         const quantity = randomInt(0, 200);
-        
+
         const inventory = new Inventory({
           pharmacy: pharmacy._id,
           item: item._id,
@@ -299,7 +453,7 @@ const seedDatabase = async () => {
     for (let i = 0; i < 30; i++) {
       const customer = randomElement(customers);
       const pharmacy = randomElement(pharmacies);
-      
+
       // Get inventory for this pharmacy
       const pharmacyInventory = await Inventory.find({
         pharmacy: pharmacy._id,
@@ -324,7 +478,13 @@ const seedDatabase = async () => {
         totalAmount += subtotal;
       }
 
-      const statuses = ["pending", "confirmed", "ready", "completed", "cancelled"];
+      const statuses = [
+        "pending",
+        "confirmed",
+        "ready",
+        "completed",
+        "cancelled",
+      ];
       const status = randomElement(statuses);
       const createdAt = randomDate(new Date(2024, 0, 1), new Date());
 
@@ -335,11 +495,18 @@ const seedDatabase = async () => {
         items: orderItems,
         totalAmount: Math.round(totalAmount * 100) / 100,
         status,
-        customerNotes: Math.random() > 0.7 ? "Please handle with care" : undefined,
+        customerNotes:
+          Math.random() > 0.7 ? "Please handle with care" : undefined,
         createdAt,
-        ...(status === "confirmed" ? { confirmedAt: new Date(createdAt.getTime() + 3600000) } : {}),
-        ...(status === "completed" ? { completedAt: new Date(createdAt.getTime() + 7200000) } : {}),
-        ...(status === "cancelled" ? { cancelledAt: new Date(createdAt.getTime() + 1800000) } : {}),
+        ...(status === "confirmed"
+          ? { confirmedAt: new Date(createdAt.getTime() + 3600000) }
+          : {}),
+        ...(status === "completed"
+          ? { completedAt: new Date(createdAt.getTime() + 7200000) }
+          : {}),
+        ...(status === "cancelled"
+          ? { cancelledAt: new Date(createdAt.getTime() + 1800000) }
+          : {}),
       });
       await order.save();
       orders.push(order);
@@ -366,10 +533,15 @@ const seedDatabase = async () => {
           user: customer._id,
           pharmacy: pharmacy._id,
           rating,
-          comment: rating >= 4
-            ? "Great service and fast delivery!"
-            : "Good pharmacy, could improve service.",
-          order: randomElement(orders.filter((o) => o.customer.toString() === customer._id.toString()))?._id,
+          comment:
+            rating >= 4
+              ? "Great service and fast delivery!"
+              : "Good pharmacy, could improve service.",
+          order: randomElement(
+            orders.filter(
+              (o) => o.customer.toString() === customer._id.toString()
+            )
+          )?._id,
           createdAt: randomDate(new Date(2024, 0, 1), new Date()),
         });
         await review.save();
@@ -399,7 +571,11 @@ const seedDatabase = async () => {
 
     console.log("✨ Database seeding completed successfully!");
     console.log("\n📊 Summary:");
-    console.log(`   - Users: ${customers.length + pharmacists.length} (${customers.length} customers, ${pharmacists.length} pharmacists)`);
+    console.log(
+      `   - Users: ${customers.length + pharmacists.length} (${
+        customers.length
+      } customers, ${pharmacists.length} pharmacists)`
+    );
     console.log(`   - Pharmacies: ${pharmacies.length}`);
     console.log(`   - Items: ${items.length}`);
     console.log(`   - Inventory entries: ${inventoryCount}`);
@@ -420,4 +596,3 @@ const seedDatabase = async () => {
 connectDB().then(() => {
   seedDatabase();
 });
-

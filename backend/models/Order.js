@@ -69,6 +69,6 @@ const orderSchema = new Schema({
 // Indexes
 orderSchema.index({ customer: 1, createdAt: -1 });
 orderSchema.index({ pharmacy: 1, status: 1 });
-orderSchema.index({ orderNumber: 1 });
+// Note: orderNumber index is automatically created by unique: true
 
 module.exports = mongoose.model('Order', orderSchema);

@@ -32,16 +32,20 @@ import {
   Work,
   Add,
   Replay,
+  Star,
 } from "@mui/icons-material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { userAPI, orderAPI, authAPI } from "../services/api";
+import { useNavigate as useNavigateHook } from "react-router-dom";
 
 const UserProfile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeSection, setActiveSection] = useState("profile");
   const [orders, setOrders] = useState([]);
+  const [favoritePharmacies, setFavoritePharmacies] = useState([]);
+  const [favoriteItems, setFavoriteItems] = useState([]);
   const [profileData, setProfileData] = useState({
     firstName: "",
     lastName: "",
@@ -64,6 +68,7 @@ const UserProfile = () => {
       setUser(userData);
       fetchUserProfile(userData.id);
       fetchOrders(userData.id);
+      fetchFavorites(userData.id);
     } else {
       navigate("/login");
     }
@@ -71,18 +76,21 @@ const UserProfile = () => {
 
   const fetchUserProfile = async (userId) => {
     try {
-      const response = await userAPI.getProfile(userId);
+      // Use auth/me since there's no GET /users/:id endpoint
+      const response = await authAPI.getMe();
       const profile = response.data.user;
-      setProfileData({
-        firstName: profile.firstName || "",
-        lastName: profile.lastName || "",
-        email: profile.email || "",
-        phone: profile.phone || "",
-        dateOfBirth: profile.dateOfBirth
-          ? profile.dateOfBirth.split("T")[0]
-          : "",
-        gender: profile.gender || "",
-      });
+      if (profile) {
+        setProfileData({
+          firstName: profile.firstName || "",
+          lastName: profile.lastName || "",
+          email: profile.email || "",
+          phone: profile.phone || "",
+          dateOfBirth: profile.dateOfBirth
+            ? profile.dateOfBirth.split("T")[0]
+            : "",
+          gender: profile.gender || "",
+        });
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
     }
@@ -90,10 +98,49 @@ const UserProfile = () => {
 
   const fetchOrders = async (userId) => {
     try {
-      const response = await orderAPI.getAll({ userId });
+      const response = await orderAPI.getAll({ customerId: userId });
       setOrders(response.data.orders || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
+    }
+  };
+
+  const fetchFavorites = async (userId) => {
+    try {
+      const [pharmaciesRes, itemsRes] = await Promise.all([
+        userAPI.getFavoritePharmacies(userId),
+        userAPI.getFavoriteItems(userId),
+      ]);
+      setFavoritePharmacies(pharmaciesRes.data.favoritePharmacies || []);
+      setFavoriteItems(itemsRes.data.favoriteItems || []);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+    }
+  };
+
+  const handleRemoveFavoritePharmacy = async (pharmacyId) => {
+    if (!user?.id) return;
+    try {
+      await userAPI.removeFavoritePharmacy(user.id, pharmacyId);
+      setFavoritePharmacies(
+        favoritePharmacies.filter((p) => (p._id || p) !== pharmacyId)
+      );
+      alert("Pharmacy removed from favorites");
+    } catch (error) {
+      console.error("Error removing favorite pharmacy:", error);
+      alert("Failed to remove favorite");
+    }
+  };
+
+  const handleRemoveFavoriteItem = async (itemId) => {
+    if (!user?.id) return;
+    try {
+      await userAPI.removeFavoriteItem(user.id, itemId);
+      setFavoriteItems(favoriteItems.filter((i) => (i._id || i) !== itemId));
+      alert("Item removed from favorites");
+    } catch (error) {
+      console.error("Error removing favorite item:", error);
+      alert("Failed to remove favorite");
     }
   };
 
@@ -137,7 +184,7 @@ const UserProfile = () => {
         return;
       }
 
-      await authAPI.updatePassword(passwordData);
+      await authAPI.changePassword(passwordData);
       alert("Password updated successfully!");
       setPasswordData({
         currentPassword: "",
@@ -518,32 +565,200 @@ const UserProfile = () => {
   );
 
   const renderFavoritesSection = () => (
-    <Card>
-      <CardContent>
-        <Typography variant="h5" fontWeight={700} mb={3}>
-          Favorite Pharmacies
-        </Typography>
+    <Box>
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h5" fontWeight={700} mb={3}>
+            Favorite Pharmacies
+          </Typography>
 
-        <Box sx={{ textAlign: "center", py: 8 }}>
-          <Favorite sx={{ fontSize: 80, color: "#e0e0e0", mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" mb={1}>
-            No Favorites Yet
+          {favoritePharmacies.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Favorite sx={{ fontSize: 80, color: "#e0e0e0", mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" mb={1}>
+                No Favorite Pharmacies Yet
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mb={3}>
+                Start adding pharmacies to your favorites for quick access
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => navigate("/search")}
+                sx={{
+                  background:
+                    "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                }}
+              >
+                Browse Pharmacies
+              </Button>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              {favoritePharmacies.map((pharmacy) => (
+                <Grid item xs={12} sm={6} md={4} key={pharmacy._id || pharmacy}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      border: "2px solid #f0f0f0",
+                      transition: "all 0.3s",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        bgcolor: "#f8fdfd",
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        fontWeight={600}
+                        color="secondary"
+                      >
+                        {pharmacy.name}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          handleRemoveFavoritePharmacy(pharmacy._id || pharmacy)
+                        }
+                        sx={{ color: "error.main" }}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" mb={1}>
+                      {pharmacy.address?.street}, {pharmacy.address?.city}
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                      <Star sx={{ fontSize: 16, color: "warning.main" }} />
+                      <Typography variant="body2">
+                        {pharmacy.averageRating?.toFixed(1) || "0.0"} (
+                        {pharmacy.totalReviews || 0} reviews)
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() =>
+                        navigate(`/pharmacy/${pharmacy._id || pharmacy}`)
+                      }
+                      sx={{ mt: 1 }}
+                    >
+                      View Details
+                    </Button>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <Typography variant="h5" fontWeight={700} mb={3}>
+            Favorite Items
           </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            Start adding pharmacies to your favorites for quick access
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => navigate("/search")}
-            sx={{
-              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-            }}
-          >
-            Browse Pharmacies
-          </Button>
-        </Box>
-      </CardContent>
-    </Card>
+
+          {favoriteItems.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Favorite sx={{ fontSize: 80, color: "#e0e0e0", mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" mb={1}>
+                No Favorite Items Yet
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mb={3}>
+                Start adding items to your favorites for quick access
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => navigate("/search")}
+                sx={{
+                  background:
+                    "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                }}
+              >
+                Browse Items
+              </Button>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              {favoriteItems.map((item) => (
+                <Grid item xs={12} sm={6} md={4} key={item._id || item}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      border: "2px solid #f0f0f0",
+                      transition: "all 0.3s",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        bgcolor: "#f8fdfd",
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        fontWeight={600}
+                        color="secondary"
+                      >
+                        {item.name}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          handleRemoveFavoriteItem(item._id || item)
+                        }
+                        sx={{ color: "error.main" }}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" mb={1}>
+                      {item.category} • {item.dosage || "N/A"}
+                    </Typography>
+                    {item.imageUrl && (
+                      <Box
+                        component="img"
+                        src={item.imageUrl}
+                        alt={item.name}
+                        sx={{
+                          width: "100%",
+                          height: 150,
+                          objectFit: "cover",
+                          borderRadius: 2,
+                          mb: 1,
+                        }}
+                      />
+                    )}
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() =>
+                        navigate(`/medications/${item._id || item}`)
+                      }
+                      sx={{ mt: 1 }}
+                    >
+                      View Details
+                    </Button>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
   );
 
   const renderSecuritySection = () => (

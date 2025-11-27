@@ -111,9 +111,9 @@ const Home = () => {
 
   const fetchPopularProducts = async () => {
     try {
-      const response = await medicationAPI.getPopular();
-      const products = response.data.medications?.slice(0, 5) || [];
-      
+      const response = await medicationAPI.getTopSearched();
+      const products = response.data.items?.slice(0, 5) || [];
+
       // Fallback popular products in Lebanon if API fails or returns empty
       const fallbackProducts = [
         { name: "Panadol", searchCount: 10000, category: "Pain Relief" },
@@ -122,25 +122,57 @@ const Home = () => {
         { name: "Brufen", searchCount: 2500, category: "Pain Relief" },
         { name: "Paracetamol", searchCount: 4000, category: "Pain Relief" },
       ];
-      
+
       // Merge API data with fallback data
-      const mergedProducts = products.length > 0 
-        ? products.map((product, index) => ({
-            ...product,
-            searchCount: product.searchCount || fallbackProducts[index]?.searchCount || 0,
-          }))
-        : fallbackProducts.map(p => ({ ...p, _id: p.name.toLowerCase().replace(/\s/g, '-') }));
-      
+      const mergedProducts =
+        products.length > 0
+          ? products.map((product, index) => ({
+              ...product,
+              searchCount:
+                product.searchCount ||
+                fallbackProducts[index]?.searchCount ||
+                0,
+            }))
+          : fallbackProducts.map((p) => ({
+              ...p,
+              _id: p.name.toLowerCase().replace(/\s/g, "-"),
+            }));
+
       setPopularProducts(mergedProducts.slice(0, 5));
     } catch (error) {
       console.error("Error fetching popular products:", error);
       // Use fallback products on error
       const fallbackProducts = [
-        { name: "Panadol", searchCount: 10000, category: "Pain Relief", _id: "panadol" },
-        { name: "Advil", searchCount: 5000, category: "Pain Relief", _id: "advil" },
-        { name: "Aspirin", searchCount: 3000, category: "Pain Relief", _id: "aspirin" },
-        { name: "Brufen", searchCount: 2500, category: "Pain Relief", _id: "brufen" },
-        { name: "Paracetamol", searchCount: 4000, category: "Pain Relief", _id: "paracetamol" },
+        {
+          name: "Panadol",
+          searchCount: 10000,
+          category: "Pain Relief",
+          _id: "panadol",
+        },
+        {
+          name: "Advil",
+          searchCount: 5000,
+          category: "Pain Relief",
+          _id: "advil",
+        },
+        {
+          name: "Aspirin",
+          searchCount: 3000,
+          category: "Pain Relief",
+          _id: "aspirin",
+        },
+        {
+          name: "Brufen",
+          searchCount: 2500,
+          category: "Pain Relief",
+          _id: "brufen",
+        },
+        {
+          name: "Paracetamol",
+          searchCount: 4000,
+          category: "Pain Relief",
+          _id: "paracetamol",
+        },
       ];
       setPopularProducts(fallbackProducts);
     }
@@ -148,41 +180,97 @@ const Home = () => {
 
   const fetchFeaturedPharmacies = async () => {
     try {
-      const response = await pharmacyAPI.getAll({ featured: true });
+      const response = await pharmacyAPI.getFeatured();
       const pharmacies = response.data.pharmacies?.slice(0, 5) || [];
-      
+
       // Fallback featured pharmacies in Lebanon if API fails or returns empty
       const fallbackPharmacies = [
-        { name: "Al Rahbani Pharmacy", motto: "We strive to help", city: "Beirut" },
-        { name: "Maen Pharmacy", motto: "Your health is our priority", city: "Beirut" },
+        {
+          name: "Al Rahbani Pharmacy",
+          motto: "We strive to help",
+          city: "Beirut",
+        },
+        {
+          name: "Maen Pharmacy",
+          motto: "Your health is our priority",
+          city: "Beirut",
+        },
         { name: "Rallan Pharmacy", motto: "Caring for you", city: "Beirut" },
-        { name: "Salam Pharmacy", motto: "Quality care, quality service", city: "Tripoli" },
-        { name: "Al Hayat Pharmacy", motto: "Your trusted health partner", city: "Sidon" },
+        {
+          name: "Salam Pharmacy",
+          motto: "Quality care, quality service",
+          city: "Tripoli",
+        },
+        {
+          name: "Al Hayat Pharmacy",
+          motto: "Your trusted health partner",
+          city: "Sidon",
+        },
       ];
-      
+
       // Merge API data with fallback data
-      const mergedPharmacies = pharmacies.length > 0
-        ? pharmacies.map((pharmacy, index) => ({
-            ...pharmacy,
-            motto: pharmacy.motto || pharmacy.tagline || fallbackPharmacies[index]?.motto || "",
-          }))
-        : fallbackPharmacies.map(p => ({ 
-            ...p, 
-            _id: p.name.toLowerCase().replace(/\s/g, '-'),
-            address: { city: p.city },
-            isOpen: true,
-          }));
-      
+      const mergedPharmacies =
+        pharmacies.length > 0
+          ? pharmacies.map((pharmacy, index) => ({
+              ...pharmacy,
+              motto:
+                pharmacy.motto ||
+                pharmacy.tagline ||
+                fallbackPharmacies[index]?.motto ||
+                "",
+            }))
+          : fallbackPharmacies.map((p) => ({
+              ...p,
+              _id: p.name.toLowerCase().replace(/\s/g, "-"),
+              address: { city: p.city },
+              isOpen: true,
+            }));
+
       setFeaturedPharmacies(mergedPharmacies.slice(0, 5));
     } catch (error) {
       console.error("Error fetching featured pharmacies:", error);
       // Use fallback pharmacies on error
       const fallbackPharmacies = [
-        { name: "Al Rahbani Pharmacy", motto: "We strive to help", city: "Beirut", _id: "al-rahbani", address: { city: "Beirut" }, isOpen: true },
-        { name: "Maen Pharmacy", motto: "Your health is our priority", city: "Beirut", _id: "maen", address: { city: "Beirut" }, isOpen: true },
-        { name: "Rallan Pharmacy", motto: "Caring for you", city: "Beirut", _id: "rallan", address: { city: "Beirut" }, isOpen: true },
-        { name: "Salam Pharmacy", motto: "Quality care, quality service", city: "Tripoli", _id: "salam", address: { city: "Tripoli" }, isOpen: true },
-        { name: "Al Hayat Pharmacy", motto: "Your trusted health partner", city: "Sidon", _id: "al-hayat", address: { city: "Sidon" }, isOpen: true },
+        {
+          name: "Al Rahbani Pharmacy",
+          motto: "We strive to help",
+          city: "Beirut",
+          _id: "al-rahbani",
+          address: { city: "Beirut" },
+          isOpen: true,
+        },
+        {
+          name: "Maen Pharmacy",
+          motto: "Your health is our priority",
+          city: "Beirut",
+          _id: "maen",
+          address: { city: "Beirut" },
+          isOpen: true,
+        },
+        {
+          name: "Rallan Pharmacy",
+          motto: "Caring for you",
+          city: "Beirut",
+          _id: "rallan",
+          address: { city: "Beirut" },
+          isOpen: true,
+        },
+        {
+          name: "Salam Pharmacy",
+          motto: "Quality care, quality service",
+          city: "Tripoli",
+          _id: "salam",
+          address: { city: "Tripoli" },
+          isOpen: true,
+        },
+        {
+          name: "Al Hayat Pharmacy",
+          motto: "Your trusted health partner",
+          city: "Sidon",
+          _id: "al-hayat",
+          address: { city: "Sidon" },
+          isOpen: true,
+        },
       ];
       setFeaturedPharmacies(fallbackPharmacies);
     }
@@ -199,6 +287,9 @@ const Home = () => {
   };
 
   const handleCategoryClick = (categoryName) => {
+    medicationAPI.getByCategory(categoryName).then((response) => {
+      console.log(response.data);
+    });
     navigate(`/search?category=${encodeURIComponent(categoryName)}`);
   };
 
@@ -397,11 +488,7 @@ const Home = () => {
                 }}
               >
                 <Icon sx={{ fontSize: 48, color: "primary.main", mb: 1.5 }} />
-                <Typography
-                  variant="body1"
-                  fontWeight={600}
-                  color="secondary"
-                >
+                <Typography variant="body1" fontWeight={600} color="secondary">
                   {category.name}
                 </Typography>
               </Card>
@@ -438,7 +525,8 @@ const Home = () => {
           mb={3}
           sx={{ pl: 2, fontStyle: "italic" }}
         >
-          Top 5 most requested (searched) products last month (updates every month)
+          Top 5 most requested (searched) products last month (updates every
+          month)
         </Typography>
         <Box
           component="section"
@@ -462,10 +550,13 @@ const Home = () => {
         >
           {popularProducts.slice(0, 5).map((product) => {
             const searchCount = product.searchCount || 0;
-            const formattedCount = searchCount >= 1000 
-              ? `+${(searchCount / 1000).toFixed(searchCount % 1000 === 0 ? 0 : 1)}k` 
-              : `+${searchCount}`;
-            
+            const formattedCount =
+              searchCount >= 1000
+                ? `+${(searchCount / 1000).toFixed(
+                    searchCount % 1000 === 0 ? 0 : 1
+                  )}k`
+                : `+${searchCount}`;
+
             return (
               <Card
                 key={product._id || product.name}
@@ -483,7 +574,9 @@ const Home = () => {
                     borderColor: "primary.main",
                   },
                 }}
-                onClick={() => navigate(`/search?q=${encodeURIComponent(product.name)}`)}
+                onClick={() =>
+                  navigate(`/search?q=${encodeURIComponent(product.name)}`)
+                }
               >
                 <Box
                   sx={{
@@ -498,7 +591,9 @@ const Home = () => {
                 >
                   <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
                 </Box>
-                <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
+                <CardContent
+                  sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+                >
                   <Typography
                     variant="h6"
                     fontWeight={600}
@@ -606,7 +701,14 @@ const Home = () => {
                   borderColor: "primary.main",
                 },
               }}
-              onClick={() => navigate(`/pharmacy/${pharmacy._id || pharmacy.name.toLowerCase().replace(/\s/g, '-')}`)}
+              onClick={() =>
+                navigate(
+                  `/pharmacy/${
+                    pharmacy._id ||
+                    pharmacy.name.toLowerCase().replace(/\s/g, "-")
+                  }`
+                )
+              }
             >
               <Box
                 sx={{
@@ -621,7 +723,16 @@ const Home = () => {
               >
                 <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
               </Box>
-              <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", pb: 3, pt: 2 }}>
+              <CardContent
+                sx={{
+                  flexGrow: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  pb: 3,
+                  pt: 2,
+                }}
+              >
                 <Box>
                   <Typography
                     variant="h6"
@@ -632,9 +743,9 @@ const Home = () => {
                     {pharmacy.name}
                   </Typography>
                   {pharmacy.motto && (
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary" 
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
                       mb={1}
                       sx={{ fontStyle: "italic" }}
                     >

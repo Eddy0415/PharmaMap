@@ -134,8 +134,8 @@ const CustomerHome = () => {
 
   const fetchPopularProducts = async () => {
     try {
-      const response = await medicationAPI.getPopular();
-      const products = response.data.medications?.slice(0, 5) || [];
+      const response = await medicationAPI.getTopSearched();
+      const products = response.data.items?.slice(0, 5) || [];
       
       const fallbackProducts = [
         { name: "Panadol", searchCount: 10000, category: "Pain Relief" },
@@ -168,7 +168,7 @@ const CustomerHome = () => {
 
   const fetchFeaturedPharmacies = async () => {
     try {
-      const response = await pharmacyAPI.getAll({ featured: true });
+      const response = await pharmacyAPI.getFeatured();
       const pharmacies = response.data.pharmacies?.slice(0, 5) || [];
       
       const fallbackPharmacies = [
