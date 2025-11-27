@@ -1,95 +1,74 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const orderSchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+const orderSchema = new Schema({
+  // Order reference
+  orderNumber: { 
+    type: String, 
+    required: true, 
+    unique: true 
+  },
+  
+  // Customer
+  customer: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
+  
+  // Pharmacy
+  pharmacy: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'Pharmacy', 
+    required: true 
+  },
+  
+  // Items in order
+  items: [{
+    item: { 
+      type: Schema.Types.ObjectId, 
+      ref: 'Item', 
+      required: true 
     },
-    pharmacy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Pharmacy',
-        required: true
+    quantity: { 
+      type: Number, 
+      required: true, 
+      min: 1 
     },
-    medications: [{
-        medication: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Medication',
-            required: true
-        },
-        name: String,
-        quantity: {
-            type: Number,
-            required: true,
-            min: 1
-        },
-        price: {
-            type: Number,
-            required: true
-        },
-        subtotal: Number
-    }],
-    totalAmount: {
-        type: Number,
-        required: true,
-        min: 0
+    priceAtOrder: { 
+      type: Number, 
+      required: true 
     },
-    status: {
-        type: String,
-        enum: ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'],
-        default: 'pending'
-    },
-    paymentMethod: {
-        type: String,
-        enum: ['cash', 'card', 'online'],
-        default: 'cash'
-    },
-    paymentStatus: {
-        type: String,
-        enum: ['pending', 'paid', 'failed'],
-        default: 'pending'
-    },
-    deliveryAddress: {
-        street: String,
-        city: String,
-        country: { type: String, default: 'Lebanon' }
-    },
-    deliveryType: {
-        type: String,
-        enum: ['pickup', 'delivery'],
-        default: 'pickup'
-    },
-    notes: {
-        type: String,
-        trim: true
-    },
-    orderNumber: {
-        type: String,
-        unique: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    completedAt: {
-        type: Date
-    }
-}, {
-    timestamps: true
+    subtotal: { type: Number, required: true }
+  }],
+  
+  // Total
+  totalAmount: { 
+    type: Number, 
+    required: true 
+  },
+  
+  // Status
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'ready', 'completed', 'cancelled'],
+    default: 'pending'
+  },
+  
+  // Notes
+  customerNotes: { type: String },
+  pharmacyNotes: { type: String },
+  
+  // Timestamps
+  createdAt: { type: Date, default: Date.now },
+  confirmedAt: { type: Date },
+  completedAt: { type: Date },
+  cancelledAt: { type: Date }
 });
 
-// Generate order number before saving
-orderSchema.pre('save', function(next) {
-    if (!this.orderNumber) {
-        this.orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    }
-    
-    // Calculate subtotals
-    this.medications.forEach(item => {
-        item.subtotal = item.quantity * item.price;
-    });
-    
-    next();
-});
+// Indexes
+orderSchema.index({ customer: 1, createdAt: -1 });
+orderSchema.index({ pharmacy: 1, status: 1 });
+orderSchema.index({ orderNumber: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

@@ -1,93 +1,110 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const Schema = mongoose.Schema;
 
-const userSchema = new mongoose.Schema({
-    firstName: {
+const userSchema = new Schema({
+  // Basic Info
+  firstName: { type: String, required: true, trim: true },
+  lastName: { type: String, required: true, trim: true },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  password: { type: String, required: true }, // Hash with bcrypt
+  phone: { type: String, required: true },
+
+  // User Type
+  userType: {
+    type: String,
+    enum: ["customer", "pharmacist"],
+    required: true,
+  },
+
+  // Customer-specific fields
+  dateOfBirth: { type: Date },
+  gender: {
+    type: String,
+    enum: ["male", "female", "other", "prefer-not"],
+  },
+  addresses: [
+    {
+      type: {
         type: String,
-        required: [true, 'First name is required'],
-        trim: true
+        enum: ["home", "work", "other"],
+        default: "home",
+      },
+      street: String,
+      city: String,
+      isDefault: { type: Boolean, default: false },
     },
-    lastName: {
-        type: String,
-        required: [true, 'Last name is required'],
-        trim: true
+  ],
+
+  // Favorites
+  favoritePharmacies: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Pharmacy",
     },
-    email: {
-        type: String,
-        required: [true, 'Email is required'],
-        unique: true,
-        lowercase: true,
-        trim: true,
-        match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email']
+  ],
+  favoriteItems: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Item",
     },
-    phone: {
-        type: String,
-        required: [true, 'Phone number is required'],
-        trim: true
-    },
-    password: {
-        type: String,
-        required: [true, 'Password is required'],
-        minlength: [8, 'Password must be at least 8 characters']
-    },
-    accountType: {
-        type: String,
-        enum: ['customer', 'pharmacy'],
-        default: 'customer'
-    },
-    dateOfBirth: {
-        type: Date
-    },
-    gender: {
-        type: String,
-        enum: ['male', 'female', 'other', 'prefer-not']
-    },
-    addresses: [{
-        type: {
-            type: String,
-            enum: ['home', 'work', 'other'],
-            default: 'home'
-        },
-        street: String,
-        city: String,
-        country: { type: String, default: 'Lebanon' },
-        isDefault: { type: Boolean, default: false }
-    }],
-    favorites: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Pharmacy'
-    }],
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-}, {
-    timestamps: true
+  ],
+
+  // Pharmacist-specific: reference to their pharmacy
+  pharmacy: {
+    type: Schema.Types.ObjectId,
+    ref: "Pharmacy",
+  },
+
+  dateOfBirth: {
+    type: Date,
+  },
+  gender: {
+    type: String,
+    enum: ["male", "female", "other", "prefer-not"],
+  },
+  // Account status
+  isActive: { type: Boolean, default: true },
+  isVerified: { type: Boolean, default: false },
+
+  // Timestamps
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
+// Index for faster queries
+userSchema.index({ email: 1 });
+userSchema.index({ userType: 1 });
+
 // Hash password before saving
-userSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) {
-        return next();
-    }
-    
-    try {
-        const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
-        next();
-    } catch (error) {
-        next(error);
-    }
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Method to compare passwords
-userSchema.methods.comparePassword = async function(candidatePassword) {
-    return await bcrypt.compare(candidatePassword, this.password);
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Virtual for full name
-userSchema.virtual('fullName').get(function() {
-    return `${this.firstName} ${this.lastName}`;
+userSchema.virtual("fullName").get(function () {
+  return `${this.firstName} ${this.lastName}`;
 });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);
