@@ -15,7 +15,7 @@ router.post("/register", async (req, res) => {
       email,
       phone,
       password,
-      accountType,
+      userType,
       pharmacyName,
       pharmacyAddress,
       city,
@@ -38,13 +38,13 @@ router.post("/register", async (req, res) => {
       email,
       phone,
       password,
-      accountType,
+      userType,
     });
 
     await user.save();
 
-    // If pharmacy account, create pharmacy
-    if (accountType === "pharmacy") {
+    // If pharmacist account, create pharmacy
+    if (userType === "pharmacist") {
       const pharmacy = new Pharmacy({
         owner: user._id,
         name: pharmacyName,
@@ -55,23 +55,62 @@ router.post("/register", async (req, res) => {
         },
         phone: phone,
         email: email,
-        workingHours: {
-          monday: { open: "08:00", close: "22:00" },
-          tuesday: { open: "08:00", close: "22:00" },
-          wednesday: { open: "08:00", close: "22:00" },
-          thursday: { open: "08:00", close: "22:00" },
-          friday: { open: "08:00", close: "22:00" },
-          saturday: { open: "09:00", close: "21:00" },
-          sunday: { open: "09:00", close: "18:00" },
-        },
+        workingHours: [
+          {
+            day: "Monday",
+            openTime: "08:00",
+            closeTime: "22:00",
+            isClosed: false,
+          },
+          {
+            day: "Tuesday",
+            openTime: "08:00",
+            closeTime: "22:00",
+            isClosed: false,
+          },
+          {
+            day: "Wednesday",
+            openTime: "08:00",
+            closeTime: "22:00",
+            isClosed: false,
+          },
+          {
+            day: "Thursday",
+            openTime: "08:00",
+            closeTime: "22:00",
+            isClosed: false,
+          },
+          {
+            day: "Friday",
+            openTime: "08:00",
+            closeTime: "22:00",
+            isClosed: false,
+          },
+          {
+            day: "Saturday",
+            openTime: "09:00",
+            closeTime: "21:00",
+            isClosed: false,
+          },
+          {
+            day: "Sunday",
+            openTime: "09:00",
+            closeTime: "18:00",
+            isClosed: false,
+          },
+        ],
       });
 
       await pharmacy.save();
+
+      // Link pharmacy to user
+      user.pharmacy = pharmacy._id;
+      await user.save();
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, accountType: user.accountType },
+      { userId: user._id, userType: user.userType },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -85,7 +124,7 @@ router.post("/register", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        accountType: user.accountType,
+        userType: user.userType,
       },
     });
   } catch (error) {
@@ -125,7 +164,7 @@ router.post("/login", async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, accountType: user.accountType },
+      { userId: user._id, userType: user.userType },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -139,7 +178,7 @@ router.post("/login", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        accountType: user.accountType,
+        userType: user.userType,
       },
     });
   } catch (error) {
@@ -299,8 +338,8 @@ router.delete("/account", async (req, res) => {
       });
     }
 
-    // If user is a pharmacy owner, delete the pharmacy as well
-    if (user.accountType === "pharmacy") {
+    // If user is a pharmacist, delete the pharmacy as well
+    if (user.userType === "pharmacist") {
       await Pharmacy.deleteOne({ owner: user._id });
     }
 

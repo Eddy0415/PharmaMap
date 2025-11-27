@@ -1,19 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
-const Medication = require('../models/Medication');
+const Item = require('../models/Item');
+const Inventory = require('../models/Inventory');
 
 // @route   GET /api/orders
 // @desc    Get all orders (for admin/pharmacy)
 // @access  Private
 router.get('/', async (req, res) => {
     try {
-        const { userId, pharmacyId, status } = req.query;
+        const { customerId, pharmacyId, status } = req.query;
         
         let query = {};
         
-        if (userId) {
-            query.user = userId;
+        if (customerId) {
+            query.customer = customerId;
         }
         
         if (pharmacyId) {
@@ -25,9 +26,9 @@ router.get('/', async (req, res) => {
         }
 
         const orders = await Order.find(query)
-            .populate('user', 'firstName lastName email phone')
+            .populate('customer', 'firstName lastName email phone')
             .populate('pharmacy', 'name address phone')
-            .populate('medications.medication', 'name category')
+            .populate('items.item', 'name category imageUrl')
             .sort({ createdAt: -1 });
 
         res.json({
@@ -51,9 +52,9 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const order = await Order.findById(req.params.id)
-            .populate('user', 'firstName lastName email phone')
+            .populate('customer', 'firstName lastName email phone')
             .populate('pharmacy', 'name address phone')
-            .populate('medications.medication', 'name category price');
+            .populate('items.item', 'name category imageUrl');
 
         if (!order) {
             return res.status(404).json({ 
@@ -81,54 +82,68 @@ router.get('/:id', async (req, res) => {
 // @access  Private
 router.post('/', async (req, res) => {
     try {
-        const { user, pharmacy, medications, deliveryAddress, deliveryType, paymentMethod, notes } = req.body;
+        const { customer, pharmacy, items, customerNotes } = req.body;
+
+        // Generate order number
+        const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
         // Validate stock and calculate total
         let totalAmount = 0;
-        const orderMedications = [];
+        const orderItems = [];
 
-        for (const item of medications) {
-            const medication = await Medication.findById(item.medication);
+        for (const orderItem of items) {
+            // Get inventory entry for this item at this pharmacy
+            const inventory = await Inventory.findOne({
+                pharmacy: pharmacy,
+                item: orderItem.item
+            });
             
-            if (!medication) {
+            if (!inventory) {
                 return res.status(404).json({ 
                     success: false, 
-                    message: `Medication ${item.medication} not found` 
+                    message: `Item ${orderItem.item} not available at this pharmacy` 
                 });
             }
 
-            if (medication.stock < item.quantity) {
+            if (inventory.quantity < orderItem.quantity) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: `Insufficient stock for ${medication.name}` 
+                    message: `Insufficient stock for item` 
                 });
             }
 
-            orderMedications.push({
-                medication: medication._id,
-                name: medication.name,
-                quantity: item.quantity,
-                price: medication.price,
-                subtotal: medication.price * item.quantity
+            const item = await Item.findById(orderItem.item);
+            if (!item) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: `Item not found` 
+                });
+            }
+
+            const subtotal = inventory.price * orderItem.quantity;
+            orderItems.push({
+                item: item._id,
+                quantity: orderItem.quantity,
+                priceAtOrder: inventory.price,
+                subtotal: subtotal
             });
 
-            totalAmount += medication.price * item.quantity;
+            totalAmount += subtotal;
 
-            // Update stock
-            medication.stock -= item.quantity;
-            await medication.save();
+            // Update inventory stock
+            inventory.quantity -= orderItem.quantity;
+            inventory.totalOrders += 1;
+            await inventory.save();
         }
 
         // Create order
         const order = new Order({
-            user,
+            orderNumber,
+            customer,
             pharmacy,
-            medications: orderMedications,
+            items: orderItems,
             totalAmount,
-            deliveryAddress,
-            deliveryType,
-            paymentMethod,
-            notes
+            customerNotes
         });
 
         await order.save();
@@ -155,12 +170,19 @@ router.put('/:id', async (req, res) => {
     try {
         const { status } = req.body;
 
+        const updateData = { status };
+        
+        if (status === 'confirmed') {
+            updateData.confirmedAt = Date.now();
+        } else if (status === 'completed') {
+            updateData.completedAt = Date.now();
+        } else if (status === 'cancelled') {
+            updateData.cancelledAt = Date.now();
+        }
+
         const order = await Order.findByIdAndUpdate(
             req.params.id,
-            { 
-                status,
-                ...(status === 'completed' ? { completedAt: Date.now() } : {})
-            },
+            updateData,
             { new: true }
         );
 
@@ -200,23 +222,28 @@ router.delete('/:id', async (req, res) => {
             });
         }
 
-        if (order.status !== 'pending') {
+        if (order.status === 'cancelled' || order.status === 'completed') {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Cannot cancel order that is not pending' 
+                message: `Cannot cancel order with status: ${order.status}` 
             });
         }
 
         // Restore stock
-        for (const item of order.medications) {
-            const medication = await Medication.findById(item.medication);
-            if (medication) {
-                medication.stock += item.quantity;
-                await medication.save();
+        for (const orderItem of order.items) {
+            const inventory = await Inventory.findOne({
+                pharmacy: order.pharmacy,
+                item: orderItem.item
+            });
+            
+            if (inventory) {
+                inventory.quantity += orderItem.quantity;
+                await inventory.save();
             }
         }
 
         order.status = 'cancelled';
+        order.cancelledAt = Date.now();
         await order.save();
 
         res.json({
