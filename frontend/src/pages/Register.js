@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
-  Container,
   Box,
-  Paper,
   Typography,
   TextField,
   Button,
@@ -16,6 +14,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Grid,
+  Dialog,
 } from '@mui/material';
 import {
   Person,
@@ -29,9 +28,9 @@ import {
   Business,
   LocationOn,
   Badge,
+  Close as CloseIcon,
 } from '@mui/icons-material';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Home from './Home';
 import { authAPI } from '../services/api';
 
 const Register = () => {
@@ -133,103 +132,151 @@ const Register = () => {
     }
   };
 
-  return (
-    <Box component="main" sx={{ bgcolor: 'background.default', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header />
+  const handleClose = () => {
+    navigate("/");
+  };
 
-      <Box
-        component="section"
-        sx={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 5,
+  return (
+    <>
+      <Home />
+      
+      <Dialog
+        open={true}
+        onClose={handleClose}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            width: "75vw",
+            maxWidth: "1000px",
+            height: "75vh",
+            maxHeight: "600px",
+            margin: "auto",
+            borderRadius: 2,
+            overflow: "hidden",
+          },
+        }}
+        BackdropProps={{
+          sx: {
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+          },
         }}
       >
-        <Container maxWidth="md">
-          <Paper
-            component="article"
-            elevation={8}
+        <Box
+          sx={{
+            display: "flex",
+            height: "100%",
+            position: "relative",
+          }}
+        >
+          {/* Close Button */}
+          <IconButton
+            onClick={handleClose}
             sx={{
-              p: 5,
-              borderRadius: 5,
+              position: "absolute",
+              top: 16,
+              right: 16,
+              zIndex: 10,
+              bgcolor: "rgba(255, 255, 255, 0.9)",
+              "&:hover": {
+                bgcolor: "white",
+              },
             }}
           >
-            {/* Header */}
-            <Box component="header" sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography component="h1" variant="h4" fontWeight={700} color="secondary" mb={1}>
-                Create Account
-              </Typography>
-              <Typography component="p" variant="body1" color="text.secondary">
-                Join PharmaMap today
-              </Typography>
-            </Box>
+            <CloseIcon />
+          </IconButton>
 
-            {/* Account Type Toggle */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-              <ToggleButtonGroup
-                value={accountType}
-                exclusive
-                onChange={handleAccountTypeChange}
-                sx={{ width: '100%', maxWidth: 500 }}
-              >
-                <ToggleButton
-                  value="customer"
-                  sx={{
-                    flex: 1,
-                    py: 2,
-                    '&.Mui-selected': {
-                      background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                      color: 'white',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #44a9a3 0%, #3a8f8a 100%)',
-                      },
-                    },
-                  }}
+          {/* Left Section - Register Form (2/3 width) */}
+          <Box
+            sx={{
+              width: "66.666%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              bgcolor: "background.paper",
+              overflow: "auto",
+              p: 4,
+            }}
+          >
+            {/* Form Container */}
+            <Box
+              sx={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {/* Header */}
+              <Box component="header" sx={{ mb: 3 }}>
+                <Typography component="h1" variant="h4" fontWeight={700} color="secondary" mb={1}>
+                  Sign up
+                </Typography>
+              </Box>
+
+              {/* Account Type Toggle */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3, width: "100%" }}>
+                <ToggleButtonGroup
+                  value={accountType}
+                  exclusive
+                  onChange={handleAccountTypeChange}
+                  sx={{ width: '100%' }}
                 >
-                  <Person sx={{ mr: 1 }} />
-                  Customer
-                </ToggleButton>
-                <ToggleButton
-                  value="pharmacy"
-                  sx={{
-                    flex: 1,
-                    py: 2,
-                    '&.Mui-selected': {
-                      background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                      color: 'white',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #44a9a3 0%, #3a8f8a 100%)',
+                  <ToggleButton
+                    value="customer"
+                    sx={{
+                      flex: 1,
+                      py: 1.5,
+                      fontSize: "0.875rem",
+                      '&.Mui-selected': {
+                        background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+                        color: 'white',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #44a9a3 0%, #3a8f8a 100%)',
+                        },
                       },
-                    },
-                  }}
-                >
-                  <LocalPharmacy sx={{ mr: 1 }} />
-                  Pharmacy Owner
-                </ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
+                    }}
+                  >
+                    <Person sx={{ mr: 1, fontSize: "1rem" }} />
+                    Customer
+                  </ToggleButton>
+                  <ToggleButton
+                    value="pharmacy"
+                    sx={{
+                      flex: 1,
+                      py: 1.5,
+                      fontSize: "0.875rem",
+                      '&.Mui-selected': {
+                        background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+                        color: 'white',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #44a9a3 0%, #3a8f8a 100%)',
+                        },
+                      },
+                    }}
+                  >
+                    <LocalPharmacy sx={{ mr: 1, fontSize: "1rem" }} />
+                    Pharmacy
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
 
-            {/* Error Alert */}
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
-              </Alert>
-            )}
+              {/* Error Alert */}
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
 
-            {/* Registration Form */}
-            <form onSubmit={handleSubmit}>
-              <Grid container spacing={2.5}>
-                {/* Personal Information */}
-                <Grid item xs={12} sm={6}>
+              {/* Registration Form */}
+              <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+                {/* First Name and Last Name - Side by side, no gaps */}
+                <Box sx={{ display: "flex", gap: 2, mb: 2, width: "100%" }}>
                   <TextField
-                    fullWidth
                     label="First Name"
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
                     required
+                    sx={{ flex: 1, width: "100%" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -238,15 +285,13 @@ const Register = () => {
                       ),
                     }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
                   <TextField
-                    fullWidth
                     label="Last Name"
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
                     required
+                    sx={{ flex: 1, width: "100%" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -255,9 +300,10 @@ const Register = () => {
                       ),
                     }}
                   />
-                </Grid>
-
-                <Grid item xs={12}>
+                </Box>
+                
+                {/* Email Address - Full width, on its own line */}
+                <Box sx={{ width: "100%", mb: 2 }}>
                   <TextField
                     fullWidth
                     label="Email Address"
@@ -266,6 +312,7 @@ const Register = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    sx={{ width: "100%" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -274,9 +321,10 @@ const Register = () => {
                       ),
                     }}
                   />
-                </Grid>
+                </Box>
 
-                <Grid item xs={12}>
+                {/* Phone Number - Full width, on its own line */}
+                <Box sx={{ width: "100%", mb: 2 }}>
                   <TextField
                     fullWidth
                     label="Phone Number"
@@ -285,6 +333,7 @@ const Register = () => {
                     onChange={handleChange}
                     required
                     placeholder="+961 XX XXX XXX"
+                    sx={{ width: "100%" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -293,19 +342,20 @@ const Register = () => {
                       ),
                     }}
                   />
-                </Grid>
+                </Box>
 
                 {/* Pharmacy Fields */}
                 {accountType === 'pharmacy' && (
                   <>
-                    <Grid item xs={12}>
+                    {/* Pharmacy Name and Address - Side by side */}
+                    <Box sx={{ display: "flex", gap: 2, mb: 2, width: "100%" }}>
                       <TextField
-                        fullWidth
                         label="Pharmacy Name"
                         name="pharmacyName"
                         value={formData.pharmacyName}
                         onChange={handleChange}
                         required={accountType === 'pharmacy'}
+                        sx={{ flex: 1, width: "100%" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
@@ -314,16 +364,13 @@ const Register = () => {
                           ),
                         }}
                       />
-                    </Grid>
-
-                    <Grid item xs={12}>
                       <TextField
-                        fullWidth
                         label="Pharmacy Address"
                         name="pharmacyAddress"
                         value={formData.pharmacyAddress}
                         onChange={handleChange}
                         required={accountType === 'pharmacy'}
+                        sx={{ flex: 1, width: "100%" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
@@ -332,16 +379,17 @@ const Register = () => {
                           ),
                         }}
                       />
-                    </Grid>
+                    </Box>
 
-                    <Grid item xs={12} sm={6}>
+                    {/* City and License - Side by side */}
+                    <Box sx={{ display: "flex", gap: 2, mb: 2, width: "100%" }}>
                       <TextField
-                        fullWidth
                         label="City"
                         name="city"
                         value={formData.city}
                         onChange={handleChange}
                         required={accountType === 'pharmacy'}
+                        sx={{ flex: 1, width: "100%" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
@@ -350,16 +398,13 @@ const Register = () => {
                           ),
                         }}
                       />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
                       <TextField
-                        fullWidth
                         label="License Number"
                         name="license"
                         value={formData.license}
                         onChange={handleChange}
                         required={accountType === 'pharmacy'}
+                        sx={{ flex: 1, width: "100%" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
@@ -368,12 +413,12 @@ const Register = () => {
                           ),
                         }}
                       />
-                    </Grid>
+                    </Box>
                   </>
                 )}
 
-                {/* Password Fields */}
-                <Grid item xs={12} sm={6}>
+                {/* Password - Full width, on its own line */}
+                <Box sx={{ width: "100%", mb: 2 }}>
                   <TextField
                     fullWidth
                     label="Password"
@@ -382,6 +427,7 @@ const Register = () => {
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    sx={{ width: "100%" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -400,9 +446,10 @@ const Register = () => {
                       ),
                     }}
                   />
-                </Grid>
+                </Box>
 
-                <Grid item xs={12} sm={6}>
+                {/* Confirm Password - Full width, on its own line */}
+                <Box sx={{ width: "100%", mb: 2 }}>
                   <TextField
                     fullWidth
                     label="Confirm Password"
@@ -411,6 +458,7 @@ const Register = () => {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
+                    sx={{ width: "100%" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -429,74 +477,88 @@ const Register = () => {
                       ),
                     }}
                   />
-                </Grid>
-              </Grid>
+                </Box>
 
-              {/* Terms Checkbox */}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="terms"
-                    checked={formData.terms}
-                    onChange={handleChange}
-                    sx={{ color: 'primary.main' }}
+                {/* Terms Checkbox */}
+                <Box sx={{ width: "100%", mb: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="terms"
+                        checked={formData.terms}
+                        onChange={handleChange}
+                        sx={{ color: 'primary.main' }}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+                        I agree to the{' '}
+                        <Link href="#" sx={{ color: 'primary.main', textDecoration: 'none' }}>
+                          Terms
+                        </Link>{' '}
+                        and{' '}
+                        <Link href="#" sx={{ color: 'primary.main', textDecoration: 'none' }}>
+                          Privacy Policy
+                        </Link>
+                      </Typography>
+                    }
                   />
-                }
-                label={
-                  <Typography variant="body2" color="text.secondary">
-                    I agree to the{' '}
-                    <Link href="#" sx={{ color: 'primary.main', textDecoration: 'none' }}>
-                      Terms of Service
-                    </Link>{' '}
-                    and{' '}
-                    <Link href="#" sx={{ color: 'primary.main', textDecoration: 'none' }}>
-                      Privacy Policy
-                    </Link>
-                  </Typography>
-                }
-                sx={{ mt: 2, mb: 3 }}
-              />
+                </Box>
 
-              <Button
-                fullWidth
-                type="submit"
-                variant="contained"
-                size="large"
-                disabled={loading}
-                startIcon={<PersonAdd />}
-                sx={{
-                  py: 1.5,
-                  background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                  fontSize: 16,
-                  fontWeight: 700,
-                  boxShadow: '0 4px 12px rgba(78, 205, 196, 0.3)',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 20px rgba(78, 205, 196, 0.4)',
-                  },
-                }}
-              >
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </Button>
-            </form>
+                <Button
+                  fullWidth
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  disabled={loading}
+                  startIcon={<PersonAdd />}
+                  sx={{
+                    py: 1.5,
+                    mt: 2,
+                    mb: 2,
+                    background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+                    fontSize: 16,
+                    fontWeight: 700,
+                    boxShadow: '0 4px 12px rgba(78, 205, 196, 0.3)',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 6px 20px rgba(78, 205, 196, 0.4)',
+                    },
+                  }}
+                >
+                  {loading ? 'Creating Account...' : 'Sign up'}
+                </Button>
+              </form>
 
-            {/* Login Link */}
-            <Typography variant="body2" textAlign="center" color="text.secondary" mt={3}>
-              Already have an account?{' '}
-              <Link
-                component={RouterLink}
-                to="/login"
-                sx={{ color: 'primary.main', fontWeight: 700, textDecoration: 'none' }}
-              >
-                Login Here
-              </Link>
-            </Typography>
-          </Paper>
-        </Container>
-      </Box>
+              {/* Login Link */}
+              <Typography variant="body2" textAlign="center" color="text.secondary" sx={{ fontSize: "0.875rem" }}>
+                Already have an account?{' '}
+                <Link
+                  component={RouterLink}
+                  to="/login"
+                  sx={{ color: 'primary.main', fontWeight: 700, textDecoration: 'underline' }}
+                >
+                  Log in
+                </Link>
+              </Typography>
+            </Box>
+          </Box>
 
-      <Footer />
-    </Box>
+          {/* Right Section - Image (1/3 width) */}
+          <Box
+            sx={{
+              width: "33.333%",
+              height: "100%",
+              backgroundImage:
+                "url(https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=800&fit=crop)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          />
+        </Box>
+      </Dialog>
+    </>
   );
 };
 

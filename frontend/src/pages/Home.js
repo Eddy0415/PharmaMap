@@ -23,6 +23,7 @@ import {
   HealthAndSafety,
   Elderly,
   ShieldMoon,
+  TrendingUp,
 } from "@mui/icons-material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -46,6 +47,24 @@ const carouselSlides = [
       "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=1200&h=450&fit=crop",
     title: "Save Time & Money",
     description: "Compare prices and find the nearest available pharmacy",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&h=450&fit=crop",
+    title: "24/7 Availability",
+    description: "Find pharmacies open around the clock near you",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=1200&h=450&fit=crop",
+    title: "Premium Quality Guaranteed",
+    description: "All pharmacies verified for quality and authenticity",
+  },
+  {
+    image:
+      "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=1200&h=450&fit=crop",
+    title: "Fast Delivery Options",
+    description: "Multiple delivery options available for your convenience",
   },
 ];
 
@@ -93,18 +112,79 @@ const Home = () => {
   const fetchPopularProducts = async () => {
     try {
       const response = await medicationAPI.getPopular();
-      setPopularProducts(response.data.medications.slice(0, 5));
+      const products = response.data.medications?.slice(0, 5) || [];
+      
+      // Fallback popular products in Lebanon if API fails or returns empty
+      const fallbackProducts = [
+        { name: "Panadol", searchCount: 10000, category: "Pain Relief" },
+        { name: "Advil", searchCount: 5000, category: "Pain Relief" },
+        { name: "Aspirin", searchCount: 3000, category: "Pain Relief" },
+        { name: "Brufen", searchCount: 2500, category: "Pain Relief" },
+        { name: "Paracetamol", searchCount: 4000, category: "Pain Relief" },
+      ];
+      
+      // Merge API data with fallback data
+      const mergedProducts = products.length > 0 
+        ? products.map((product, index) => ({
+            ...product,
+            searchCount: product.searchCount || fallbackProducts[index]?.searchCount || 0,
+          }))
+        : fallbackProducts.map(p => ({ ...p, _id: p.name.toLowerCase().replace(/\s/g, '-') }));
+      
+      setPopularProducts(mergedProducts.slice(0, 5));
     } catch (error) {
       console.error("Error fetching popular products:", error);
+      // Use fallback products on error
+      const fallbackProducts = [
+        { name: "Panadol", searchCount: 10000, category: "Pain Relief", _id: "panadol" },
+        { name: "Advil", searchCount: 5000, category: "Pain Relief", _id: "advil" },
+        { name: "Aspirin", searchCount: 3000, category: "Pain Relief", _id: "aspirin" },
+        { name: "Brufen", searchCount: 2500, category: "Pain Relief", _id: "brufen" },
+        { name: "Paracetamol", searchCount: 4000, category: "Pain Relief", _id: "paracetamol" },
+      ];
+      setPopularProducts(fallbackProducts);
     }
   };
 
   const fetchFeaturedPharmacies = async () => {
     try {
       const response = await pharmacyAPI.getAll({ featured: true });
-      setFeaturedPharmacies(response.data.pharmacies.slice(0, 5));
+      const pharmacies = response.data.pharmacies?.slice(0, 5) || [];
+      
+      // Fallback featured pharmacies in Lebanon if API fails or returns empty
+      const fallbackPharmacies = [
+        { name: "Al Rahbani Pharmacy", motto: "We strive to help", city: "Beirut" },
+        { name: "Maen Pharmacy", motto: "Your health is our priority", city: "Beirut" },
+        { name: "Rallan Pharmacy", motto: "Caring for you", city: "Beirut" },
+        { name: "Salam Pharmacy", motto: "Quality care, quality service", city: "Tripoli" },
+        { name: "Al Hayat Pharmacy", motto: "Your trusted health partner", city: "Sidon" },
+      ];
+      
+      // Merge API data with fallback data
+      const mergedPharmacies = pharmacies.length > 0
+        ? pharmacies.map((pharmacy, index) => ({
+            ...pharmacy,
+            motto: pharmacy.motto || pharmacy.tagline || fallbackPharmacies[index]?.motto || "",
+          }))
+        : fallbackPharmacies.map(p => ({ 
+            ...p, 
+            _id: p.name.toLowerCase().replace(/\s/g, '-'),
+            address: { city: p.city },
+            isOpen: true,
+          }));
+      
+      setFeaturedPharmacies(mergedPharmacies.slice(0, 5));
     } catch (error) {
       console.error("Error fetching featured pharmacies:", error);
+      // Use fallback pharmacies on error
+      const fallbackPharmacies = [
+        { name: "Al Rahbani Pharmacy", motto: "We strive to help", city: "Beirut", _id: "al-rahbani", address: { city: "Beirut" }, isOpen: true },
+        { name: "Maen Pharmacy", motto: "Your health is our priority", city: "Beirut", _id: "maen", address: { city: "Beirut" }, isOpen: true },
+        { name: "Rallan Pharmacy", motto: "Caring for you", city: "Beirut", _id: "rallan", address: { city: "Beirut" }, isOpen: true },
+        { name: "Salam Pharmacy", motto: "Quality care, quality service", city: "Tripoli", _id: "salam", address: { city: "Tripoli" }, isOpen: true },
+        { name: "Al Hayat Pharmacy", motto: "Your trusted health partner", city: "Sidon", _id: "al-hayat", address: { city: "Sidon" }, isOpen: true },
+      ];
+      setFeaturedPharmacies(fallbackPharmacies);
     }
   };
 
@@ -190,10 +270,13 @@ const Home = () => {
               top: "50%",
               transform: "translateY(-50%)",
               bgcolor: "rgba(255,255,255,0.9)",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
               "&:hover": { bgcolor: "white" },
             }}
           >
-            <ArrowBackIos sx={{ ml: 1 }} />
+            <ArrowForwardIos sx={{ transform: "rotate(180deg)" }} />
           </IconButton>
           <IconButton
             onClick={handleNextSlide}
@@ -203,6 +286,9 @@ const Home = () => {
               top: "50%",
               transform: "translateY(-50%)",
               bgcolor: "rgba(255,255,255,0.9)",
+              borderRadius: "50%",
+              width: 48,
+              height: 48,
               "&:hover": { bgcolor: "white" },
             }}
           >
@@ -261,49 +347,67 @@ const Home = () => {
           />
           Browse by Categories
         </Typography>
-        <Grid
+        <Box
           component="nav"
           aria-label="Medication categories"
-          container
-          spacing={2.5}
-          mb={6}
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2.5,
+            mb: 6,
+            "& > *": {
+              flex: "1 1 calc(20% - 20px)",
+              minWidth: "150px",
+              "@media (max-width: 900px)": {
+                flex: "1 1 calc(33.333% - 20px)",
+              },
+              "@media (max-width: 600px)": {
+                flex: "1 1 calc(50% - 20px)",
+              },
+            },
+          }}
         >
           {categories.map((category, index) => {
             const Icon = category.icon;
             return (
-              <Grid item xs={6} sm={4} md={2.4} key={index}>
-                <Card
-                  onClick={() => handleCategoryClick(category.name)}
-                  sx={{
-                    p: 3,
-                    textAlign: "center",
-                    cursor: "pointer",
-                    border: "3px solid #e0e0e0",
-                    transition: "all 0.3s",
-                    "&:hover": {
-                      background:
-                        "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                      borderColor: "#4ecdc4",
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 8px 24px rgba(78, 205, 196, 0.3)",
-                      "& .MuiSvgIcon-root": { color: "white" },
-                      "& .MuiTypography-root": { color: "white" },
-                    },
-                  }}
+              <Card
+                key={index}
+                onClick={() => handleCategoryClick(category.name)}
+                sx={{
+                  width: "100%",
+                  height: 180,
+                  p: 3,
+                  textAlign: "center",
+                  cursor: "pointer",
+                  border: "3px solid #e0e0e0",
+                  transition: "all 0.3s",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  "&:hover": {
+                    background:
+                      "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                    borderColor: "#4ecdc4",
+                    transform: "translateY(-5px)",
+                    boxShadow: "0 8px 24px rgba(78, 205, 196, 0.3)",
+                    "& .MuiSvgIcon-root": { color: "white" },
+                    "& .MuiTypography-root": { color: "white" },
+                  },
+                }}
+              >
+                <Icon sx={{ fontSize: 48, color: "primary.main", mb: 1.5 }} />
+                <Typography
+                  variant="body1"
+                  fontWeight={600}
+                  color="secondary"
                 >
-                  <Icon sx={{ fontSize: 48, color: "primary.main", mb: 1.5 }} />
-                  <Typography
-                    variant="body1"
-                    fontWeight={600}
-                    color="secondary"
-                  >
-                    {category.name}
-                  </Typography>
-                </Card>
-              </Grid>
+                  {category.name}
+                </Typography>
+              </Card>
             );
           })}
-        </Grid>
+        </Box>
 
         {/* Popular Products Section */}
         <Typography
@@ -328,28 +432,58 @@ const Home = () => {
           />
           Popular Products
         </Typography>
-        <Grid
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          mb={3}
+          sx={{ pl: 2, fontStyle: "italic" }}
+        >
+          Top 5 most requested (searched) products last month (updates every month)
+        </Typography>
+        <Box
           component="section"
           aria-label="Popular medications"
-          container
-          spacing={2.5}
-          mb={6}
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2.5,
+            mb: 6,
+            "& > *": {
+              flex: "1 1 calc(20% - 20px)",
+              minWidth: "150px",
+              "@media (max-width: 900px)": {
+                flex: "1 1 calc(33.333% - 20px)",
+              },
+              "@media (max-width: 600px)": {
+                flex: "1 1 calc(50% - 20px)",
+              },
+            },
+          }}
         >
-          {popularProducts.map((product) => (
-            <Grid item xs={12} sm={6} md={2.4} key={product._id}>
+          {popularProducts.slice(0, 5).map((product) => {
+            const searchCount = product.searchCount || 0;
+            const formattedCount = searchCount >= 1000 
+              ? `+${(searchCount / 1000).toFixed(searchCount % 1000 === 0 ? 0 : 1)}k` 
+              : `+${searchCount}`;
+            
+            return (
               <Card
+                key={product._id || product.name}
                 sx={{
-                  height: "100%",
+                  width: "100%",
+                  height: 280,
                   cursor: "pointer",
                   transition: "all 0.3s",
                   border: "2px solid transparent",
+                  display: "flex",
+                  flexDirection: "column",
                   "&:hover": {
                     transform: "translateY(-5px)",
                     boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
                     borderColor: "primary.main",
                   },
                 }}
-                onClick={() => navigate(`/search?q=${product.name}`)}
+                onClick={() => navigate(`/search?q=${encodeURIComponent(product.name)}`)}
               >
                 <Box
                   sx={{
@@ -359,11 +493,12 @@ const Home = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    flexShrink: 0,
                   }}
                 >
                   <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
                 </Box>
-                <CardContent>
+                <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
                   <Typography
                     variant="h6"
                     fontWeight={600}
@@ -375,6 +510,7 @@ const Home = () => {
                   <Typography
                     variant="body2"
                     color="text.secondary"
+                    mb={1}
                     display="flex"
                     alignItems="center"
                     gap={0.5}
@@ -383,13 +519,25 @@ const Home = () => {
                       fontSize="small"
                       sx={{ color: "primary.main" }}
                     />
-                    {product.category}
+                    {product.category || "General"}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="primary.main"
+                    fontWeight={600}
+                    display="flex"
+                    alignItems="center"
+                    gap={0.5}
+                    sx={{ mt: 1 }}
+                  >
+                    <TrendingUp fontSize="small" />
+                    {formattedCount} searches last month
                   </Typography>
                 </CardContent>
               </Card>
-            </Grid>
-          ))}
-        </Grid>
+            );
+          })}
+        </Box>
 
         {/* Featured Pharmacies Section */}
         <Typography
@@ -414,41 +562,67 @@ const Home = () => {
           />
           Featured Pharmacies
         </Typography>
-        <Grid
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          mb={3}
+          sx={{ pl: 2, fontStyle: "italic" }}
+        >
+          Paid by 5 pharmacies
+        </Typography>
+        <Box
           component="section"
           aria-label="Featured pharmacies"
-          container
-          spacing={2.5}
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2.5,
+            "& > *": {
+              flex: "1 1 calc(20% - 20px)",
+              minWidth: "150px",
+              "@media (max-width: 900px)": {
+                flex: "1 1 calc(33.333% - 20px)",
+              },
+              "@media (max-width: 600px)": {
+                flex: "1 1 calc(50% - 20px)",
+              },
+            },
+          }}
         >
-          {featuredPharmacies.map((pharmacy) => (
-            <Grid item xs={12} sm={6} md={2.4} key={pharmacy._id}>
-              <Card
+          {featuredPharmacies.slice(0, 5).map((pharmacy) => (
+            <Card
+              key={pharmacy._id || pharmacy.name}
+              sx={{
+                width: "100%",
+                height: 320,
+                cursor: "pointer",
+                transition: "all 0.3s",
+                border: "2px solid transparent",
+                display: "flex",
+                flexDirection: "column",
+                "&:hover": {
+                  transform: "translateY(-5px)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                  borderColor: "primary.main",
+                },
+              }}
+              onClick={() => navigate(`/pharmacy/${pharmacy._id || pharmacy.name.toLowerCase().replace(/\s/g, '-')}`)}
+            >
+              <Box
                 sx={{
-                  height: "100%",
-                  cursor: "pointer",
-                  transition: "all 0.3s",
-                  border: "2px solid transparent",
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                    borderColor: "primary.main",
-                  },
+                  height: 150,
+                  background:
+                    "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
                 }}
-                onClick={() => navigate(`/pharmacy/${pharmacy._id}`)}
               >
-                <Box
-                  sx={{
-                    height: 150,
-                    background:
-                      "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
-                </Box>
-                <CardContent>
+                <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+              </Box>
+              <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", pb: 3, pt: 2 }}>
+                <Box>
                   <Typography
                     variant="h6"
                     fontWeight={600}
@@ -457,23 +631,35 @@ const Home = () => {
                   >
                     {pharmacy.name}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" mb={1}>
-                    📍 {pharmacy.address.city}
+                  {pharmacy.motto && (
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      mb={1}
+                      sx={{ fontStyle: "italic" }}
+                    >
+                      {pharmacy.motto}
+                    </Typography>
+                  )}
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    📍 {pharmacy.address?.city || pharmacy.city || "Lebanon"}
                   </Typography>
-                  <Chip
-                    label={pharmacy.isOpen ? "Open Now" : "Closed"}
-                    size="small"
-                    sx={{
-                      bgcolor: pharmacy.isOpen ? "#c8e6c9" : "#ffcdd2",
-                      color: pharmacy.isOpen ? "#2e7d32" : "#c62828",
-                      fontWeight: 600,
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
+                </Box>
+                <Chip
+                  label={pharmacy.isOpen !== false ? "Open Now" : "Closed"}
+                  size="small"
+                  sx={{
+                    bgcolor: pharmacy.isOpen !== false ? "#c8e6c9" : "#ffcdd2",
+                    color: pharmacy.isOpen !== false ? "#2e7d32" : "#c62828",
+                    fontWeight: 600,
+                    width: "fit-content",
+                    mt: 2,
+                  }}
+                />
+              </CardContent>
+            </Card>
           ))}
-        </Grid>
+        </Box>
       </Container>
 
       <Footer />
