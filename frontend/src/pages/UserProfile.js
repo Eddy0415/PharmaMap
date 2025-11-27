@@ -35,7 +35,7 @@ import {
 } from '@mui/icons-material';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { userAPI, orderAPI } from '../services/api';
+import { userAPI, orderAPI, authAPI } from '../services/api';
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -49,6 +49,11 @@ const UserProfile = () => {
     phone: '',
     dateOfBirth: '',
     gender: '',
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
   useEffect(() => {
@@ -105,6 +110,67 @@ const UserProfile = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/');
+  };
+
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      // Validate passwords
+      if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+        alert('Please fill in all password fields');
+        return;
+      }
+
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        alert('New password and confirmation do not match');
+        return;
+      }
+
+      if (passwordData.newPassword.length < 8) {
+        alert('New password must be at least 8 characters long');
+        return;
+      }
+
+      await authAPI.updatePassword(passwordData);
+      alert('Password updated successfully!');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update password';
+      alert(errorMessage);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently deleted.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const doubleConfirm = window.confirm(
+      'This is your last chance. Are you absolutely sure you want to delete your account?'
+    );
+
+    if (!doubleConfirm) {
+      return;
+    }
+
+    try {
+      await authAPI.deleteAccount();
+      alert('Your account has been deleted successfully.');
+      handleLogout();
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to delete account';
+      alert(errorMessage);
+    }
   };
 
   const renderProfileSection = () => (
@@ -422,42 +488,61 @@ const UserProfile = () => {
             </Typography>
           </Box>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Current Password"
-                type="password"
-                placeholder="Enter current password"
-              />
+          <form onSubmit={handlePasswordUpdate}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Current Password"
+                  type="password"
+                  placeholder="Enter current password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) =>
+                    setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                  }
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="New Password"
+                  type="password"
+                  placeholder="Enter new password"
+                  value={passwordData.newPassword}
+                  onChange={(e) =>
+                    setPasswordData({ ...passwordData, newPassword: e.target.value })
+                  }
+                  required
+                  helperText="Password must be at least 8 characters long"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Confirm New Password"
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                  }
+                  required
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="New Password"
-                type="password"
-                placeholder="Enter new password"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Confirm New Password"
-                type="password"
-                placeholder="Confirm new password"
-              />
-            </Grid>
-          </Grid>
 
-          <Button
-            variant="contained"
-            sx={{
-              mt: 2,
-              background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-            }}
-          >
-            Update Password
-          </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{
+                mt: 2,
+                background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+              }}
+            >
+              Update Password
+            </Button>
+          </form>
         </Box>
 
         <Divider sx={{ my: 3 }} />
@@ -471,6 +556,7 @@ const UserProfile = () => {
           </Typography>
           <Button
             variant="contained"
+            onClick={handleDeleteAccount}
             sx={{
               bgcolor: '#ffebee',
               color: '#d32f2f',
