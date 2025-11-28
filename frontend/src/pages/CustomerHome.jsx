@@ -22,27 +22,25 @@ import {
   List,
   ListItemButton,
 } from "@mui/material";
-import {
-  ArrowForwardIos,
-  Spa,
-  Favorite,
-  LocalPharmacy,
-  PanTool,
-  Bloodtype,
-  Masks,
-  AcUnit,
-  HealthAndSafety,
-  Elderly,
-  ShieldMoon,
-  TrendingUp,
-  Search as SearchIcon,
-  Menu as MenuIcon,
-  History,
-  Favorite as FavoriteIcon,
-  Phone,
-  Logout,
-  KeyboardArrowDown,
-} from "@mui/icons-material";
+import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
+import Spa from "@mui/icons-material/Spa";
+import Favorite from "@mui/icons-material/Favorite";
+import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
+import PanTool from "@mui/icons-material/PanTool";
+import Bloodtype from "@mui/icons-material/Bloodtype";
+import Masks from "@mui/icons-material/Masks";
+import AcUnit from "@mui/icons-material/AcUnit";
+import HealthAndSafety from "@mui/icons-material/HealthAndSafety";
+import Elderly from "@mui/icons-material/Elderly";
+import ShieldMoon from "@mui/icons-material/ShieldMoon";
+import TrendingUp from "@mui/icons-material/TrendingUp";
+import SearchIcon from "@mui/icons-material/Search";
+import MenuIcon from "@mui/icons-material/Menu";
+import History from "@mui/icons-material/History";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import Phone from "@mui/icons-material/Phone";
+import Logout from "@mui/icons-material/Logout";
+import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
 import Footer from "../components/Footer";
 import { pharmacyAPI, medicationAPI } from "../services/api";
 

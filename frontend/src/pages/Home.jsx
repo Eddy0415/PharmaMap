@@ -17,6 +17,7 @@ import {
   Divider,
   Paper,
 } from "@mui/material";
+<<<<<<< HEAD:frontend/src/pages/Home.js
 import {
   ArrowBackIos,
   ArrowForwardIos,
@@ -34,6 +35,21 @@ import {
   Close,
   Info,
 } from "@mui/icons-material";
+=======
+import ArrowBackIos from "@mui/icons-material/ArrowBackIos";
+import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
+import Spa from "@mui/icons-material/Spa";
+import Favorite from "@mui/icons-material/Favorite";
+import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
+import PanTool from "@mui/icons-material/PanTool";
+import Bloodtype from "@mui/icons-material/Bloodtype";
+import Masks from "@mui/icons-material/Masks";
+import AcUnit from "@mui/icons-material/AcUnit";
+import HealthAndSafety from "@mui/icons-material/HealthAndSafety";
+import Elderly from "@mui/icons-material/Elderly";
+import ShieldMoon from "@mui/icons-material/ShieldMoon";
+import TrendingUp from "@mui/icons-material/TrendingUp";
+>>>>>>> 43b0616e91764ef6b2274b17d53304e21c8e6f75:frontend/src/pages/Home.jsx
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { pharmacyAPI, medicationAPI } from "../services/api";

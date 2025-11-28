@@ -33,21 +33,19 @@ import {
   InputLabel,
   Alert,
 } from "@mui/material";
-import {
-  Dashboard,
-  Inventory,
-  ShoppingCart,
-  TrendingUp,
-  Settings,
-  Logout,
-  Add,
-  Edit,
-  Delete,
-  Search as SearchIcon,
-  Warning,
-  Cancel,
-  Notifications,
-} from "@mui/icons-material";
+import Dashboard from "@mui/icons-material/Dashboard";
+import Inventory from "@mui/icons-material/Inventory";
+import ShoppingCart from "@mui/icons-material/ShoppingCart";
+import TrendingUp from "@mui/icons-material/TrendingUp";
+import Settings from "@mui/icons-material/Settings";
+import Logout from "@mui/icons-material/Logout";
+import Add from "@mui/icons-material/Add";
+import Edit from "@mui/icons-material/Edit";
+import Delete from "@mui/icons-material/Delete";
+import SearchIcon from "@mui/icons-material/Search";
+import Warning from "@mui/icons-material/Warning";
+import Cancel from "@mui/icons-material/Cancel";
+import Notifications from "@mui/icons-material/Notifications";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import {

@@ -15,13 +15,11 @@ import {
   IconButton,
   Divider,
 } from "@mui/material";
-import {
-  Close,
-  ShoppingCart,
-  LocalPharmacy,
-  Add,
-  Remove,
-} from "@mui/icons-material";
+import Close from "@mui/icons-material/Close";
+import ShoppingCart from "@mui/icons-material/ShoppingCart";
+import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
+import Add from "@mui/icons-material/Add";
+import Remove from "@mui/icons-material/Remove";
 import { orderAPI } from "../services/api";
 
 const ProductOrderDialog = ({

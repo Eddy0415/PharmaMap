@@ -11,13 +11,11 @@ import {
   IconButton,
   Dialog,
 } from "@mui/material";
-import {
-  Email,
-  Lock,
-  Visibility,
-  VisibilityOff,
-  Close as CloseIcon,
-} from "@mui/icons-material";
+import Email from "@mui/icons-material/Email";
+import Lock from "@mui/icons-material/Lock";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import CloseIcon from "@mui/icons-material/Close";
 import Home from "./Home";
 import { authAPI } from "../services/api";
 

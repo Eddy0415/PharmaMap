@@ -1,3 +1,4 @@
+<<<<<<< HEAD:frontend/src/components/Footer.js
 import React from "react";
 import {
   Box,
@@ -15,6 +16,16 @@ import {
   Phone,
   Email,
 } from "@mui/icons-material";
+=======
+import React from 'react';
+import { Box, Container, Grid, Typography, Link, IconButton } from '@mui/material';
+import Facebook from '@mui/icons-material/Facebook';
+import Instagram from '@mui/icons-material/Instagram';
+import Twitter from '@mui/icons-material/Twitter';
+import LinkedIn from '@mui/icons-material/LinkedIn';
+import Phone from '@mui/icons-material/Phone';
+import Email from '@mui/icons-material/Email';
+>>>>>>> 43b0616e91764ef6b2274b17d53304e21c8e6f75:frontend/src/components/Footer.jsx
 
 const Footer = () => {
   return (
