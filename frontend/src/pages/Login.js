@@ -56,7 +56,7 @@ const Login = () => {
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
         // Redirect based on account type
-        if (response.data.user.accountType === "pharmacy") {
+        if (response.data.user.userType === "pharmacist") {
           navigate("/dashboard");
         } else {
           navigate("/");

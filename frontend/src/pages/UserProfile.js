@@ -239,7 +239,7 @@ const UserProfile = () => {
         </Box>
 
         <form onSubmit={handleProfileUpdate}>
-          <Grid container spacing={2.5}>
+          <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -337,18 +337,53 @@ const UserProfile = () => {
     </Card>
   );
 
+  const getOrderStatusColor = (status) => {
+    switch (status) {
+      case "pending":
+        return { bgcolor: "#fff3e0", color: "#f57c00" };
+      case "confirmed":
+        return { bgcolor: "#e3f2fd", color: "#1976d2" };
+      case "ready":
+        return { bgcolor: "#e8f5e9", color: "#388e3c" };
+      case "completed":
+        return { bgcolor: "#c8e6c9", color: "#2e7d32" };
+      case "cancelled":
+        return { bgcolor: "#ffcdd2", color: "#c62828" };
+      default:
+        return { bgcolor: "#e0e0e0", color: "#666" };
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const renderOrdersSection = () => (
     <Card>
       <CardContent>
-        <Typography variant="h5" fontWeight={700} mb={3}>
-          My Orders
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+          <ShoppingBag sx={{ mr: 1, color: "primary.main" }} />
+          <Typography variant="h5" fontWeight={700}>
+            My Orders
+          </Typography>
+        </Box>
 
         {orders.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 4 }}>
+          <Box sx={{ textAlign: "center", py: 6 }}>
             <ShoppingBag sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
+            <Typography variant="h6" color="text.secondary" mb={1}>
               No orders yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Start shopping to see your orders here
             </Typography>
           </Box>
         ) : (
@@ -359,6 +394,7 @@ const UserProfile = () => {
                 sx={{
                   p: 2.5,
                   border: "2px solid #f0f0f0",
+                  borderRadius: 2,
                   transition: "all 0.3s",
                   "&:hover": {
                     borderColor: "primary.main",
@@ -366,7 +402,7 @@ const UserProfile = () => {
                   },
                 }}
               >
-                <Grid container spacing={2} alignItems="center">
+                <Grid container spacing={2} alignItems="flex-start">
                   <Grid item>
                     <Box
                       sx={{
@@ -386,40 +422,98 @@ const UserProfile = () => {
                     </Box>
                   </Grid>
                   <Grid item xs>
-                    <Typography variant="h6" fontWeight={600}>
-                      {order.medications.map((m) => m.name).join(", ")}
-                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        mb: 1,
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="h6" fontWeight={600} mb={0.5}>
+                          Order #{order.orderNumber || "N/A"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {order.items?.length > 0
+                            ? order.items
+                                .map(
+                                  (item) =>
+                                    `${item.item?.name || "Unknown"} (x${
+                                      item.quantity || 0
+                                    })`
+                                )
+                                .join(", ")
+                            : "No items"}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 0.5 }}
+                        >
+                          Total:{" "}
+                          {order.items?.reduce(
+                            (sum, item) => sum + (item.quantity || 0),
+                            0
+                          ) || 0}{" "}
+                          unit(s)
+                          {order.items?.length > 1 &&
+                            ` (${order.items.length} items)`}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={
+                          order.status?.charAt(0).toUpperCase() +
+                            order.status?.slice(1) || "Unknown"
+                        }
+                        size="small"
+                        sx={{
+                          ...getOrderStatusColor(order.status),
+                          fontWeight: 600,
+                        }}
+                      />
+                    </Box>
                     <Box
                       sx={{
                         display: "flex",
                         gap: 2,
                         flexWrap: "wrap",
-                        mt: 0.5,
+                        mt: 1.5,
                       }}
                     >
                       <Typography variant="body2" color="text.secondary">
-                        📅 {new Date(order.createdAt).toLocaleDateString()}
+                        📅 {formatDate(order.createdAt)}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         🏪 {order.pharmacy?.name || "Pharmacy"}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        📦 Order #{order.orderNumber}
-                      </Typography>
+                      {order.pharmacy?.address && (
+                        <Typography variant="body2" color="text.secondary">
+                          📍 {order.pharmacy.address.city}
+                        </Typography>
+                      )}
                     </Box>
-                    <Chip
-                      label={order.status}
-                      size="small"
-                      sx={{
-                        mt: 1,
-                        bgcolor:
-                          order.status === "completed" ? "#c8e6c9" : "#fff9c4",
-                        color:
-                          order.status === "completed" ? "#2e7d32" : "#f57f17",
-                        fontWeight: 600,
-                        textTransform: "capitalize",
-                      }}
-                    />
+                    {order.customerNotes && (
+                      <Box
+                        sx={{
+                          mt: 1.5,
+                          p: 1.5,
+                          bgcolor: "#f8f9fa",
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          fontWeight={600}
+                          color="text.secondary"
+                        >
+                          Your Notes:
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {order.customerNotes}
+                        </Typography>
+                      </Box>
+                    )}
                   </Grid>
                   <Grid item sx={{ textAlign: "right" }}>
                     <Typography
@@ -428,12 +522,18 @@ const UserProfile = () => {
                       color="primary.main"
                       mb={1}
                     >
-                      {order.totalAmount} LBP
+                      ${order.totalAmount?.toFixed(2) || "0.00"}
                     </Typography>
                     <Button
                       variant="outlined"
                       size="small"
                       startIcon={<Replay />}
+                      onClick={() => {
+                        // Navigate to pharmacy to reorder
+                        if (order.pharmacy?._id) {
+                          navigate(`/pharmacy/${order.pharmacy._id}`);
+                        }
+                      }}
                     >
                       Reorder
                     </Button>
@@ -458,9 +558,12 @@ const UserProfile = () => {
             mb: 3,
           }}
         >
-          <Typography variant="h5" fontWeight={700}>
-            Your Addresses
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Room sx={{ mr: 1, color: "primary.main" }} />
+            <Typography variant="h5" fontWeight={700}>
+              Your Addresses
+            </Typography>
+          </Box>
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -479,6 +582,7 @@ const UserProfile = () => {
                 p: 2.5,
                 border: "2px solid",
                 borderColor: "primary.main",
+                borderRadius: 2,
                 bgcolor: "#f0f9f9",
               }}
             >
@@ -526,6 +630,7 @@ const UserProfile = () => {
               sx={{
                 p: 2.5,
                 border: "2px solid #f0f0f0",
+                borderRadius: 2,
               }}
             >
               <Box
@@ -568,12 +673,15 @@ const UserProfile = () => {
     <Box>
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h5" fontWeight={700} mb={3}>
-            Favorite Pharmacies
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+            <Favorite sx={{ mr: 1, color: "primary.main" }} />
+            <Typography variant="h5" fontWeight={700}>
+              Favorite Pharmacies
+            </Typography>
+          </Box>
 
           {favoritePharmacies.length === 0 ? (
-            <Box sx={{ textAlign: "center", py: 8 }}>
+            <Box sx={{ textAlign: "center", py: 6 }}>
               <Favorite sx={{ fontSize: 80, color: "#e0e0e0", mb: 2 }} />
               <Typography variant="h6" color="text.secondary" mb={1}>
                 No Favorite Pharmacies Yet
@@ -598,12 +706,14 @@ const UserProfile = () => {
                 <Grid item xs={12} sm={6} md={4} key={pharmacy._id || pharmacy}>
                   <Paper
                     sx={{
-                      p: 2,
+                      p: 2.5,
                       border: "2px solid #f0f0f0",
+                      borderRadius: 2,
                       transition: "all 0.3s",
                       "&:hover": {
                         borderColor: "primary.main",
                         bgcolor: "#f8fdfd",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                       },
                     }}
                   >
@@ -661,12 +771,15 @@ const UserProfile = () => {
 
       <Card>
         <CardContent>
-          <Typography variant="h5" fontWeight={700} mb={3}>
-            Favorite Items
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+            <Favorite sx={{ mr: 1, color: "primary.main" }} />
+            <Typography variant="h5" fontWeight={700}>
+              Favorite Items
+            </Typography>
+          </Box>
 
           {favoriteItems.length === 0 ? (
-            <Box sx={{ textAlign: "center", py: 8 }}>
+            <Box sx={{ textAlign: "center", py: 6 }}>
               <Favorite sx={{ fontSize: 80, color: "#e0e0e0", mb: 2 }} />
               <Typography variant="h6" color="text.secondary" mb={1}>
                 No Favorite Items Yet
@@ -691,12 +804,14 @@ const UserProfile = () => {
                 <Grid item xs={12} sm={6} md={4} key={item._id || item}>
                   <Paper
                     sx={{
-                      p: 2,
+                      p: 2.5,
                       border: "2px solid #f0f0f0",
+                      borderRadius: 2,
                       transition: "all 0.3s",
                       "&:hover": {
                         borderColor: "primary.main",
                         bgcolor: "#f8fdfd",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                       },
                     }}
                   >
@@ -764,79 +879,77 @@ const UserProfile = () => {
   const renderSecuritySection = () => (
     <Card>
       <CardContent>
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Security sx={{ mr: 1, color: "primary.main" }} />
-            <Typography variant="h5" fontWeight={700}>
-              Change Password
-            </Typography>
-          </Box>
-
-          <form onSubmit={handlePasswordUpdate}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Current Password"
-                  type="password"
-                  placeholder="Enter current password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      currentPassword: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="New Password"
-                  type="password"
-                  placeholder="Enter new password"
-                  value={passwordData.newPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      newPassword: e.target.value,
-                    })
-                  }
-                  required
-                  helperText="Password must be at least 8 characters long"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Confirm New Password"
-                  type="password"
-                  placeholder="Confirm new password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </Grid>
-            </Grid>
-
-            <Button
-              type="submit"
-              variant="contained"
-              sx={{
-                mt: 2,
-                background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-              }}
-            >
-              Update Password
-            </Button>
-          </form>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+          <Security sx={{ mr: 1, color: "primary.main" }} />
+          <Typography variant="h5" fontWeight={700}>
+            Change Password
+          </Typography>
         </Box>
+
+        <form onSubmit={handlePasswordUpdate}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Current Password"
+                type="password"
+                placeholder="Enter current password"
+                value={passwordData.currentPassword}
+                onChange={(e) =>
+                  setPasswordData({
+                    ...passwordData,
+                    currentPassword: e.target.value,
+                  })
+                }
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="New Password"
+                type="password"
+                placeholder="Enter new password"
+                value={passwordData.newPassword}
+                onChange={(e) =>
+                  setPasswordData({
+                    ...passwordData,
+                    newPassword: e.target.value,
+                  })
+                }
+                required
+                helperText="Password must be at least 8 characters long"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Confirm New Password"
+                type="password"
+                placeholder="Confirm new password"
+                value={passwordData.confirmPassword}
+                onChange={(e) =>
+                  setPasswordData({
+                    ...passwordData,
+                    confirmPassword: e.target.value,
+                  })
+                }
+                required
+              />
+            </Grid>
+          </Grid>
+
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{
+              mt: 2,
+              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+            }}
+          >
+            Update Password
+          </Button>
+        </form>
 
         <Divider sx={{ my: 3 }} />
 
@@ -953,26 +1066,7 @@ const UserProfile = () => {
                     </ListItemIcon>
                     <ListItemText primary="My Orders" />
                   </ListItem>
-                  <ListItem
-                    button
-                    selected={activeSection === "addresses"}
-                    onClick={() => setActiveSection("addresses")}
-                    sx={{
-                      borderRadius: 2,
-                      mb: 1,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        color: "white",
-                        "& .MuiListItemIcon-root": { color: "white" },
-                      },
-                    }}
-                  >
-                    <ListItemIcon>
-                      <Room />
-                    </ListItemIcon>
-                    <ListItemText primary="Addresses" />
-                  </ListItem>
+
                   <ListItem
                     button
                     selected={activeSection === "favorites"}

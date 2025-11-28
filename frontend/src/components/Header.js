@@ -246,7 +246,7 @@ const Header = ({ user, onLogout }) => {
                     },
                   }}
                 >
-                  {user.accountType === "pharmacy" ? (
+                  {user.userType === "pharmacist" ? (
                     <MenuItem
                       onClick={() => {
                         handleMenuClose();

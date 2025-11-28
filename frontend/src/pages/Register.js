@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -15,7 +15,7 @@ import {
   ToggleButton,
   Grid,
   Dialog,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Person,
   Email,
@@ -29,36 +29,36 @@ import {
   LocationOn,
   Badge,
   Close as CloseIcon,
-} from '@mui/icons-material';
-import Home from './Home';
-import { authAPI } from '../services/api';
+} from "@mui/icons-material";
+import Home from "./Home";
+import { authAPI } from "../services/api";
 
 const Register = () => {
   const navigate = useNavigate();
-  const [accountType, setAccountType] = useState('customer');
+  const [accountType, setAccountType] = useState("customer");
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    pharmacyName: '',
-    pharmacyAddress: '',
-    city: '',
-    license: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    pharmacyName: "",
+    pharmacyAddress: "",
+    city: "",
+    license: "",
     terms: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -70,27 +70,32 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError("Password must be at least 8 characters");
       return;
     }
 
     if (!formData.terms) {
-      setError('You must agree to the Terms of Service');
+      setError("You must agree to the Terms of Service");
       return;
     }
 
-    if (accountType === 'pharmacy') {
-      if (!formData.pharmacyName || !formData.pharmacyAddress || !formData.city || !formData.license) {
-        setError('Please fill in all pharmacy information');
+    if (accountType === "pharmacy") {
+      if (
+        !formData.pharmacyName ||
+        !formData.pharmacyAddress ||
+        !formData.city ||
+        !formData.license
+      ) {
+        setError("Please fill in all pharmacy information");
         return;
       }
     }
@@ -98,14 +103,17 @@ const Register = () => {
     setLoading(true);
 
     try {
+      // Map accountType to userType for backend
+      const userType = accountType === "pharmacy" ? "pharmacist" : "customer";
+
       const response = await authAPI.register({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
-        accountType,
-        ...(accountType === 'pharmacy' && {
+        userType,
+        ...(accountType === "pharmacy" && {
           pharmacyName: formData.pharmacyName,
           pharmacyAddress: formData.pharmacyAddress,
           city: formData.city,
@@ -115,18 +123,21 @@ const Register = () => {
 
       if (response.data.success) {
         // Store token and user data
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
 
-        // Redirect based on account type
-        if (accountType === 'pharmacy') {
-          navigate('/dashboard');
+        // Redirect based on user type
+        if (response.data.user.userType === "pharmacist") {
+          navigate("/dashboard");
         } else {
-          navigate('/');
+          navigate("/");
         }
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Registration failed. Please try again.');
+      setError(
+        error.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -139,20 +150,20 @@ const Register = () => {
   return (
     <>
       <Home />
-      
+
       <Dialog
         open={true}
         onClose={handleClose}
-        maxWidth={false}
+        maxWidth="md"
+        fullWidth
         PaperProps={{
           sx: {
-            width: "75vw",
-            maxWidth: "1000px",
-            height: "75vh",
-            maxHeight: "600px",
+            maxWidth: "900px",
             margin: "auto",
             borderRadius: 2,
-            overflow: "hidden",
+            maxHeight: "95vh",
+            display: "flex",
+            flexDirection: "column",
           },
         }}
         BackdropProps={{
@@ -164,7 +175,7 @@ const Register = () => {
         <Box
           sx={{
             display: "flex",
-            height: "100%",
+            flexDirection: { xs: "column", md: "row" },
             position: "relative",
           }}
         >
@@ -188,13 +199,13 @@ const Register = () => {
           {/* Left Section - Register Form (2/3 width) */}
           <Box
             sx={{
-              width: "66.666%",
-              height: "100%",
+              width: { xs: "100%", md: "66.666%" },
+              flex: { xs: "none", md: "0 0 66.666%" },
               display: "flex",
               flexDirection: "column",
               bgcolor: "background.paper",
-              overflow: "auto",
-              p: 4,
+              p: { xs: 3, sm: 4 },
+              minWidth: 0,
             }}
           >
             {/* Form Container */}
@@ -203,22 +214,36 @@ const Register = () => {
                 width: "100%",
                 display: "flex",
                 flexDirection: "column",
+                minHeight: "min-content",
               }}
             >
               {/* Header */}
               <Box component="header" sx={{ mb: 3 }}>
-                <Typography component="h1" variant="h4" fontWeight={700} color="secondary" mb={1}>
+                <Typography
+                  component="h1"
+                  variant="h4"
+                  fontWeight={700}
+                  color="secondary"
+                  mb={1}
+                >
                   Sign up
                 </Typography>
               </Box>
 
               {/* Account Type Toggle */}
-              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3, width: "100%" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  mb: 3,
+                  width: "100%",
+                }}
+              >
                 <ToggleButtonGroup
                   value={accountType}
                   exclusive
                   onChange={handleAccountTypeChange}
-                  sx={{ width: '100%' }}
+                  sx={{ width: "100%" }}
                 >
                   <ToggleButton
                     value="customer"
@@ -226,11 +251,13 @@ const Register = () => {
                       flex: 1,
                       py: 1.5,
                       fontSize: "0.875rem",
-                      '&.Mui-selected': {
-                        background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                        color: 'white',
-                        '&:hover': {
-                          background: 'linear-gradient(135deg, #44a9a3 0%, #3a8f8a 100%)',
+                      "&.Mui-selected": {
+                        background:
+                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                        color: "white",
+                        "&:hover": {
+                          background:
+                            "linear-gradient(135deg, #44a9a3 0%, #3a8f8a 100%)",
                         },
                       },
                     }}
@@ -244,11 +271,13 @@ const Register = () => {
                       flex: 1,
                       py: 1.5,
                       fontSize: "0.875rem",
-                      '&.Mui-selected': {
-                        background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
-                        color: 'white',
-                        '&:hover': {
-                          background: 'linear-gradient(135deg, #44a9a3 0%, #3a8f8a 100%)',
+                      "&.Mui-selected": {
+                        background:
+                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                        color: "white",
+                        "&:hover": {
+                          background:
+                            "linear-gradient(135deg, #44a9a3 0%, #3a8f8a 100%)",
                         },
                       },
                     }}
@@ -268,8 +297,8 @@ const Register = () => {
 
               {/* Registration Form */}
               <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-                {/* First Name and Last Name - Side by side, no gaps */}
-                <Box sx={{ display: "flex", gap: 2, mb: 2, width: "100%" }}>
+                {/* First Name and Last Name - Side by side */}
+                <Box sx={{ display: "flex", gap: 2, mb: 1.5, width: "100%" }}>
                   <TextField
                     label="First Name"
                     name="firstName"
@@ -280,7 +309,7 @@ const Register = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Person sx={{ color: 'primary.main' }} />
+                          <Person sx={{ color: "primary.main" }} />
                         </InputAdornment>
                       ),
                     }}
@@ -295,15 +324,15 @@ const Register = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Person sx={{ color: 'primary.main' }} />
+                          <Person sx={{ color: "primary.main" }} />
                         </InputAdornment>
                       ),
                     }}
                   />
                 </Box>
-                
+
                 {/* Email Address - Full width, on its own line */}
-                <Box sx={{ width: "100%", mb: 2 }}>
+                <Box sx={{ width: "100%", mb: 1.5 }}>
                   <TextField
                     fullWidth
                     label="Email Address"
@@ -316,7 +345,7 @@ const Register = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Email sx={{ color: 'primary.main' }} />
+                          <Email sx={{ color: "primary.main" }} />
                         </InputAdornment>
                       ),
                     }}
@@ -324,7 +353,7 @@ const Register = () => {
                 </Box>
 
                 {/* Phone Number - Full width, on its own line */}
-                <Box sx={{ width: "100%", mb: 2 }}>
+                <Box sx={{ width: "100%", mb: 1.5 }}>
                   <TextField
                     fullWidth
                     label="Phone Number"
@@ -337,7 +366,7 @@ const Register = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Phone sx={{ color: 'primary.main' }} />
+                          <Phone sx={{ color: "primary.main" }} />
                         </InputAdornment>
                       ),
                     }}
@@ -345,21 +374,23 @@ const Register = () => {
                 </Box>
 
                 {/* Pharmacy Fields */}
-                {accountType === 'pharmacy' && (
+                {accountType === "pharmacy" && (
                   <>
                     {/* Pharmacy Name and Address - Side by side */}
-                    <Box sx={{ display: "flex", gap: 2, mb: 2, width: "100%" }}>
+                    <Box
+                      sx={{ display: "flex", gap: 2, mb: 1.5, width: "100%" }}
+                    >
                       <TextField
                         label="Pharmacy Name"
                         name="pharmacyName"
                         value={formData.pharmacyName}
                         onChange={handleChange}
-                        required={accountType === 'pharmacy'}
+                        required={accountType === "pharmacy"}
                         sx={{ flex: 1, width: "100%" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <Business sx={{ color: 'primary.main' }} />
+                              <Business sx={{ color: "primary.main" }} />
                             </InputAdornment>
                           ),
                         }}
@@ -369,12 +400,12 @@ const Register = () => {
                         name="pharmacyAddress"
                         value={formData.pharmacyAddress}
                         onChange={handleChange}
-                        required={accountType === 'pharmacy'}
+                        required={accountType === "pharmacy"}
                         sx={{ flex: 1, width: "100%" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <LocationOn sx={{ color: 'primary.main' }} />
+                              <LocationOn sx={{ color: "primary.main" }} />
                             </InputAdornment>
                           ),
                         }}
@@ -382,18 +413,20 @@ const Register = () => {
                     </Box>
 
                     {/* City and License - Side by side */}
-                    <Box sx={{ display: "flex", gap: 2, mb: 2, width: "100%" }}>
+                    <Box
+                      sx={{ display: "flex", gap: 2, mb: 1.5, width: "100%" }}
+                    >
                       <TextField
                         label="City"
                         name="city"
                         value={formData.city}
                         onChange={handleChange}
-                        required={accountType === 'pharmacy'}
+                        required={accountType === "pharmacy"}
                         sx={{ flex: 1, width: "100%" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <LocationOn sx={{ color: 'primary.main' }} />
+                              <LocationOn sx={{ color: "primary.main" }} />
                             </InputAdornment>
                           ),
                         }}
@@ -403,12 +436,12 @@ const Register = () => {
                         name="license"
                         value={formData.license}
                         onChange={handleChange}
-                        required={accountType === 'pharmacy'}
+                        required={accountType === "pharmacy"}
                         sx={{ flex: 1, width: "100%" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <Badge sx={{ color: 'primary.main' }} />
+                              <Badge sx={{ color: "primary.main" }} />
                             </InputAdornment>
                           ),
                         }}
@@ -418,12 +451,12 @@ const Register = () => {
                 )}
 
                 {/* Password - Full width, on its own line */}
-                <Box sx={{ width: "100%", mb: 2 }}>
+                <Box sx={{ width: "100%", mb: 1.5 }}>
                   <TextField
                     fullWidth
                     label="Password"
                     name="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -431,7 +464,7 @@ const Register = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Lock sx={{ color: 'primary.main' }} />
+                          <Lock sx={{ color: "primary.main" }} />
                         </InputAdornment>
                       ),
                       endAdornment: (
@@ -449,12 +482,12 @@ const Register = () => {
                 </Box>
 
                 {/* Confirm Password - Full width, on its own line */}
-                <Box sx={{ width: "100%", mb: 2 }}>
+                <Box sx={{ width: "100%", mb: 1.5 }}>
                   <TextField
                     fullWidth
                     label="Confirm Password"
                     name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? "text" : "password"}
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
@@ -462,16 +495,22 @@ const Register = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Lock sx={{ color: 'primary.main' }} />
+                          <Lock sx={{ color: "primary.main" }} />
                         </InputAdornment>
                       ),
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            onClick={() =>
+                              setShowConfirmPassword(!showConfirmPassword)
+                            }
                             edge="end"
                           >
-                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                            {showConfirmPassword ? (
+                              <VisibilityOff />
+                            ) : (
+                              <Visibility />
+                            )}
                           </IconButton>
                         </InputAdornment>
                       ),
@@ -480,24 +519,34 @@ const Register = () => {
                 </Box>
 
                 {/* Terms Checkbox */}
-                <Box sx={{ width: "100%", mb: 2 }}>
+                <Box sx={{ width: "100%", mb: 1.5 }}>
                   <FormControlLabel
                     control={
                       <Checkbox
                         name="terms"
                         checked={formData.terms}
                         onChange={handleChange}
-                        sx={{ color: 'primary.main' }}
+                        sx={{ color: "primary.main" }}
                       />
                     }
                     label={
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
-                        I agree to the{' '}
-                        <Link href="#" sx={{ color: 'primary.main', textDecoration: 'none' }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: "0.75rem" }}
+                      >
+                        I agree to the{" "}
+                        <Link
+                          href="#"
+                          sx={{ color: "primary.main", textDecoration: "none" }}
+                        >
                           Terms
-                        </Link>{' '}
-                        and{' '}
-                        <Link href="#" sx={{ color: 'primary.main', textDecoration: 'none' }}>
+                        </Link>{" "}
+                        and{" "}
+                        <Link
+                          href="#"
+                          sx={{ color: "primary.main", textDecoration: "none" }}
+                        >
                           Privacy Policy
                         </Link>
                       </Typography>
@@ -514,29 +563,39 @@ const Register = () => {
                   startIcon={<PersonAdd />}
                   sx={{
                     py: 1.5,
-                    mt: 2,
-                    mb: 2,
-                    background: 'linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)',
+                    mt: 1.5,
+                    mb: 1.5,
+                    background:
+                      "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
                     fontSize: 16,
                     fontWeight: 700,
-                    boxShadow: '0 4px 12px rgba(78, 205, 196, 0.3)',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 6px 20px rgba(78, 205, 196, 0.4)',
+                    boxShadow: "0 4px 12px rgba(78, 205, 196, 0.3)",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 6px 20px rgba(78, 205, 196, 0.4)",
                     },
                   }}
                 >
-                  {loading ? 'Creating Account...' : 'Sign up'}
+                  {loading ? "Creating Account..." : "Sign up"}
                 </Button>
               </form>
 
               {/* Login Link */}
-              <Typography variant="body2" textAlign="center" color="text.secondary" sx={{ fontSize: "0.875rem" }}>
-                Already have an account?{' '}
+              <Typography
+                variant="body2"
+                textAlign="center"
+                color="text.secondary"
+                sx={{ fontSize: "0.875rem" }}
+              >
+                Already have an account?{" "}
                 <Link
                   component={RouterLink}
                   to="/login"
-                  sx={{ color: 'primary.main', fontWeight: 700, textDecoration: 'underline' }}
+                  sx={{
+                    color: "primary.main",
+                    fontWeight: 700,
+                    textDecoration: "underline",
+                  }}
                 >
                   Log in
                 </Link>
@@ -547,13 +606,15 @@ const Register = () => {
           {/* Right Section - Image (1/3 width) */}
           <Box
             sx={{
-              width: "33.333%",
-              height: "100%",
+              width: { xs: "100%", md: "33.333%" },
+              flex: { xs: "none", md: "0 0 33.333%" },
+              minHeight: { xs: "200px", md: "auto" },
               backgroundImage:
                 "url(https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=800&fit=crop)",
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
+              display: { xs: "none", md: "block" },
             }}
           />
         </Box>
@@ -563,4 +624,3 @@ const Register = () => {
 };
 
 export default Register;
-

@@ -98,6 +98,7 @@ export const reviewAPI = {
 
 // Inventory APIs
 export const inventoryAPI = {
+  getAll: (params) => api.get("/inventory", { params }),
   add: (inventoryData) => api.post("/inventory", inventoryData),
   update: (id, data) => api.put(`/inventory/${id}`, data),
   delete: (id) => api.delete(`/inventory/${id}`),

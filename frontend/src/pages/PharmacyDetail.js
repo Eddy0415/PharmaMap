@@ -32,7 +32,13 @@ import {
 } from "@mui/icons-material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { pharmacyAPI, medicationAPI, reviewAPI, userAPI } from "../services/api";
+import ProductOrderDialog from "../components/ProductOrderDialog";
+import {
+  pharmacyAPI,
+  medicationAPI,
+  reviewAPI,
+  userAPI,
+} from "../services/api";
 
 const PharmacyDetail = () => {
   const { id } = useParams();
@@ -44,6 +50,8 @@ const PharmacyDetail = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -60,7 +68,9 @@ const PharmacyDetail = () => {
   const checkFavoriteStatus = async (userId) => {
     try {
       const response = await userAPI.getFavoritePharmacies(userId);
-      const favoriteIds = response.data.favoritePharmacies.map((p) => p._id || p);
+      const favoriteIds = response.data.favoritePharmacies.map(
+        (p) => p._id || p
+      );
       setIsFavorite(favoriteIds.includes(id));
     } catch (error) {
       console.error("Error checking favorite status:", error);
@@ -345,17 +355,26 @@ const PharmacyDetail = () => {
                 {filteredInventory.length === 0 ? (
                   <Alert severity="info">No medications found</Alert>
                 ) : (
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  >
                     {filteredInventory.map((inv) => (
                       <Paper
                         key={inv._id}
+                        onClick={() => {
+                          setSelectedProduct(inv);
+                          setOrderDialogOpen(true);
+                        }}
                         sx={{
                           p: 2,
                           border: "2px solid #f0f0f0",
                           transition: "all 0.3s",
+                          cursor: "pointer",
                           "&:hover": {
                             borderColor: "primary.main",
                             bgcolor: "#f8fdfd",
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                           },
                         }}
                       >
@@ -613,7 +632,9 @@ const PharmacyDetail = () => {
                     Working Hours
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Box
+                  sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}
+                >
                   {pharmacy.workingHours && pharmacy.workingHours.length > 0 ? (
                     pharmacy.workingHours.map((wh) => (
                       <Box
@@ -632,7 +653,9 @@ const PharmacyDetail = () => {
                         <Typography variant="body2" color="text.secondary">
                           {wh.isClosed
                             ? "Closed"
-                            : `${wh.openTime || "N/A"} - ${wh.closeTime || "N/A"}`}
+                            : `${wh.openTime || "N/A"} - ${
+                                wh.closeTime || "N/A"
+                              }`}
                         </Typography>
                       </Box>
                     ))
@@ -647,6 +670,21 @@ const PharmacyDetail = () => {
           </Grid>
         </Grid>
       </Container>
+
+      <ProductOrderDialog
+        open={orderDialogOpen}
+        onClose={() => {
+          setOrderDialogOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        pharmacy={pharmacy}
+        user={user}
+        onOrderSuccess={(order) => {
+          // Optionally refresh inventory or show success message
+          console.log("Order placed:", order);
+        }}
+      />
 
       <Footer />
     </Box>

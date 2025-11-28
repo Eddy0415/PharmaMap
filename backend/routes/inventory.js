@@ -4,6 +4,40 @@ const Inventory = require("../models/Inventory");
 const Item = require("../models/Item");
 const Pharmacy = require("../models/Pharmacy");
 
+// @route   GET /api/inventory
+// @desc    Get inventory items by pharmacy ID
+// @access  Private (Pharmacy Owner)
+router.get("/", async (req, res) => {
+  try {
+    const { pharmacyId } = req.query;
+
+    if (!pharmacyId) {
+      return res.status(400).json({
+        success: false,
+        message: "Pharmacy ID is required",
+      });
+    }
+
+    const inventory = await Inventory.find({ pharmacy: pharmacyId })
+      .populate("item", "name category imageUrl")
+      .populate("pharmacy", "name address")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: inventory.length,
+      inventory,
+    });
+  } catch (error) {
+    console.error("Get inventory error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching inventory",
+      error: error.message,
+    });
+  }
+});
+
 // @route   POST /api/inventory
 // @desc    Add inventory item
 // @access  Private (Pharmacy Owner)
@@ -61,6 +95,10 @@ router.post("/", async (req, res) => {
 
     await inventory.save();
 
+    // Populate item and pharmacy before returning
+    await inventory.populate("item", "name category imageUrl");
+    await inventory.populate("pharmacy", "name address");
+
     res.status(201).json({
       success: true,
       message: "Inventory item added successfully",
@@ -92,13 +130,38 @@ router.put("/:id", async (req, res) => {
     if (isAvailable !== undefined) updateData.isAvailable = isAvailable;
     if (lastRestocked !== undefined) updateData.lastRestocked = lastRestocked;
 
+    // Get current inventory to calculate stockStatus
+    const currentInventory = await Inventory.findById(req.params.id);
+    if (!currentInventory) {
+      return res.status(404).json({
+        success: false,
+        message: "Inventory item not found",
+      });
+    }
+
+    // Calculate stockStatus based on updated quantity
+    const finalQuantity =
+      quantity !== undefined ? quantity : currentInventory.quantity;
+    const finalLowStockThreshold =
+      lowStockThreshold !== undefined
+        ? lowStockThreshold
+        : currentInventory.lowStockThreshold;
+
+    if (finalQuantity === 0) {
+      updateData.stockStatus = "out-of-stock";
+    } else if (finalQuantity < finalLowStockThreshold) {
+      updateData.stockStatus = "low-stock";
+    } else {
+      updateData.stockStatus = "in-stock";
+    }
+
     const inventory = await Inventory.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true, runValidators: true }
     )
-      .populate("item", "name category")
-      .populate("pharmacy", "name");
+      .populate("item", "name category imageUrl")
+      .populate("pharmacy", "name address");
 
     if (!inventory) {
       return res.status(404).json({

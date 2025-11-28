@@ -27,6 +27,7 @@ import {
 } from "@mui/icons-material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import ProductOrderDialog from "../components/ProductOrderDialog";
 import { medicationAPI, pharmacyAPI } from "../services/api";
 
 const Search = () => {
@@ -38,6 +39,9 @@ const Search = () => {
   const [sortBy, setSortBy] = useState("distance");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedPharmacy, setSelectedPharmacy] = useState(null);
 
   useEffect(() => {
     // Load user from localStorage
@@ -481,9 +485,26 @@ const Search = () => {
                                 itemData.price?.toFixed(2) || "0.00"
                               }`}
                               size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedProduct({
+                                  ...itemData,
+                                  item: itemData.item,
+                                  price: itemData.price,
+                                  quantity: itemData.quantity,
+                                  stockStatus: itemData.stockStatus,
+                                });
+                                setSelectedPharmacy(result.pharmacy);
+                                setOrderDialogOpen(true);
+                              }}
                               sx={{
                                 ...getStockStatusColor(itemData.stockStatus),
                                 fontWeight: 600,
+                                cursor: "pointer",
+                                "&:hover": {
+                                  opacity: 0.8,
+                                  transform: "scale(1.05)",
+                                },
                               }}
                             />
                           ))}
@@ -492,6 +513,11 @@ const Search = () => {
                               label={`+${result.items.length - 3} more`}
                               size="small"
                               variant="outlined"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/pharmacy/${result.pharmacy._id}`);
+                              }}
+                              sx={{ cursor: "pointer" }}
                             />
                           )}
                         </Box>
@@ -559,6 +585,21 @@ const Search = () => {
           </Grid>
         )}
       </Container>
+
+      <ProductOrderDialog
+        open={orderDialogOpen}
+        onClose={() => {
+          setOrderDialogOpen(false);
+          setSelectedProduct(null);
+          setSelectedPharmacy(null);
+        }}
+        product={selectedProduct}
+        pharmacy={selectedPharmacy}
+        user={user}
+        onOrderSuccess={(order) => {
+          console.log("Order placed:", order);
+        }}
+      />
 
       <Footer />
     </Box>
