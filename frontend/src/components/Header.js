@@ -211,6 +211,21 @@ const Header = ({ user, onLogout }) => {
             >
               <SearchIcon sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }} />
             </IconButton>
+            <Button
+              variant="text"
+              onClick={() => navigate("/about")}
+              sx={{
+                color: "white",
+                px: { xs: 1, sm: 1.5 },
+                py: { xs: 0.5, sm: 0.75 },
+                fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                textTransform: "none",
+                borderRadius: { xs: "18px", sm: "22px" },
+                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+              }}
+            >
+              About Us
+            </Button>
             {user ? (
               <Box>
                 <IconButton

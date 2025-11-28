@@ -4,11 +4,11 @@ import {
   Container,
   Box,
   Typography,
-  Grid,
   Card,
   CardContent,
   IconButton,
   Chip,
+  Button,
 } from "@mui/material";
 import {
   ArrowBackIos,
@@ -63,8 +63,8 @@ const carouselSlides = [
   {
     image:
       "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=1200&h=450&fit=crop",
-    title: "Fast Delivery Options",
-    description: "Multiple delivery options available for your convenience",
+    title: "Reserve & pick up",
+    description: "Ready for you when you arrive",
   },
 ];
 
@@ -300,121 +300,188 @@ const Home = () => {
     >
       <Header user={user} />
 
-      <Container component="section" maxWidth="xl" sx={{ py: 5 }}>
-        {/* Carousel Section */}
+      {/* Hero Carousel */}
+      <Box
+        component="section"
+        aria-label="Featured content carousel"
+        sx={{
+          position: "relative",
+          width: "100%",
+          height: {
+            xs: "calc(100vh - 64px)",
+            sm: "calc(100vh - 64px)",
+            md: "calc(100vh - 64px)",
+          },
+          minHeight: 620,
+          overflow: "hidden",
+          mb: 0,
+          borderRadius: 0,
+        }}
+      >
+        {carouselSlides.map((slide, index) => (
+          <Box
+            key={index}
+            sx={{
+              position: "absolute",
+              inset: 0,
+              opacity: currentSlide === index ? 1 : 0,
+              transition: "opacity 0.6s ease, transform 12s ease",
+              transform: currentSlide === index ? "scale(1.03)" : "scale(1)",
+              backgroundImage: `url(${slide.image})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              filter: "brightness(0.9)",
+            }}
+          />
+        ))}
+
         <Box
-          component="section"
-          aria-label="Featured content carousel"
           sx={{
-            position: "relative",
-            borderRadius: 5,
-            overflow: "hidden",
-            height: 450,
-            mb: 5,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(120deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.15) 100%)",
+            zIndex: 1,
+          }}
+        />
+
+        <Box
+          sx={{
+            position: "absolute",
+            top: { xs: "35%", md: "50%" },
+            left: { xs: "6%", sm: "8%", md: "6%" },
+            transform: "translateY(-50%)",
+            color: "common.white",
+            zIndex: 2,
+            maxWidth: { xs: "88%", sm: "72%", md: "46%" },
           }}
         >
-          {carouselSlides.map((slide, index) => (
-            <Box
-              key={index}
+          <Typography
+            variant="h3"
+            fontWeight={800}
+            sx={{
+              fontSize: { xs: "2rem", sm: "2.6rem", md: "3.2rem" },
+              textShadow: "2px 2px 10px rgba(0,0,0,0.55)",
+              mb: 1.5,
+            }}
+          >
+            Fast access to the medicine you need.
+          </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: { xs: "1.05rem", sm: "1.2rem", md: "1.35rem" },
+              lineHeight: 1.5,
+              maxWidth: 640,
+              opacity: 0.9,
+              mb: 3,
+            }}
+          >
+            We scan trusted pharmacies around you so you can reserve what you
+            need before stepping out the door.
+          </Typography>
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => navigate("/search")}
               sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                opacity: currentSlide === index ? 1 : 0,
-                transition: "opacity 0.5s ease-in-out",
-                backgroundImage: `url(${slide.image})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+                color: "common.white",
+                borderColor: "rgba(255,255,255,0.85)",
+                px: 3,
+                py: 1,
+                fontWeight: 700,
+                letterSpacing: 0.5,
+                "&:hover": {
+                  bgcolor: "common.white",
+                  color: "primary.main",
+                  borderColor: "common.white",
+                },
               }}
             >
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  background:
-                    "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)",
-                  p: 4,
-                  color: "white",
-                }}
-              >
-                <Typography variant="h4" fontWeight={700} mb={1}>
-                  {slide.title}
-                </Typography>
-                <Typography variant="body1" sx={{ opacity: 0.9 }}>
-                  {slide.description}
-                </Typography>
-              </Box>
-            </Box>
-          ))}
-
-          {/* Carousel Controls */}
-          <IconButton
-            onClick={handlePrevSlide}
-            sx={{
-              position: "absolute",
-              left: 20,
-              top: "50%",
-              transform: "translateY(-50%)",
-              bgcolor: "rgba(255,255,255,0.9)",
-              borderRadius: "50%",
-              width: 48,
-              height: 48,
-              "&:hover": { bgcolor: "white" },
-            }}
-          >
-            <ArrowForwardIos sx={{ transform: "rotate(180deg)" }} />
-          </IconButton>
-          <IconButton
-            onClick={handleNextSlide}
-            sx={{
-              position: "absolute",
-              right: 20,
-              top: "50%",
-              transform: "translateY(-50%)",
-              bgcolor: "rgba(255,255,255,0.9)",
-              borderRadius: "50%",
-              width: 48,
-              height: 48,
-              "&:hover": { bgcolor: "white" },
-            }}
-          >
-            <ArrowForwardIos />
-          </IconButton>
-
-          {/* Indicators */}
-          <Box
-            sx={{
-              position: "absolute",
-              bottom: 20,
-              left: "50%",
-              transform: "translateX(-50%)",
-              display: "flex",
-              gap: 1,
-            }}
-          >
-            {carouselSlides.map((_, index) => (
-              <Box
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                sx={{
-                  width: currentSlide === index ? 30 : 12,
-                  height: 12,
-                  borderRadius: 6,
-                  bgcolor:
-                    currentSlide === index ? "white" : "rgba(255,255,255,0.5)",
-                  cursor: "pointer",
-                  transition: "all 0.3s",
-                }}
-              />
-            ))}
+              Start a search
+            </Button>
+            <Chip
+              icon={<TrendingUp sx={{ color: "inherit" }} />}
+              label="Live availability checks"
+              sx={{
+                bgcolor: "rgba(255,255,255,0.18)",
+                color: "white",
+                border: "1px solid rgba(255,255,255,0.35)",
+                fontWeight: 700,
+                "& .MuiChip-icon": { color: "white" },
+              }}
+            />
           </Box>
         </Box>
 
+        <Card
+          sx={{
+            position: "absolute",
+            bottom: { xs: 16, sm: 28, md: 42 },
+            right: { xs: 16, sm: 28, md: 64 },
+            width: { xs: "82%", sm: 360, md: 400 },
+            zIndex: 3,
+            backdropFilter: "blur(10px)",
+            backgroundColor: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            color: "white",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+          }}
+          elevation={0}
+        >
+          <CardContent sx={{ pb: 3 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ textTransform: "uppercase", letterSpacing: 1.1, mb: 1 }}
+            >
+              Featured highlight
+            </Typography>
+            <Typography variant="h6" fontWeight={800} mb={1}>
+              {carouselSlides[currentSlide].title}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.85 }}>
+              {carouselSlides[currentSlide].description}
+            </Typography>
+          </CardContent>
+        </Card>
+
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            gap: 1.2,
+            zIndex: 3,
+          }}
+        >
+          {carouselSlides.map((_, index) => (
+            <Box
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              sx={{
+                width: currentSlide === index ? 34 : 12,
+                height: 12,
+                borderRadius: 999,
+                bgcolor:
+                  currentSlide === index
+                    ? "common.white"
+                    : "rgba(255,255,255,0.55)",
+                cursor: "pointer",
+                transition: "all 0.3s",
+                boxShadow:
+                  currentSlide === index
+                    ? "0 8px 20px rgba(0,0,0,0.35)"
+                    : "none",
+              }}
+            />
+          ))}
+        </Box>
+      </Box>
+
+      <Container component="section" maxWidth="xl" sx={{ pt: 4, pb: 5 }}>
         {/* Categories Section */}
         <Typography
           component="h2"

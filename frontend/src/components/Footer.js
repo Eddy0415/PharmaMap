@@ -25,9 +25,29 @@ const Footer = () => {
         <Grid container spacing={4}>
           {/* About Section */}
           <Grid item xs={12} md={4}>
-            <Typography variant="h6" sx={{ mb: 2, color: '#4ecdc4', fontWeight: 700 }}>
-              About PharmaMap
-            </Typography>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1.5,
+                mb: 2,
+                px: 1,
+                py: 0.5,
+                bgcolor: 'rgba(255,255,255,0.05)',
+                borderRadius: 2,
+                boxShadow: '0 6px 12px rgba(0,0,0,0.15)',
+              }}
+            >
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="PharmaMap"
+                sx={{ width: 56, height: 56, objectFit: 'contain' }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </Box>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', lineHeight: 1.8 }}>
               Your trusted platform for finding medications across Lebanon. We connect you with
               verified pharmacies to ensure you get what you need, when you need it.

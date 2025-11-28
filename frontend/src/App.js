@@ -12,6 +12,7 @@ import PharmacyDetail from './pages/PharmacyDetail';
 import UserProfile from './pages/UserProfile';
 import PharmacyDashboard from './pages/PharmacyDashboard';
 import CustomerHome from './pages/CustomerHome';
+import About from './pages/About';
 
 // Create theme
 const theme = createTheme({
@@ -51,6 +52,7 @@ function App() {
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/dashboard" element={<PharmacyDashboard />} />
           <Route path="/customer-home" element={<CustomerHome />} />
+          <Route path="/about" element={<About />} />
         </Routes>
       </Router>
     </ThemeProvider>
