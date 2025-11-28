@@ -375,29 +375,29 @@ const Search = () => {
             </Button>
           </Card>
         ) : (
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             {results.map((result) => (
-              <Grid item xs={12} key={result.pharmacy._id}>
+              <Grid item xs={12} md={4} key={result.pharmacy._id}>
                 <Card
                   sx={{
                     transition: "all 0.3s",
                     cursor: "pointer",
                     "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
                     },
                   }}
                   onClick={() => navigate(`/pharmacy/${result.pharmacy._id}`)}
                 >
-                  <CardContent sx={{ p: 3 }}>
-                    <Grid container spacing={3} alignItems="center">
+                  <CardContent sx={{ p: 2 }}>
+                    <Grid container spacing={1.5} alignItems="center">
                       {/* Pharmacy Logo */}
                       <Grid item>
                         <Box
                           sx={{
-                            width: 100,
-                            height: 100,
-                            borderRadius: 3,
+                            width: 60,
+                            height: 60,
+                            borderRadius: 2,
                             background:
                               "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
                             display: "flex",
@@ -406,7 +406,7 @@ const Search = () => {
                           }}
                         >
                           <LocalPharmacy
-                            sx={{ fontSize: 48, color: "primary.main" }}
+                            sx={{ fontSize: 32, color: "primary.main" }}
                           />
                         </Box>
                       </Grid>
@@ -414,19 +414,20 @@ const Search = () => {
                       {/* Pharmacy Info */}
                       <Grid item xs>
                         <Typography
-                          variant="h5"
+                          variant="h6"
                           fontWeight={700}
                           color="secondary"
-                          mb={1}
+                          mb={0.5}
+                          sx={{ fontSize: "0.95rem" }}
                         >
                           {result.pharmacy.name}
                         </Typography>
                         <Box
                           sx={{
                             display: "flex",
-                            flexWrap: "wrap",
-                            gap: 2,
-                            mb: 1.5,
+                            flexDirection: "column",
+                            gap: 0.5,
+                            mb: 1,
                           }}
                         >
                           <Box
@@ -438,11 +439,12 @@ const Search = () => {
                             }}
                           >
                             <Room
-                              fontSize="small"
-                              sx={{ color: "primary.main" }}
+                              sx={{ fontSize: 14, color: "primary.main" }}
                             />
-                            {result.pharmacy.address.street},{" "}
-                            {result.pharmacy.address.city}
+                            <Typography variant="caption" noWrap>
+                              {result.pharmacy.address.street},{" "}
+                              {result.pharmacy.address.city}
+                            </Typography>
                           </Box>
                           <Box
                             sx={{
@@ -453,10 +455,11 @@ const Search = () => {
                             }}
                           >
                             <Phone
-                              fontSize="small"
-                              sx={{ color: "primary.main" }}
+                              sx={{ fontSize: 14, color: "primary.main" }}
                             />
-                            {result.pharmacy.phone}
+                            <Typography variant="caption">
+                              {result.pharmacy.phone}
+                            </Typography>
                           </Box>
                           <Box
                             sx={{
@@ -467,18 +470,26 @@ const Search = () => {
                             }}
                           >
                             <Schedule
-                              fontSize="small"
-                              sx={{ color: "primary.main" }}
+                              sx={{ fontSize: 14, color: "primary.main" }}
                             />
-                            {result.pharmacy.is24Hours
-                              ? "24/7"
-                              : "Limited Hours"}
+                            <Typography variant="caption">
+                              {result.pharmacy.is24Hours
+                                ? "24/7"
+                                : "Limited Hours"}
+                            </Typography>
                           </Box>
                         </Box>
 
                         {/* Items List */}
-                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                          {result.items?.slice(0, 3).map((itemData, idx) => (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: 0.5,
+                            flexWrap: "wrap",
+                            mb: 1,
+                          }}
+                        >
+                          {result.items?.slice(0, 2).map((itemData, idx) => (
                             <Chip
                               key={idx}
                               label={`${itemData.item?.name || "Unknown"} - $${
@@ -501,6 +512,8 @@ const Search = () => {
                                 ...getStockStatusColor(itemData.stockStatus),
                                 fontWeight: 600,
                                 cursor: "pointer",
+                                fontSize: "0.7rem",
+                                height: 20,
                                 "&:hover": {
                                   opacity: 0.8,
                                   transform: "scale(1.05)",
@@ -508,16 +521,20 @@ const Search = () => {
                               }}
                             />
                           ))}
-                          {result.items?.length > 3 && (
+                          {result.items?.length > 2 && (
                             <Chip
-                              label={`+${result.items.length - 3} more`}
+                              label={`+${result.items.length - 2} more`}
                               size="small"
                               variant="outlined"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/pharmacy/${result.pharmacy._id}`);
                               }}
-                              sx={{ cursor: "pointer" }}
+                              sx={{
+                                cursor: "pointer",
+                                fontSize: "0.7rem",
+                                height: 20,
+                              }}
                             />
                           )}
                         </Box>
@@ -526,10 +543,11 @@ const Search = () => {
                       {/* Price and Actions */}
                       <Grid item sx={{ textAlign: "right" }}>
                         <Typography
-                          variant="h4"
+                          variant="h6"
                           fontWeight={700}
                           color="primary.main"
-                          mb={1}
+                          mb={0.5}
+                          sx={{ fontSize: "1rem" }}
                         >
                           ${result.items?.[0]?.price?.toFixed(2) || "0.00"}
                         </Typography>
@@ -537,22 +555,36 @@ const Search = () => {
                           label={getStockStatusText(
                             result.items?.[0]?.stockStatus || "out-of-stock"
                           )}
+                          size="small"
                           sx={{
                             ...getStockStatusColor(
                               result.items?.[0]?.stockStatus || "out-of-stock"
                             ),
                             fontWeight: 600,
-                            mb: 2,
+                            mb: 1,
+                            fontSize: "0.7rem",
+                            height: 20,
                           }}
                         />
-                        <Box sx={{ display: "flex", gap: 1 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: 0.5,
+                            flexDirection: "column",
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             size="small"
-                            startIcon={<Room />}
+                            startIcon={<Room sx={{ fontSize: 14 }} />}
                             onClick={(e) => {
                               e.stopPropagation();
                               alert(`Opening map for ${result.pharmacy.name}`);
+                            }}
+                            sx={{
+                              fontSize: "0.75rem",
+                              minWidth: "auto",
+                              px: 1,
                             }}
                           >
                             Map
@@ -560,7 +592,7 @@ const Search = () => {
                           <Button
                             variant="contained"
                             size="small"
-                            startIcon={<Phone />}
+                            startIcon={<Phone sx={{ fontSize: 14 }} />}
                             onClick={(e) => {
                               e.stopPropagation();
                               window.location.href = `tel:${result.pharmacy.phone}`;
@@ -571,6 +603,9 @@ const Search = () => {
                             sx={{
                               background:
                                 "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                              fontSize: "0.75rem",
+                              minWidth: "auto",
+                              px: 1,
                             }}
                           >
                             Call

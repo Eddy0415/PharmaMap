@@ -128,6 +128,7 @@ const Login = () => {
           <Box
             sx={{
               width: { xs: "100%", md: "33.333%" },
+              flex: { xs: "none", md: "0 0 33.333%" },
               height: "100%",
               display: "flex",
               flexDirection: "column",
@@ -264,6 +265,7 @@ const Login = () => {
           <Box
             sx={{
               width: { xs: 0, md: "66.666%" },
+              flex: { xs: "none", md: "0 0 66.666%" },
               height: "100%",
               backgroundImage:
                 "url(https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=800&fit=crop)",

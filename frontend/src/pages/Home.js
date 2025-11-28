@@ -296,11 +296,16 @@ const Home = () => {
   return (
     <Box
       component="main"
-      sx={{ bgcolor: "background.default", minHeight: "100vh" }}
+      sx={{
+        bgcolor: "background.default",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
       <Header user={user} />
 
-      <Container component="section" maxWidth="xl" sx={{ py: 5 }}>
+      <Container component="section" maxWidth="xl" sx={{ py: 5, flexGrow: 1 }}>
         {/* Carousel Section */}
         <Box
           component="section"

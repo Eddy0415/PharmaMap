@@ -16,6 +16,7 @@ import {
   Divider,
   Paper,
   Alert,
+  Pagination,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -52,6 +53,8 @@ const PharmacyDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [inventoryPage, setInventoryPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -141,6 +144,19 @@ const PharmacyDetail = () => {
     return itemName.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  const paginatedInventory = filteredInventory.slice(
+    (inventoryPage - 1) * itemsPerPage,
+    inventoryPage * itemsPerPage
+  );
+  const totalInventoryPages = Math.ceil(
+    filteredInventory.length / itemsPerPage
+  );
+
+  const handleInventoryPageChange = (event, value) => {
+    setInventoryPage(value);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const getStockStatusColor = (status) => {
     switch (status) {
       case "in-stock":
@@ -156,9 +172,16 @@ const PharmacyDetail = () => {
 
   if (loading) {
     return (
-      <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
+      <Box
+        sx={{
+          bgcolor: "background.default",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <Header user={user} />
-        <Container maxWidth="xl" sx={{ py: 5 }}>
+        <Container maxWidth="xl" sx={{ py: 5, flexGrow: 1 }}>
           <Typography>Loading...</Typography>
         </Container>
         <Footer />
@@ -168,9 +191,16 @@ const PharmacyDetail = () => {
 
   if (!pharmacy) {
     return (
-      <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
+      <Box
+        sx={{
+          bgcolor: "background.default",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <Header user={user} />
-        <Container maxWidth="xl" sx={{ py: 5 }}>
+        <Container maxWidth="xl" sx={{ py: 5, flexGrow: 1 }}>
           <Typography>Pharmacy not found</Typography>
         </Container>
         <Footer />
@@ -181,11 +211,15 @@ const PharmacyDetail = () => {
   return (
     <Box
       component="main"
-      sx={{ bgcolor: "background.default", minHeight: "100vh" }}
+      sx={{
+        bgcolor: "background.default",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
       <Header user={user} />
-
-      <Container component="article" maxWidth="xl" sx={{ py: 5 }}>
+      <Container component="article" maxWidth="xl" sx={{ py: 5, flexGrow: 1 }}>
         <Button
           startIcon={<ArrowBack />}
           onClick={() => navigate(-1)}
@@ -326,10 +360,15 @@ const PharmacyDetail = () => {
           </Grid>
         </Card>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
-            <Card sx={{ mb: 4 }}>
-              <CardContent>
+        <Grid container spacing={4} alignItems="stretch">
+          {/* Column 1: Available Medications */}
+          <Grid item xs={12} md={4}>
+            <Card
+              sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+            >
+              <CardContent
+                sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+              >
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                   <LocalPharmacy sx={{ mr: 1, color: "primary.main" }} />
                   <Typography variant="h5" fontWeight={700}>
@@ -341,7 +380,10 @@ const PharmacyDetail = () => {
                   fullWidth
                   placeholder="Search in this pharmacy..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setInventoryPage(1);
+                  }}
                   sx={{ mb: 3 }}
                   InputProps={{
                     startAdornment: (
@@ -355,71 +397,263 @@ const PharmacyDetail = () => {
                 {filteredInventory.length === 0 ? (
                   <Alert severity="info">No medications found</Alert>
                 ) : (
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-                  >
-                    {filteredInventory.map((inv) => (
-                      <Paper
-                        key={inv._id}
-                        onClick={() => {
-                          setSelectedProduct(inv);
-                          setOrderDialogOpen(true);
-                        }}
+                  <>
+                    <Box
+                      sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                    >
+                      {paginatedInventory.map((inv) => (
+                        <Paper
+                          key={inv._id}
+                          onClick={() => {
+                            setSelectedProduct(inv);
+                            setOrderDialogOpen(true);
+                          }}
+                          sx={{
+                            p: 2.5,
+                            border: "2px solid #f0f0f0",
+                            borderRadius: 2,
+                            transition: "all 0.3s",
+                            cursor: "pointer",
+                            "&:hover": {
+                              borderColor: "primary.main",
+                              bgcolor: "#f8fdfd",
+                              transform: "translateY(-2px)",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                            },
+                          }}
+                        >
+                          <Grid container spacing={2} alignItems="center">
+                            <Grid item xs>
+                              <Typography
+                                variant="h6"
+                                fontWeight={600}
+                                color="secondary"
+                                mb={0.5}
+                                sx={{ fontSize: "1.1rem" }}
+                              >
+                                {inv.item?.name || "Unknown Item"}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ fontSize: "0.875rem" }}
+                              >
+                                {inv.item?.category || "N/A"}
+                                {inv.item?.category && inv.item?.dosage
+                                  ? " • "
+                                  : ""}
+                                {inv.item?.dosage || ""}
+                              </Typography>
+                            </Grid>
+                            <Grid
+                              item
+                              sx={{
+                                textAlign: "right",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "flex-end",
+                                gap: 0.5,
+                              }}
+                            >
+                              <Typography
+                                variant="h6"
+                                fontWeight={700}
+                                color="primary.main"
+                                sx={{ fontSize: "1.25rem" }}
+                              >
+                                ${inv.price?.toFixed(2) || "0.00"}
+                              </Typography>
+                              <Chip
+                                label={`Stock: ${inv.quantity || 0} units`}
+                                size="small"
+                                sx={{
+                                  ...getStockStatusColor(inv.stockStatus),
+                                  fontWeight: 600,
+                                  fontSize: "0.75rem",
+                                  height: 24,
+                                }}
+                              />
+                            </Grid>
+                          </Grid>
+                        </Paper>
+                      ))}
+                    </Box>
+                    {totalInventoryPages > 1 && (
+                      <Box
                         sx={{
-                          p: 2,
-                          border: "2px solid #f0f0f0",
-                          transition: "all 0.3s",
-                          cursor: "pointer",
-                          "&:hover": {
-                            borderColor: "primary.main",
-                            bgcolor: "#f8fdfd",
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                          },
+                          display: "flex",
+                          justifyContent: "center",
+                          mt: 3,
                         }}
                       >
-                        <Grid container spacing={2} alignItems="center">
-                          <Grid item xs>
-                            <Typography
-                              variant="h6"
-                              fontWeight={600}
-                              color="secondary"
-                            >
-                              {inv.item?.name || "Unknown Item"}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {inv.item?.category || ""} •{" "}
-                              {inv.item?.dosage || "N/A"}
-                            </Typography>
-                          </Grid>
-                          <Grid item sx={{ textAlign: "right" }}>
-                            <Typography
-                              variant="h6"
-                              fontWeight={700}
-                              color="primary.main"
-                              mb={0.5}
-                            >
-                              ${inv.price?.toFixed(2) || "0.00"}
-                            </Typography>
-                            <Chip
-                              label={`Stock: ${inv.quantity || 0} units`}
-                              size="small"
-                              sx={{
-                                ...getStockStatusColor(inv.stockStatus),
-                                fontWeight: 600,
-                              }}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Paper>
-                    ))}
-                  </Box>
+                        <Pagination
+                          count={totalInventoryPages}
+                          page={inventoryPage}
+                          onChange={handleInventoryPageChange}
+                          color="primary"
+                          size="large"
+                        />
+                      </Box>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
+          </Grid>
 
-            <Card>
-              <CardContent>
+          {/* Column 2: Location, Contact Information */}
+          <Grid item xs={12} md={4}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 3,
+                height: "100%",
+              }}
+            >
+              <Card sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                <CardContent
+                  sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Room sx={{ mr: 1, color: "primary.main" }} />
+                    <Typography variant="h6" fontWeight={700}>
+                      Location
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      minHeight: 200,
+                      borderRadius: 3,
+                      background:
+                        "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mb: 2,
+                    }}
+                  >
+                    <Room sx={{ fontSize: 64, color: "primary.main" }} />
+                  </Box>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<Directions />}
+                    onClick={() => {
+                      const coords = pharmacy.address.coordinates;
+                      if (coords?.latitude && coords?.longitude) {
+                        window.open(
+                          `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`,
+                          "_blank"
+                        );
+                      } else {
+                        alert("Location coordinates not available");
+                      }
+                    }}
+                    sx={{
+                      background:
+                        "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                    }}
+                  >
+                    Get Directions
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Phone sx={{ mr: 1, color: "primary.main" }} />
+                    <Typography variant="h6" fontWeight={700}>
+                      Contact Information
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 2,
+                        p: 2,
+                        bgcolor: "#f8f9fa",
+                        borderRadius: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 2,
+                          background:
+                            "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "white",
+                        }}
+                      >
+                        <Phone />
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" fontWeight={600}>
+                          Phone
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {pharmacy.phone}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 2,
+                        p: 2,
+                        bgcolor: "#f8f9fa",
+                        borderRadius: 2,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 2,
+                          background:
+                            "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "white",
+                        }}
+                      >
+                        <Room />
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" fontWeight={600}>
+                          Address
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {pharmacy.address.street}
+                          <br />
+                          {pharmacy.address.city}, Lebanon
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
+          </Grid>
+
+          {/* Column 3: Reviews & Ratings */}
+          <Grid item xs={12} md={4}>
+            <Card
+              sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+            >
+              <CardContent
+                sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
+              >
                 <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                   <Star sx={{ mr: 1, color: "primary.main" }} />
                   <Typography variant="h5" fontWeight={700}>
@@ -498,173 +732,61 @@ const PharmacyDetail = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Room sx={{ mr: 1, color: "primary.main" }} />
-                  <Typography variant="h6" fontWeight={700}>
-                    Location
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    height: 250,
-                    borderRadius: 3,
-                    background:
-                      "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mb: 2,
-                  }}
-                >
-                  <Room sx={{ fontSize: 64, color: "primary.main" }} />
-                </Box>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<Directions />}
-                  onClick={() => {
-                    const coords = pharmacy.address.coordinates;
-                    if (coords?.latitude && coords?.longitude) {
-                      window.open(
-                        `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`,
-                        "_blank"
-                      );
-                    } else {
-                      alert("Location coordinates not available");
-                    }
-                  }}
-                  sx={{
-                    background:
-                      "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                  }}
-                >
-                  Get Directions
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={700} mb={2}>
-                  Contact Information
-                </Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 2,
-                      p: 2,
-                      bgcolor: "#f8f9fa",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 2,
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "white",
-                      }}
-                    >
-                      <Phone />
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" fontWeight={600}>
-                        Phone
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {pharmacy.phone}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 2,
-                      p: 2,
-                      bgcolor: "#f8f9fa",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 2,
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "white",
-                      }}
-                    >
-                      <Room />
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" fontWeight={600}>
-                        Address
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {pharmacy.address.street}
-                        <br />
-                        {pharmacy.address.city}, Lebanon
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-
-            <Card>
+          {/* Working Hours - Full Width Row */}
+          <Grid item xs={12}>
+            <Card sx={{ mt: 4 }}>
               <CardContent>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                   <Schedule sx={{ mr: 1, color: "primary.main" }} />
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="h5" fontWeight={700}>
                     Working Hours
                   </Typography>
                 </Box>
-                <Box
-                  sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}
-                >
+                <Grid container spacing={2}>
                   {pharmacy.workingHours && pharmacy.workingHours.length > 0 ? (
                     pharmacy.workingHours.map((wh) => (
-                      <Box
-                        key={wh.day}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          p: 1.5,
-                          bgcolor: "#f8f9fa",
-                          borderRadius: 2,
-                        }}
-                      >
-                        <Typography variant="body2" fontWeight={600}>
-                          {wh.day}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {wh.isClosed
-                            ? "Closed"
-                            : `${wh.openTime || "N/A"} - ${
-                                wh.closeTime || "N/A"
-                              }`}
-                        </Typography>
-                      </Box>
+                      <Grid item xs={12} sm={6} md={4} key={wh.day}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            p: 2,
+                            bgcolor: "#f8f9fa",
+                            borderRadius: 2,
+                            transition: "all 0.2s",
+                            "&:hover": {
+                              bgcolor: "#f0f0f0",
+                            },
+                          }}
+                        >
+                          <Typography variant="body1" fontWeight={600}>
+                            {wh.day}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color={
+                              wh.isClosed ? "text.secondary" : "text.primary"
+                            }
+                            sx={{
+                              fontWeight: wh.isClosed ? 400 : 500,
+                            }}
+                          >
+                            {wh.isClosed
+                              ? "Closed"
+                              : `${wh.openTime || "N/A"} - ${
+                                  wh.closeTime || "N/A"
+                                }`}
+                          </Typography>
+                        </Box>
+                      </Grid>
                     ))
                   ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      Working hours not available
-                    </Typography>
+                    <Grid item xs={12}>
+                      <Alert severity="info">Working hours not available</Alert>
+                    </Grid>
                   )}
-                </Box>
+                </Grid>
               </CardContent>
             </Card>
           </Grid>
