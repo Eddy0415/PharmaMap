@@ -13,12 +13,10 @@ import {
   InputAdornment,
   Container,
 } from "@mui/material";
-import {
-  Search as SearchIcon,
-  Person,
-  Dashboard as DashboardIcon,
-  Logout,
-} from "@mui/icons-material";
+import SearchIcon from "@mui/icons-material/Search";
+import Person from "@mui/icons-material/Person";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import Logout from "@mui/icons-material/Logout";
 
 const Header = ({ user, onLogout }) => {
   const navigate = useNavigate();

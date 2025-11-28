@@ -16,20 +16,18 @@ import {
   Grid,
   Dialog,
 } from "@mui/material";
-import {
-  Person,
-  Email,
-  Phone,
-  Lock,
-  Visibility,
-  VisibilityOff,
-  PersonAdd,
-  LocalPharmacy,
-  Business,
-  LocationOn,
-  Badge,
-  Close as CloseIcon,
-} from "@mui/icons-material";
+import Person from "@mui/icons-material/Person";
+import Email from "@mui/icons-material/Email";
+import Phone from "@mui/icons-material/Phone";
+import Lock from "@mui/icons-material/Lock";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import PersonAdd from "@mui/icons-material/PersonAdd";
+import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
+import Business from "@mui/icons-material/Business";
+import LocationOn from "@mui/icons-material/LocationOn";
+import Badge from "@mui/icons-material/Badge";
+import CloseIcon from "@mui/icons-material/Close";
 import Home from "./Home";
 import { authAPI } from "../services/api";
 

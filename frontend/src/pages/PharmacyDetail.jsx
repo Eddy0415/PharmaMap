@@ -17,19 +17,17 @@ import {
   Paper,
   Alert,
 } from "@mui/material";
-import {
-  ArrowBack,
-  LocalPharmacy,
-  Phone,
-  Room,
-  Schedule,
-  Star,
-  Search as SearchIcon,
-  Directions,
-  Share,
-  Favorite,
-  FavoriteBorder,
-} from "@mui/icons-material";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
+import Phone from "@mui/icons-material/Phone";
+import Room from "@mui/icons-material/Room";
+import Schedule from "@mui/icons-material/Schedule";
+import Star from "@mui/icons-material/Star";
+import SearchIcon from "@mui/icons-material/Search";
+import Directions from "@mui/icons-material/Directions";
+import Share from "@mui/icons-material/Share";
+import Favorite from "@mui/icons-material/Favorite";
+import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ProductOrderDialog from "../components/ProductOrderDialog";

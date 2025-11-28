@@ -17,14 +17,12 @@ import {
   IconButton,
   InputAdornment,
 } from "@mui/material";
-import {
-  Search as SearchIcon,
-  LocalPharmacy,
-  Phone,
-  Schedule,
-  Room,
-  FilterList,
-} from "@mui/icons-material";
+import SearchIcon from "@mui/icons-material/Search";
+import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
+import Phone from "@mui/icons-material/Phone";
+import Schedule from "@mui/icons-material/Schedule";
+import Room from "@mui/icons-material/Room";
+import FilterList from "@mui/icons-material/FilterList";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ProductOrderDialog from "../components/ProductOrderDialog";

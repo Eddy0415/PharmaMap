@@ -1,13 +1,11 @@
 import React from 'react';
 import { Box, Container, Grid, Typography, Link, IconButton } from '@mui/material';
-import {
-  Facebook,
-  Instagram,
-  Twitter,
-  LinkedIn,
-  Phone,
-  Email,
-} from '@mui/icons-material';
+import Facebook from '@mui/icons-material/Facebook';
+import Instagram from '@mui/icons-material/Instagram';
+import Twitter from '@mui/icons-material/Twitter';
+import LinkedIn from '@mui/icons-material/LinkedIn';
+import Phone from '@mui/icons-material/Phone';
+import Email from '@mui/icons-material/Email';
 
 const Footer = () => {
   return (

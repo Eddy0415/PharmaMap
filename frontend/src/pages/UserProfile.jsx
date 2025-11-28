@@ -19,21 +19,19 @@ import {
   Paper,
   Divider,
 } from "@mui/material";
-import {
-  Person,
-  ShoppingBag,
-  Room,
-  Favorite,
-  Security,
-  Logout,
-  Edit,
-  Delete,
-  Home,
-  Work,
-  Add,
-  Replay,
-  Star,
-} from "@mui/icons-material";
+import Person from "@mui/icons-material/Person";
+import ShoppingBag from "@mui/icons-material/ShoppingBag";
+import Room from "@mui/icons-material/Room";
+import Favorite from "@mui/icons-material/Favorite";
+import Security from "@mui/icons-material/Security";
+import Logout from "@mui/icons-material/Logout";
+import Edit from "@mui/icons-material/Edit";
+import Delete from "@mui/icons-material/Delete";
+import Home from "@mui/icons-material/Home";
+import Work from "@mui/icons-material/Work";
+import Add from "@mui/icons-material/Add";
+import Replay from "@mui/icons-material/Replay";
+import Star from "@mui/icons-material/Star";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { userAPI, orderAPI, authAPI } from "../services/api";
