@@ -4,11 +4,12 @@ const Pharmacy = require("../models/Pharmacy");
 const Review = require("../models/Review");
 
 // @route   GET /api/pharmacies
-// @desc    Search all pharmacies
+// @desc    Search all pharmacies (with optional location-based sorting)
 // @access  Public
 router.get("/", async (req, res) => {
   try {
-    const { search, city, isOpen } = req.query;
+    const { search, city, isOpen, latitude, longitude, maxDistance } =
+      req.query;
 
     let query = { isActive: true };
 
@@ -24,9 +25,67 @@ router.get("/", async (req, res) => {
       query.isOpen = true;
     }
 
-    const pharmacies = await Pharmacy.find(query)
+    // If coordinates provided, use MongoDB geospatial query
+    if (latitude && longitude) {
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+      const maxDist = maxDistance ? parseFloat(maxDistance) * 1000 : 50000; // Convert km to meters, default 50km
+
+      // Add geospatial query using $near
+      query["address.coordinates"] = {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [lng, lat], // GeoJSON: [longitude, latitude]
+          },
+          $maxDistance: maxDist,
+        },
+      };
+    }
+
+    let pharmacies = await Pharmacy.find(query)
       .populate("owner", "firstName lastName email")
-      .sort({ averageRating: -1, totalReviews: -1 });
+      .lean(); // Use lean() for better performance with geospatial queries
+
+    // If coordinates provided, calculate and add distance to each pharmacy
+    if (latitude && longitude) {
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+
+      pharmacies = pharmacies.map((pharmacy) => {
+        if (
+          pharmacy.address.coordinates?.coordinates &&
+          pharmacy.address.coordinates.coordinates.length === 2
+        ) {
+          const [pharmacyLng, pharmacyLat] =
+            pharmacy.address.coordinates.coordinates;
+          const distance = calculateDistance(
+            lat,
+            lng,
+            pharmacyLat,
+            pharmacyLng
+          );
+          return { ...pharmacy, distance };
+        }
+        return pharmacy;
+      });
+
+      // Sort by distance (nearest first)
+      pharmacies.sort((a, b) => {
+        if (a.distance && b.distance) return a.distance - b.distance;
+        if (a.distance) return -1;
+        if (b.distance) return 1;
+        return 0;
+      });
+    } else {
+      // Default sort by rating if no location provided
+      pharmacies.sort((a, b) => {
+        if (b.averageRating !== a.averageRating) {
+          return b.averageRating - a.averageRating;
+        }
+        return b.totalReviews - a.totalReviews;
+      });
+    }
 
     res.json({
       success: true,
@@ -42,6 +101,22 @@ router.get("/", async (req, res) => {
     });
   }
 });
+
+// Helper function to calculate distance between two coordinates (Haversine formula)
+// Returns distance in kilometers
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+}
 
 // @route   GET /api/pharmacies/featured
 // @desc    Get all featured pharmacies

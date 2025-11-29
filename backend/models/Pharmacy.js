@@ -15,9 +15,17 @@ const pharmacySchema = new Schema({
   address: {
     street: { type: String, required: true },
     city: { type: String, required: true },
+    // GeoJSON format: [longitude, latitude] for MongoDB 2dsphere index
     coordinates: {
-      latitude: { type: Number },
-      longitude: { type: Number },
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true,
+      },
     },
   },
 
@@ -79,7 +87,7 @@ const pharmacySchema = new Schema({
 
 // Indexes
 pharmacySchema.index({ "address.city": 1 });
-pharmacySchema.index({ "address.coordinates": "2dsphere" });
+pharmacySchema.index({ "address.coordinates": "2dsphere" }); // GeoJSON index for geospatial queries
 pharmacySchema.index({ averageRating: -1 });
 
 module.exports = mongoose.model("Pharmacy", pharmacySchema);

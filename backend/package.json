@@ -4,9 +4,11 @@
   "description": "PharmaMap Backend API",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --watch server.js",
     "dev": "nodemon server.js",
     "seed": "node seed.js",
+    "seed:inventory": "node seed-inventory.js",
+    "migrate:coordinates": "node migrate-coordinates.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
