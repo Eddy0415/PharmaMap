@@ -9,33 +9,7 @@ import {
   IconButton,
   Chip,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-  Divider,
-  Paper,
 } from "@mui/material";
-<<<<<<< HEAD:frontend/src/pages/Home.js
-import {
-  ArrowBackIos,
-  ArrowForwardIos,
-  Spa,
-  Favorite,
-  LocalPharmacy,
-  PanTool,
-  Bloodtype,
-  Masks,
-  AcUnit,
-  HealthAndSafety,
-  Elderly,
-  ShieldMoon,
-  TrendingUp,
-  Close,
-  Info,
-} from "@mui/icons-material";
-=======
 import ArrowBackIos from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
 import Spa from "@mui/icons-material/Spa";
@@ -49,7 +23,6 @@ import HealthAndSafety from "@mui/icons-material/HealthAndSafety";
 import Elderly from "@mui/icons-material/Elderly";
 import ShieldMoon from "@mui/icons-material/ShieldMoon";
 import TrendingUp from "@mui/icons-material/TrendingUp";
->>>>>>> 43b0616e91764ef6b2274b17d53304e21c8e6f75:frontend/src/pages/Home.jsx
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { pharmacyAPI, medicationAPI } from "../services/api";
@@ -112,9 +85,6 @@ const Home = () => {
   const [user, setUser] = useState(null);
   const [popularProducts, setPopularProducts] = useState([]);
   const [featuredPharmacies, setFeaturedPharmacies] = useState([]);
-  const [productDialogOpen, setProductDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [productDetails, setProductDetails] = useState(null);
 
   useEffect(() => {
     // Load user from localStorage
@@ -321,47 +291,10 @@ const Home = () => {
     navigate(`/search?category=${encodeURIComponent(categoryName)}`);
   };
 
-  const handleProductClick = async (product) => {
-    setSelectedProduct(product);
-    setProductDialogOpen(true);
-    try {
-      const response = await medicationAPI.getAll({ search: product.name });
-      if (response.data.results && response.data.results.length > 0) {
-        const productData = response.data.results[0];
-        setProductDetails({
-          ...productData,
-          searchCount: product.searchCount,
-        });
-      } else {
-        setProductDetails({
-          ...product,
-          description: "Product information not available",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching product details:", error);
-      setProductDetails({
-        ...product,
-        description: "Unable to load product details",
-      });
-    }
-  };
-
-  const handleCloseProductDialog = () => {
-    setProductDialogOpen(false);
-    setSelectedProduct(null);
-    setProductDetails(null);
-  };
-
   return (
     <Box
       component="main"
-      sx={{
-        bgcolor: "background.default",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
+      sx={{ bgcolor: "background.default", minHeight: "100vh" }}
     >
       <Header user={user} />
 
@@ -712,7 +645,6 @@ const Home = () => {
               >
                 <Box
                   sx={{
-                    position: "relative",
                     height: 150,
                     background:
                       "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
@@ -723,28 +655,6 @@ const Home = () => {
                   }}
                 >
                   <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleProductClick(product);
-                    }}
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      bgcolor: "rgba(255, 255, 255, 0.9)",
-                      "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 1)",
-                        transform: "scale(1.1)",
-                      },
-                      transition: "all 0.2s",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                    }}
-                    size="small"
-                    aria-label="Product information"
-                  >
-                    <Info sx={{ fontSize: 20, color: "primary.main" }} />
-                  </IconButton>
                 </Box>
                 <CardContent
                   sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
@@ -927,394 +837,6 @@ const Home = () => {
           ))}
         </Box>
       </Container>
-
-      {/* Product Details Dialog */}
-      <Dialog
-        open={productDialogOpen}
-        onClose={handleCloseProductDialog}
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            maxHeight: "85vh",
-            width: "90%",
-            maxWidth: 500,
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-            color: "white",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            py: 1,
-            px: 1.5,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1 }}>
-            <LocalPharmacy sx={{ fontSize: 24, color: "white" }} />
-            <Typography variant="h6" fontWeight={700} fontSize="1rem" noWrap>
-              {productDetails?.item?.name || productDetails?.name || "Product"}
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={handleCloseProductDialog}
-            size="small"
-            sx={{
-              color: "white",
-              ml: 1,
-              "&:hover": {
-                bgcolor: "rgba(255,255,255,0.2)",
-              },
-            }}
-          >
-            <Close sx={{ fontSize: 20 }} />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers sx={{ p: 1.5 }}>
-          {productDetails ? (
-            <Box>
-              {/* Quick Info Chips */}
-              <Box
-                sx={{ display: "flex", gap: 0.75, mb: 1.5, flexWrap: "wrap" }}
-              >
-                <Chip
-                  label={
-                    productDetails?.item?.category ||
-                    productDetails?.category ||
-                    "General"
-                  }
-                  size="small"
-                  sx={{
-                    bgcolor: "primary.main",
-                    color: "white",
-                    fontWeight: 600,
-                    fontSize: "0.7rem",
-                    height: 24,
-                  }}
-                />
-                {productDetails?.searchCount && (
-                  <Chip
-                    icon={<TrendingUp sx={{ fontSize: 14 }} />}
-                    label={
-                      productDetails.searchCount >= 1000
-                        ? `+${(productDetails.searchCount / 1000).toFixed(
-                            productDetails.searchCount % 1000 === 0 ? 0 : 1
-                          )}k`
-                        : `+${productDetails.searchCount}`
-                    }
-                    size="small"
-                    sx={{
-                      bgcolor: "success.main",
-                      color: "white",
-                      fontWeight: 600,
-                      fontSize: "0.7rem",
-                      height: 24,
-                      "& .MuiChip-icon": { color: "white" },
-                    }}
-                  />
-                )}
-              </Box>
-
-              {/* Product Details - Compact */}
-              {(productDetails.item?.dosage ||
-                productDetails.item?.form ||
-                productDetails.item?.description) && (
-                <Box sx={{ mb: 1.5 }}>
-                  <Typography
-                    variant="caption"
-                    fontWeight={700}
-                    color="text.secondary"
-                    textTransform="uppercase"
-                    fontSize="0.7rem"
-                    display="block"
-                    mb={0.75}
-                  >
-                    Details
-                  </Typography>
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}
-                  >
-                    {productDetails.item?.dosage && (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          py: 0.5,
-                          borderBottom: "1px solid",
-                          borderColor: "divider",
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          fontSize="0.7rem"
-                        >
-                          Dosage:
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          fontSize="0.8rem"
-                        >
-                          {productDetails.item.dosage}
-                        </Typography>
-                      </Box>
-                    )}
-                    {productDetails.item?.form && (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          py: 0.5,
-                          borderBottom: "1px solid",
-                          borderColor: "divider",
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          fontSize="0.7rem"
-                        >
-                          Form:
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          fontSize="0.8rem"
-                        >
-                          {productDetails.item.form}
-                        </Typography>
-                      </Box>
-                    )}
-                    {productDetails.item?.description && (
-                      <Box sx={{ pt: 0.5 }}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          fontSize="0.7rem"
-                          display="block"
-                          mb={0.5}
-                        >
-                          Description:
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          lineHeight={1.5}
-                          fontSize="0.75rem"
-                          color="text.secondary"
-                        >
-                          {productDetails.item.description}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                </Box>
-              )}
-
-              {/* Available Pharmacies - Compact List */}
-              {productDetails.inventory &&
-                productDetails.inventory.length > 0 && (
-                  <Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        fontWeight={700}
-                        color="text.secondary"
-                        textTransform="uppercase"
-                        fontSize="0.7rem"
-                      >
-                        Pharmacies ({productDetails.inventory.length})
-                      </Typography>
-                    </Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 0.75,
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        pr: 0.5,
-                        "&::-webkit-scrollbar": {
-                          width: "4px",
-                        },
-                        "&::-webkit-scrollbar-track": {
-                          background: "#f1f1f1",
-                          borderRadius: "2px",
-                        },
-                        "&::-webkit-scrollbar-thumb": {
-                          background: "#888",
-                          borderRadius: "2px",
-                          "&:hover": {
-                            background: "#555",
-                          },
-                        },
-                      }}
-                    >
-                      {productDetails.inventory.slice(0, 4).map((inv, idx) => (
-                        <Paper
-                          key={idx}
-                          elevation={0}
-                          sx={{
-                            p: 0.75,
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            transition: "all 0.2s",
-                            border: "1px solid",
-                            borderColor: "divider",
-                            borderRadius: 1,
-                            "&:hover": {
-                              bgcolor: "grey.50",
-                              borderColor: "primary.main",
-                            },
-                          }}
-                        >
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography
-                              variant="body2"
-                              fontWeight={600}
-                              color="secondary"
-                              fontSize="0.85rem"
-                              noWrap
-                              mb={0.25}
-                            >
-                              {inv.pharmacy?.name || "Unknown"}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              fontSize="0.7rem"
-                            >
-                              {inv.pharmacy?.address?.city || "N/A"}
-                            </Typography>
-                          </Box>
-                          <Box
-                            sx={{
-                              textAlign: "right",
-                              ml: 1,
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "flex-end",
-                              gap: 0.25,
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Typography
-                              variant="body2"
-                              fontWeight={700}
-                              color="primary.main"
-                              fontSize="0.9rem"
-                            >
-                              ${inv.price?.toFixed(2) || "0.00"}
-                            </Typography>
-                            <Chip
-                              label={
-                                inv.stockStatus === "in-stock"
-                                  ? `${inv.quantity || 0}`
-                                  : inv.stockStatus === "low-stock"
-                                  ? `Low`
-                                  : "Out"
-                              }
-                              size="small"
-                              sx={{
-                                bgcolor:
-                                  inv.stockStatus === "in-stock"
-                                    ? "success.light"
-                                    : inv.stockStatus === "low-stock"
-                                    ? "warning.light"
-                                    : "error.light",
-                                color:
-                                  inv.stockStatus === "in-stock"
-                                    ? "success.dark"
-                                    : inv.stockStatus === "low-stock"
-                                    ? "warning.dark"
-                                    : "error.dark",
-                                fontWeight: 600,
-                                fontSize: "0.65rem",
-                                height: 18,
-                                minWidth: 35,
-                              }}
-                            />
-                          </Box>
-                        </Paper>
-                      ))}
-                      {productDetails.inventory.length > 4 && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          textAlign="center"
-                          fontSize="0.7rem"
-                          sx={{ py: 0.5 }}
-                        >
-                          +{productDetails.inventory.length - 4} more
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-                )}
-            </Box>
-          ) : (
-            <Box sx={{ textAlign: "center", py: 2 }}>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                fontSize="0.85rem"
-              >
-                Loading...
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 1, gap: 1 }}>
-          <Button
-            onClick={handleCloseProductDialog}
-            variant="outlined"
-            size="small"
-            sx={{
-              fontSize: "0.8rem",
-              px: 1.5,
-              py: 0.5,
-            }}
-          >
-            Close
-          </Button>
-          <Button
-            onClick={() => {
-              handleCloseProductDialog();
-              navigate(
-                `/search?q=${encodeURIComponent(selectedProduct?.name || "")}`
-              );
-            }}
-            variant="contained"
-            size="small"
-            sx={{
-              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "0.8rem",
-              px: 1.5,
-              py: 0.5,
-              "&:hover": {
-                background: "linear-gradient(135deg, #44a9a3 0%, #3d9791 100%)",
-              },
-            }}
-          >
-            View All
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <Footer />
     </Box>
