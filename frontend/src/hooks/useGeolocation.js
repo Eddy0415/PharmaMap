@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 /**
  * Custom hook to get user's geolocation
@@ -9,7 +9,7 @@ export const useGeolocation = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const requestLocation = () => {
+  const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       return;
@@ -51,7 +51,7 @@ export const useGeolocation = () => {
         maximumAge: 0, // Don't use cached position
       }
     );
-  };
+  }, []);
 
   // Auto-request location on mount (optional)
   useEffect(() => {
@@ -61,4 +61,3 @@ export const useGeolocation = () => {
 
   return { location, loading, error, requestLocation };
 };
-

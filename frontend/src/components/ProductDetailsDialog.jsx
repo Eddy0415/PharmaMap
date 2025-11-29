@@ -14,6 +14,8 @@ import Close from "@mui/icons-material/Close";
 import ArrowBack from "@mui/icons-material/ArrowBack";
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
 import CheckCircle from "@mui/icons-material/CheckCircle";
+import Room from "@mui/icons-material/Room";
+import { useGeolocation } from "../hooks/useGeolocation";
 
 const InfoRow = ({ label, value }) => {
   if (!value) return null;
@@ -29,6 +31,22 @@ const InfoRow = ({ label, value }) => {
   );
 };
 
+// Helper function to calculate distance between two coordinates (Haversine formula)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  if (!lat2 || !lon2) return null; // Return null if coordinates are missing
+  const R = 6371; // Radius of the Earth in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+};
+
 const ProductDetailsDialog = ({
   open,
   onClose,
@@ -39,13 +57,35 @@ const ProductDetailsDialog = ({
 }) => {
   const [showPharmacies, setShowPharmacies] = useState(false);
   const [requestMode, setRequestMode] = useState(false);
+  const { location, requestLocation } = useGeolocation();
 
-  useEffect(() => {
-    if (open) {
-      setShowPharmacies(false);
-      setRequestMode(false);
-    }
-  }, [open]);
+  // Sort pharmacies by distance if location is available
+  const sortedPharmacies = useMemo(() => {
+    if (!location || pharmacies.length === 0) return pharmacies;
+
+    return [...pharmacies].map((entry) => {
+      const coords = entry.pharmacy?.address?.coordinates?.coordinates;
+      let distance = null;
+      
+      if (coords && Array.isArray(coords) && coords.length === 2) {
+        const [longitude, latitude] = coords;
+        distance = calculateDistance(
+          location.latitude,
+          location.longitude,
+          latitude,
+          longitude
+        );
+      }
+      
+      return { ...entry, distance };
+    }).sort((a, b) => {
+      // Sort by distance (nearest first)
+      if (a.distance === null && b.distance === null) return 0;
+      if (a.distance === null) return 1; // Put pharmacies without coordinates at the end
+      if (b.distance === null) return -1;
+      return a.distance - b.distance;
+    });
+  }, [pharmacies, location]);
 
   const pharmacyCount = pharmacies.length;
   const showRequest = Boolean(onRequestPharmacy);
@@ -58,6 +98,15 @@ const ProductDetailsDialog = ({
       product.item.ingredients
     );
   }, [product]);
+
+  useEffect(() => {
+    if (open) {
+      setShowPharmacies(false);
+      setRequestMode(false);
+      // Request location when dialog opens
+      requestLocation();
+    }
+  }, [open, requestLocation]);
 
   if (!product) return null;
 
@@ -73,7 +122,7 @@ const ProductDetailsDialog = ({
 
   const renderPharmacyList = () => (
     <Box sx={{ mt: 2 }}>
-      {pharmacies.map((entry) => (
+      {sortedPharmacies.map((entry) => (
         <Box
           key={entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy.name}
           sx={{
@@ -115,7 +164,7 @@ const ProductDetailsDialog = ({
                 ? `${entry.pharmacy.address.street}, ${entry.pharmacy.address.city || ""}`
                 : entry.pharmacy.address?.city || "Lebanon"}
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, flexWrap: "wrap" }}>
               <Chip
                 size="small"
                 label={`$${entry.price?.toFixed(2) ?? "N/A"}`}
@@ -138,6 +187,22 @@ const ProductDetailsDialog = ({
                     : "In stock"
                 }
               />
+              {entry.distance !== null && location && (
+                <Chip
+                  size="small"
+                  icon={<Room sx={{ fontSize: 14 }} />}
+                  label={
+                    entry.distance < 1
+                      ? `${(entry.distance * 1000).toFixed(0)}m away`
+                      : `${entry.distance.toFixed(1)}km away`
+                  }
+                  sx={{
+                    color: "primary.main",
+                    borderColor: "primary.main",
+                  }}
+                  variant="outlined"
+                />
+              )}
             </Box>
           </Box>
           <Button
