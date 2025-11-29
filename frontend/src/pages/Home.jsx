@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Container,
   Box,
@@ -81,10 +81,14 @@ const categories = [
 
 const Home = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [user, setUser] = useState(null);
   const [popularProducts, setPopularProducts] = useState([]);
   const [featuredPharmacies, setFeaturedPharmacies] = useState([]);
+  const categoriesRef = useRef(null);
+  const productsRef = useRef(null);
+  const featuredRef = useRef(null);
 
   useEffect(() => {
     // Load user from localStorage
@@ -106,6 +110,29 @@ const Home = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  const scrollToSection = useCallback((ref) => {
+    if (!ref.current) return;
+    const headerOffset = 88;
+    const elementPosition =
+      ref.current.getBoundingClientRect().top + window.pageYOffset;
+    const offsetPosition = elementPosition - headerOffset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: "smooth",
+    });
+  }, []);
+
+  useEffect(() => {
+    if (location.hash === "#categories") {
+      scrollToSection(categoriesRef);
+    } else if (location.hash === "#products") {
+      scrollToSection(productsRef);
+    } else if (location.hash === "#featured") {
+      scrollToSection(featuredRef);
+    }
+  }, [location.hash, scrollToSection]);
 
   const fetchPopularProducts = async () => {
     try {
@@ -296,7 +323,12 @@ const Home = () => {
       component="main"
       sx={{ bgcolor: "background.default", minHeight: "100vh" }}
     >
-      <Header user={user} />
+      <Header
+        user={user}
+        onScrollToCategories={() => scrollToSection(categoriesRef)}
+        onScrollToProducts={() => scrollToSection(productsRef)}
+        onScrollToFeatured={() => scrollToSection(featuredRef)}
+      />
 
       {/* Hero Carousel */}
       <Box
@@ -481,6 +513,7 @@ const Home = () => {
 
       <Container component="section" maxWidth="xl" sx={{ pt: 4, pb: 5 }}>
         {/* Categories Section */}
+        <Box ref={categoriesRef} id="categories">
         <Typography
           component="h2"
           variant="h4"
@@ -503,233 +536,250 @@ const Home = () => {
           />
           Browse by Categories
         </Typography>
-        <Box
-          component="nav"
-          aria-label="Medication categories"
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 2.5,
-            mb: 6,
-            "& > *": {
-              flex: "1 1 calc(20% - 20px)",
-              minWidth: "150px",
-              "@media (max-width: 900px)": {
-                flex: "1 1 calc(33.333% - 20px)",
+          <Box
+            component="nav"
+            aria-label="Medication categories"
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2.5,
+              mb: 6,
+              "& > *": {
+                flex: "1 1 calc(20% - 20px)",
+                minWidth: "150px",
+                "@media (max-width: 900px)": {
+                  flex: "1 1 calc(33.333% - 20px)",
+                },
+                "@media (max-width: 600px)": {
+                  flex: "1 1 calc(50% - 20px)",
+                },
               },
-              "@media (max-width: 600px)": {
-                flex: "1 1 calc(50% - 20px)",
-              },
-            },
-          }}
-        >
-          {categories.map((category, index) => {
-            const Icon = category.icon;
-            return (
-              <Card
-                key={index}
-                onClick={() => handleCategoryClick(category.name)}
-                sx={{
-                  width: "100%",
-                  height: 180,
-                  p: 3,
-                  textAlign: "center",
-                  cursor: "pointer",
-                  border: "3px solid #e0e0e0",
-                  transition: "all 0.3s",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  "&:hover": {
-                    background:
-                      "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                    borderColor: "#4ecdc4",
-                    transform: "translateY(-5px)",
-                    boxShadow: "0 8px 24px rgba(78, 205, 196, 0.3)",
-                    "& .MuiSvgIcon-root": { color: "white" },
-                    "& .MuiTypography-root": { color: "white" },
-                  },
-                }}
-              >
-                <Icon sx={{ fontSize: 48, color: "primary.main", mb: 1.5 }} />
-                <Typography variant="body1" fontWeight={600} color="secondary">
-                  {category.name}
-                </Typography>
-              </Card>
-            );
-          })}
+            }}
+          >
+            {categories.map((category, index) => {
+              const Icon = category.icon;
+              return (
+                <Card
+                  key={index}
+                  onClick={() => handleCategoryClick(category.name)}
+                  sx={{
+                    width: "100%",
+                    height: 180,
+                    p: 3,
+                    textAlign: "center",
+                    cursor: "pointer",
+                    border: "3px solid #e0e0e0",
+                    transition: "all 0.3s",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    "&:hover": {
+                      background:
+                        "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                      borderColor: "#4ecdc4",
+                      transform: "translateY(-5px)",
+                      boxShadow: "0 8px 24px rgba(78, 205, 196, 0.3)",
+                      "& .MuiSvgIcon-root": { color: "white" },
+                      "& .MuiTypography-root": { color: "white" },
+                    },
+                  }}
+                >
+                  <Icon
+                    sx={{ fontSize: 48, color: "primary.main", mb: 1.5 }}
+                  />
+                  <Typography
+                    variant="body1"
+                    fontWeight={600}
+                    color="secondary"
+                  >
+                    {category.name}
+                  </Typography>
+                </Card>
+              );
+            })}
+          </Box>
         </Box>
 
         {/* Popular Products Section */}
-        <Typography
-          component="h2"
-          variant="h4"
-          fontWeight={700}
-          color="secondary"
-          mb={3}
-          sx={{ position: "relative", pl: 2 }}
-        >
+        <Box ref={productsRef} id="products">
+          <Typography
+            component="h2"
+            variant="h4"
+            fontWeight={700}
+            color="secondary"
+            mb={3}
+            sx={{ position: "relative", pl: 2 }}
+          >
+            <Box
+              component="span"
+              sx={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 5,
+                bgcolor: "primary.main",
+                borderRadius: 1,
+              }}
+            />
+            Popular Products
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            mb={3}
+            sx={{ pl: 2, fontStyle: "italic" }}
+          >
+            Top 5 most requested (searched) products last month (updates every
+            month)
+          </Typography>
           <Box
-            component="span"
+            component="section"
+            aria-label="Popular medications"
             sx={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 5,
-              bgcolor: "primary.main",
-              borderRadius: 1,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2.5,
+              mb: 6,
+              "& > *": {
+                flex: "1 1 calc(20% - 20px)",
+                minWidth: "150px",
+                "@media (max-width: 900px)": {
+                  flex: "1 1 calc(33.333% - 20px)",
+                },
+                "@media (max-width: 600px)": {
+                  flex: "1 1 calc(50% - 20px)",
+                },
+              },
             }}
-          />
-          Popular Products
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          mb={3}
-          sx={{ pl: 2, fontStyle: "italic" }}
-        >
-          Top 5 most requested (searched) products last month (updates every
-          month)
-        </Typography>
-        <Box
-          component="section"
-          aria-label="Popular medications"
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 2.5,
-            mb: 6,
-            "& > *": {
-              flex: "1 1 calc(20% - 20px)",
-              minWidth: "150px",
-              "@media (max-width: 900px)": {
-                flex: "1 1 calc(33.333% - 20px)",
-              },
-              "@media (max-width: 600px)": {
-                flex: "1 1 calc(50% - 20px)",
-              },
-            },
-          }}
-        >
-          {popularProducts.slice(0, 5).map((product) => {
-            const searchCount = product.searchCount || 0;
-            const formattedCount =
-              searchCount >= 1000
-                ? `+${(searchCount / 1000).toFixed(
-                    searchCount % 1000 === 0 ? 0 : 1
-                  )}k`
-                : `+${searchCount}`;
+          >
+            {popularProducts.slice(0, 5).map((product) => {
+              const searchCount = product.searchCount || 0;
+              const formattedCount =
+                searchCount >= 1000
+                  ? `+${(searchCount / 1000).toFixed(
+                      searchCount % 1000 === 0 ? 0 : 1
+                    )}k`
+                  : `+${searchCount}`;
 
-            return (
-              <Card
-                key={product._id || product.name}
-                sx={{
-                  width: "100%",
-                  height: 280,
-                  cursor: "pointer",
-                  transition: "all 0.3s",
-                  border: "2px solid transparent",
-                  display: "flex",
-                  flexDirection: "column",
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                    borderColor: "primary.main",
-                  },
-                }}
-                onClick={() =>
-                  navigate(`/search?q=${encodeURIComponent(product.name)}`)
-                }
-              >
-                <Box
+              return (
+                <Card
+                  key={product._id || product.name}
                   sx={{
-                    height: 150,
-                    background:
-                      "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                    width: "100%",
+                    height: 280,
+                    cursor: "pointer",
+                    transition: "all 0.3s",
+                    border: "2px solid transparent",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
+                    flexDirection: "column",
+                    "&:hover": {
+                      transform: "translateY(-5px)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                      borderColor: "primary.main",
+                    },
                   }}
+                  onClick={() =>
+                    navigate(`/search?q=${encodeURIComponent(product.name)}`)
+                  }
                 >
-                  <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
-                </Box>
-                <CardContent
-                  sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
-                >
-                  <Typography
-                    variant="h6"
-                    fontWeight={600}
-                    color="secondary"
-                    mb={1}
-                  >
-                    {product.name}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    mb={1}
-                    display="flex"
-                    alignItems="center"
-                    gap={0.5}
+                  <Box
+                    sx={{
+                      height: 150,
+                      background:
+                        "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
                   >
                     <LocalPharmacy
-                      fontSize="small"
-                      sx={{ color: "primary.main" }}
+                      sx={{ fontSize: 64, color: "primary.main" }}
                     />
-                    {product.category || "General"}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="primary.main"
-                    fontWeight={600}
-                    display="flex"
-                    alignItems="center"
-                    gap={0.5}
-                    sx={{ mt: 1 }}
+                  </Box>
+                  <CardContent
+                    sx={{
+                      flexGrow: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
                   >
-                    <TrendingUp fontSize="small" />
-                    {formattedCount} searches last month
-                  </Typography>
-                </CardContent>
-              </Card>
-            );
-          })}
+                    <Typography
+                      variant="h6"
+                      fontWeight={600}
+                      color="secondary"
+                      mb={1}
+                    >
+                      {product.name}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      mb={1}
+                      display="flex"
+                      alignItems="center"
+                      gap={0.5}
+                    >
+                      <LocalPharmacy
+                        fontSize="small"
+                        sx={{ color: "primary.main" }}
+                      />
+                      {product.category || "General"}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="primary.main"
+                      fontWeight={600}
+                      display="flex"
+                      alignItems="center"
+                      gap={0.5}
+                      sx={{ mt: 1 }}
+                    >
+                      <TrendingUp fontSize="small" />
+                      {formattedCount} searches last month
+                    </Typography>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Box>
         </Box>
 
         {/* Featured Pharmacies Section */}
-        <Typography
-          component="h2"
-          variant="h4"
-          fontWeight={700}
-          color="secondary"
-          mb={3}
-          sx={{ position: "relative", pl: 2 }}
-        >
-          <Box
-            component="span"
-            sx={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 5,
-              bgcolor: "primary.main",
-              borderRadius: 1,
-            }}
-          />
-          Featured Pharmacies
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          mb={3}
-          sx={{ pl: 2, fontStyle: "italic" }}
-        >
-          Paid by 5 pharmacies
-        </Typography>
+        <Box ref={featuredRef} id="featured">
+          <Typography
+            component="h2"
+            variant="h4"
+            fontWeight={700}
+            color="secondary"
+            mb={3}
+            sx={{ position: "relative", pl: 2 }}
+          >
+            <Box
+              component="span"
+              sx={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 5,
+                bgcolor: "primary.main",
+                borderRadius: 1,
+              }}
+            />
+            Featured Pharmacies
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            mb={3}
+            sx={{ pl: 2, fontStyle: "italic" }}
+          >
+            Paid by 5 pharmacies
+          </Typography>
+        </Box>
         <Box
           component="section"
           aria-label="Featured pharmacies"
