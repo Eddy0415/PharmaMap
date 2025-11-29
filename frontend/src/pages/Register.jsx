@@ -29,10 +29,11 @@ import LocationOn from "@mui/icons-material/LocationOn";
 import Badge from "@mui/icons-material/Badge";
 import CloseIcon from "@mui/icons-material/Close";
 import Home from "./Home";
-import { authAPI } from "../services/api";
+import { useAuth } from "../hooks/authContext";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { signup, loading: authLoading } = useAuth();
   const [accountType, setAccountType] = useState("customer");
   const [formData, setFormData] = useState({
     firstName: "",
@@ -101,42 +102,10 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Map accountType to userType for backend
-      const userType = accountType === "pharmacy" ? "pharmacist" : "customer";
-
-      const response = await authAPI.register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
-        userType,
-        ...(accountType === "pharmacy" && {
-          pharmacyName: formData.pharmacyName,
-          pharmacyAddress: formData.pharmacyAddress,
-          city: formData.city,
-          license: formData.license,
-        }),
-      });
-
-      if (response.data.success) {
-        // Store token and user data
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        window.dispatchEvent(new Event("userUpdated"));
-
-        // Redirect based on user type
-        if (response.data.user.userType === "pharmacist") {
-          navigate("/dashboard");
-        } else {
-          navigate("/");
-        }
-      }
+      await signup(formData.email, formData.password);
+      navigate("/");
     } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          "Registration failed. Please try again."
-      );
+      setError(error?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -559,6 +528,7 @@ const Register = () => {
                   variant="contained"
                   size="large"
                   disabled={loading}
+                  loading={loading || authLoading}
                   startIcon={<PersonAdd />}
                   sx={{
                     py: 1.5,

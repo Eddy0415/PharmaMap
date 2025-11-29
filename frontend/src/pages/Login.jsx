@@ -17,10 +17,11 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import CloseIcon from "@mui/icons-material/Close";
 import Home from "./Home";
-import { authAPI } from "../services/api";
+import { useAuth } from "../hooks/authContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -43,28 +44,10 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await authAPI.login({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (response.data.success) {
-        // Store token and user data
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        window.dispatchEvent(new Event("userUpdated"));
-
-        // Redirect based on account type
-        if (response.data.user.userType === "pharmacist") {
-          navigate("/dashboard");
-        } else {
-          navigate("/");
-        }
-      }
+      await login(formData.email, formData.password);
+      navigate("/");
     } catch (error) {
-      setError(
-        error.response?.data?.message || "Login failed. Please try again."
-      );
+      setError(error?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -219,6 +202,7 @@ const Login = () => {
                   variant="contained"
                   size="large"
                   disabled={loading}
+                  loading={loading || authLoading}
                   sx={{
                     py: 1.5,
                     mb: 4,
