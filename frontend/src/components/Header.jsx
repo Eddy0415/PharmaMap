@@ -362,7 +362,15 @@ const Header = ({
                     },
                   }}
                 >
-                  {displayUser.userType === "pharmacist" ? (
+                  <MenuItem
+                    onClick={() => {
+                      handleMenuClose();
+                      navigate("/profile");
+                    }}
+                  >
+                    <Person sx={{ mr: 1 }} /> My Profile
+                  </MenuItem>
+                  {displayUser.userType === "pharmacist" && (
                     <MenuItem
                       onClick={() => {
                         handleMenuClose();
@@ -370,15 +378,6 @@ const Header = ({
                       }}
                     >
                       <DashboardIcon sx={{ mr: 1 }} /> Dashboard
-                    </MenuItem>
-                  ) : (
-                    <MenuItem
-                      onClick={() => {
-                        handleMenuClose();
-                        navigate("/profile");
-                      }}
-                    >
-                      <Person sx={{ mr: 1 }} /> My Profile
                     </MenuItem>
                   )}
                   <MenuItem onClick={handleLogout}>
