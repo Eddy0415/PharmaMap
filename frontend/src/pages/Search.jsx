@@ -10,7 +10,8 @@ import {
   InputAdornment,
   TextField,
   Typography,
-} from "@mui/material";
+} 
+from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
 import TrendingUp from "@mui/icons-material/TrendingUp";
