@@ -1,31 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Container,
   Box,
-  Typography,
-  TextField,
   Button,
   Card,
   CardContent,
-  Grid,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Chip,
-  IconButton,
+  Container,
+  Grid,
   InputAdornment,
+  TextField,
+  Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
-import Phone from "@mui/icons-material/Phone";
-import Schedule from "@mui/icons-material/Schedule";
+import TrendingUp from "@mui/icons-material/TrendingUp";
 import Room from "@mui/icons-material/Room";
-import FilterList from "@mui/icons-material/FilterList";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import ProductOrderDialog from "../components/ProductOrderDialog";
+import ProductDetailsDialog from "../components/ProductDetailsDialog";
 import { medicationAPI, pharmacyAPI } from "../services/api";
 
 const Search = () => {
@@ -34,21 +27,17 @@ const Search = () => {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "");
-  const [sortBy, setSortBy] = useState("distance");
-  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [productResults, setProductResults] = useState([]);
+  const [pharmacyResults, setPharmacyResults] = useState([]);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedPharmacy, setSelectedPharmacy] = useState(null);
+  const [productPharmacies, setProductPharmacies] = useState([]);
 
   useEffect(() => {
-    // Load user from localStorage
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
 
-    // Perform search if query or category exists
     const query = searchParams.get("q");
     const categoryParam = searchParams.get("category");
     if (query) {
@@ -58,109 +47,47 @@ const Search = () => {
     } else if (categoryParam) {
       setCategory(categoryParam);
       setSearchQuery("");
-      performCategorySearch(categoryParam);
+      performSearch("", categoryParam);
     }
   }, [searchParams]);
+
+  const normalizeProducts = (results = []) =>
+    results.map((res) => ({
+      item: res.item,
+      pharmacies:
+        res.inventory?.map((inv) => ({
+          pharmacy: inv.pharmacy,
+          price: inv.price,
+          quantity: inv.quantity,
+          stockStatus: inv.stockStatus,
+        })) || [],
+    }));
 
   const performSearch = async (query, categoryFilter = null) => {
     if (!query.trim() && !categoryFilter) return;
 
     setLoading(true);
     try {
-      const params = {};
+      const params = { inStock: "true" };
       if (query) params.search = query;
       if (categoryFilter) params.category = categoryFilter;
-      // Always include inStock to get inventory data
-      params.inStock = "true";
 
-      const response = await medicationAPI.getAll(params);
-      console.log("Search response:", response.data);
+      const [medsRes, pharmRes] = await Promise.all([
+        medicationAPI.getAll(params),
+        pharmacyAPI.getAll({ search: query || categoryFilter || "" }),
+      ]);
 
-      // Transform results to match expected format
-      const transformedResults = [];
-      response.data.results?.forEach((result) => {
-        if (result.inventory && result.inventory.length > 0) {
-          result.inventory.forEach((inv) => {
-            if (inv.pharmacy) {
-              const pharmacyId = inv.pharmacy._id || inv.pharmacy;
-              let pharmacyResult = transformedResults.find(
-                (r) => (r.pharmacy._id || r.pharmacy) === pharmacyId
-              );
+      setProductResults(normalizeProducts(medsRes.data.results || []));
 
-              if (!pharmacyResult) {
-                pharmacyResult = {
-                  pharmacy: inv.pharmacy,
-                  items: [],
-                };
-                transformedResults.push(pharmacyResult);
-              }
-
-              pharmacyResult.items.push({
-                item: result.item,
-                price: inv.price,
-                quantity: inv.quantity,
-                stockStatus: inv.stockStatus,
-              });
-            }
-          });
-        }
-      });
-
-      console.log("Transformed results:", transformedResults);
-      setResults(transformedResults);
+      const pharmacies =
+        pharmRes.data?.pharmacies ||
+        pharmRes.data?.results ||
+        (Array.isArray(pharmRes.data) ? pharmRes.data : []);
+      setPharmacyResults(pharmacies || []);
     } catch (error) {
       console.error("Search error:", error);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const performCategorySearch = async (categoryName) => {
-    setLoading(true);
-    try {
-      // Use getAll with category filter and inStock to get inventory
-      const response = await medicationAPI.getAll({
-        category: categoryName,
-        inStock: "true",
-      });
-      console.log("Category search response:", response.data);
-
-      // Transform results to match expected format
-      const transformedResults = [];
-      response.data.results?.forEach((result) => {
-        if (result.inventory && result.inventory.length > 0) {
-          result.inventory.forEach((inv) => {
-            if (inv.pharmacy) {
-              const pharmacyId = inv.pharmacy._id || inv.pharmacy;
-              let pharmacyResult = transformedResults.find(
-                (r) => (r.pharmacy._id || r.pharmacy) === pharmacyId
-              );
-
-              if (!pharmacyResult) {
-                pharmacyResult = {
-                  pharmacy: inv.pharmacy,
-                  items: [],
-                };
-                transformedResults.push(pharmacyResult);
-              }
-
-              pharmacyResult.items.push({
-                item: result.item,
-                price: inv.price,
-                quantity: inv.quantity,
-                stockStatus: inv.stockStatus,
-              });
-            }
-          });
-        }
-      });
-
-      console.log("Transformed category results:", transformedResults);
-      setResults(transformedResults);
-    } catch (error) {
-      console.error("Category search error:", error);
-      setResults([]);
+      setProductResults([]);
+      setPharmacyResults([]);
     } finally {
       setLoading(false);
     }
@@ -168,111 +95,51 @@ const Search = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      performSearch(searchQuery);
+    if (searchQuery.trim() || category) {
+      navigate(
+        `/search?${searchQuery ? `q=${encodeURIComponent(searchQuery)}` : ""}${
+          category ? `&category=${encodeURIComponent(category)}` : ""
+        }`
+      );
+      performSearch(searchQuery, category || null);
     }
   };
 
-  const handleSortChange = (e) => {
-    setSortBy(e.target.value);
-    // Re-sort current results
-    const sorted = [...results];
-    switch (e.target.value) {
-      case "price-low":
-        sorted.sort((a, b) => {
-          const aPrice = a.items?.[0]?.price || 0;
-          const bPrice = b.items?.[0]?.price || 0;
-          return aPrice - bPrice;
-        });
-        break;
-      case "price-high":
-        sorted.sort((a, b) => {
-          const aPrice = a.items?.[0]?.price || 0;
-          const bPrice = b.items?.[0]?.price || 0;
-          return bPrice - aPrice;
-        });
-        break;
-      case "availability":
-        sorted.sort((a, b) => {
-          const statusOrder = {
-            "in-stock": 0,
-            "low-stock": 1,
-            "out-of-stock": 2,
-          };
-          const aStatus = a.items?.[0]?.stockStatus || "out-of-stock";
-          const bStatus = b.items?.[0]?.stockStatus || "out-of-stock";
-          return statusOrder[aStatus] - statusOrder[bStatus];
-        });
-        break;
-      default:
-        // distance sorting would require coordinates
-        break;
-    }
-    setResults(sorted);
-  };
-
-  const getStockStatusColor = (status) => {
-    switch (status) {
-      case "in-stock":
-        return { bgcolor: "#c8e6c9", color: "#2e7d32" };
-      case "low-stock":
-        return { bgcolor: "#fff9c4", color: "#f57f17" };
-      case "out-of-stock":
-        return { bgcolor: "#ffcdd2", color: "#c62828" };
-      default:
-        return { bgcolor: "#e0e0e0", color: "#666" };
-    }
-  };
-
-  const getStockStatusText = (status) => {
-    switch (status) {
-      case "in-stock":
-        return "In Stock";
-      case "low-stock":
-        return "Low Stock";
-      case "out-of-stock":
-        return "Out of Stock";
-      default:
-        return "Unknown";
-    }
+  const openProductDetails = (product) => {
+    setSelectedProduct({
+      item: product.item,
+      price: product.pharmacies?.[0]?.price,
+      quantity: product.pharmacies?.[0]?.quantity,
+      stockStatus: product.pharmacies?.[0]?.stockStatus,
+    });
+    setProductPharmacies(product.pharmacies || []);
+    setDetailsDialogOpen(true);
   };
 
   return (
-    <Box
-      component="main"
-      sx={{ bgcolor: "background.default", minHeight: "100vh" }}
-    >
+    <Box component="main" sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
       <Header user={user} />
 
       <Container component="section" maxWidth="xl" sx={{ py: 5 }}>
-        {/* Search Header */}
         <Box component="header" sx={{ mb: 4 }}>
           <Box
             component="form"
             onSubmit={handleSearch}
             role="search"
-            sx={{
-              display: "flex",
-              gap: 2,
-              mb: 3,
-            }}
+            sx={{ display: "flex", gap: 2, mb: 3 }}
           >
             <TextField
               fullWidth
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for medications..."
+              placeholder="Search for medications or pharmacies..."
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
                     <SearchIcon sx={{ color: "primary.main" }} />
                   </InputAdornment>
                 ),
-                sx: {
-                  bgcolor: "white",
-                  borderRadius: 3,
-                },
+                sx: { bgcolor: "white", borderRadius: 3 },
               }}
             />
             <Button
@@ -290,313 +157,225 @@ const Search = () => {
             </Button>
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 2,
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
             <Box>
-              <Typography
-                component="h1"
-                variant="h5"
-                fontWeight={700}
-                color="secondary"
-                mb={0.5}
-              >
-                {category
-                  ? `Category: ${category}`
-                  : `Search Results for "${searchQuery}"`}
+              <Typography component="h1" variant="h5" fontWeight={700} color="secondary" mb={0.5}>
+                {category ? `Category: ${category}` : `Search Results for "${searchQuery}"`}
               </Typography>
               <Typography component="p" variant="body2" color="text.secondary">
-                Found {results.length}{" "}
-                {results.length === 1 ? "pharmacy" : "pharmacies"}
+                {productResults.length} product{productResults.length === 1 ? "" : "s"} ·{" "}
+                {pharmacyResults.length} pharmacy{pharmacyResults.length === 1 ? "" : "ies"}
               </Typography>
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              <Button
-                variant="outlined"
-                startIcon={<FilterList />}
-                sx={{
-                  borderColor: "#e0e0e0",
-                  color: "text.primary",
-                }}
-              >
-                Filters
-              </Button>
-              <FormControl sx={{ minWidth: 200 }}>
-                <InputLabel>Sort by</InputLabel>
-                <Select
-                  value={sortBy}
-                  onChange={handleSortChange}
-                  label="Sort by"
-                  sx={{ bgcolor: "white" }}
-                >
-                  <MenuItem value="distance">Distance</MenuItem>
-                  <MenuItem value="price-low">Price: Low to High</MenuItem>
-                  <MenuItem value="price-high">Price: High to Low</MenuItem>
-                  <MenuItem value="availability">Availability</MenuItem>
-                </Select>
-              </FormControl>
             </Box>
           </Box>
         </Box>
 
-        {/* Results */}
         {loading ? (
-          <Box sx={{ textAlign: "center", py: 8 }}>
+          <Card sx={{ p: 6, textAlign: "center" }}>
             <Typography variant="h6" color="text.secondary">
               Searching...
             </Typography>
-          </Box>
-        ) : results.length === 0 ? (
-          <Card sx={{ p: 8, textAlign: "center" }}>
-            <SearchIcon sx={{ fontSize: 80, color: "#e0e0e0", mb: 2 }} />
-            <Typography variant="h5" color="text.secondary" mb={1}>
-              No Results Found
-            </Typography>
-            <Typography variant="body1" color="text.secondary" mb={3}>
-              We couldn't find any pharmacies with this medication in stock.
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => navigate("/")}
-              sx={{
-                background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-              }}
-            >
-              Back to Home
-            </Button>
           </Card>
         ) : (
-          <Grid container spacing={3}>
-            {results.map((result) => (
-              <Grid item xs={12} key={result.pharmacy._id}>
-                <Card
-                  sx={{
-                    transition: "all 0.3s",
-                    cursor: "pointer",
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-                    },
-                  }}
-                  onClick={() => navigate(`/pharmacy/${result.pharmacy._id}`)}
-                >
-                  <CardContent sx={{ p: 3 }}>
-                    <Grid container spacing={3} alignItems="center">
-                      {/* Pharmacy Logo */}
-                      <Grid item>
+          <>
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" fontWeight={700} color="secondary" mb={2}>
+                Products
+              </Typography>
+              {productResults.length === 0 ? (
+                <Card sx={{ p: 4, textAlign: "center" }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No products found.
+                  </Typography>
+                </Card>
+              ) : (
+                <Grid container spacing={3} alignItems="stretch">
+                  {productResults.map((product) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={product.item?._id || product.item?.name}>
+                      <Card
+                        sx={{
+                          width: "100%",
+                          minHeight: 320,
+                          cursor: "pointer",
+                          transition: "all 0.3s",
+                          border: "2px solid transparent",
+                          display: "flex",
+                          flexDirection: "column",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                            borderColor: "primary.main",
+                          },
+                        }}
+                        onClick={() => openProductDetails(product)}
+                      >
                         <Box
                           sx={{
-                            width: 100,
-                            height: 100,
-                            borderRadius: 3,
-                            background:
-                              "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                            height: 170,
+                            background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            flexShrink: 0,
+                            overflow: "hidden",
                           }}
                         >
-                          <LocalPharmacy
-                            sx={{ fontSize: 48, color: "primary.main" }}
-                          />
+                          <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
                         </Box>
-                      </Grid>
-
-                      {/* Pharmacy Info */}
-                      <Grid item xs>
-                        <Typography
-                          variant="h5"
-                          fontWeight={700}
-                          color="secondary"
-                          mb={1}
+                        <CardContent
+                          sx={{
+                            flexGrow: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                            pb: 3,
+                            px: 2.5,
+                            overflow: "hidden",
+                          }}
                         >
-                          {result.pharmacy.name}
-                        </Typography>
+                          <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
+                            {product.item?.name}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            mb={1}
+                            display="flex"
+                            alignItems="center"
+                            gap={0.5}
+                          >
+                            <LocalPharmacy fontSize="small" sx={{ color: "primary.main" }} />
+                            {product.item?.category || "General"}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="primary.main"
+                            fontWeight={600}
+                            display="flex"
+                            alignItems="center"
+                            gap={0.5}
+                            sx={{ mt: 1 }}
+                          >
+                            <TrendingUp fontSize="small" />
+                            {product.pharmacies?.length || 0} pharmacies nearby
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Box>
+
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" fontWeight={700} color="secondary" mb={2}>
+                Pharmacies
+              </Typography>
+              {pharmacyResults.length === 0 ? (
+                <Card sx={{ p: 4, textAlign: "center" }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No pharmacies found.
+                  </Typography>
+                </Card>
+              ) : (
+                <Grid container spacing={3} alignItems="stretch">
+                  {pharmacyResults.map((pharmacy) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={pharmacy._id || pharmacy.id || pharmacy.name}>
+                      <Card
+                        sx={{
+                          width: "100%",
+                          minHeight: 400,
+                          cursor: "pointer",
+                          transition: "all 0.3s",
+                          border: "2px solid transparent",
+                          display: "flex",
+                          flexDirection: "column",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                            borderColor: "primary.main",
+                          },
+                        }}
+                        onClick={() =>
+                          navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy.name}`)
+                        }
+                      >
                         <Box
                           sx={{
+                            height: 200,
+                            background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
                             display: "flex",
-                            flexWrap: "wrap",
-                            gap: 2,
-                            mb: 1.5,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            overflow: "hidden",
                           }}
                         >
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                              color: "text.secondary",
-                            }}
-                          >
-                            <Room
-                              fontSize="small"
-                              sx={{ color: "primary.main" }}
-                            />
-                            {result.pharmacy.address.street},{" "}
-                            {result.pharmacy.address.city}
-                          </Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                              color: "text.secondary",
-                            }}
-                          >
-                            <Phone
-                              fontSize="small"
-                              sx={{ color: "primary.main" }}
-                            />
-                            {result.pharmacy.phone}
-                          </Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                              color: "text.secondary",
-                            }}
-                          >
-                            <Schedule
-                              fontSize="small"
-                              sx={{ color: "primary.main" }}
-                            />
-                            {result.pharmacy.is24Hours
-                              ? "24/7"
-                              : "Limited Hours"}
-                          </Box>
+                          <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
                         </Box>
-
-                        {/* Items List */}
-                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                          {result.items?.slice(0, 3).map((itemData, idx) => (
-                            <Chip
-                              key={idx}
-                              label={`${itemData.item?.name || "Unknown"} - $${
-                                itemData.price?.toFixed(2) || "0.00"
-                              }`}
-                              size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedProduct({
-                                  ...itemData,
-                                  item: itemData.item,
-                                  price: itemData.price,
-                                  quantity: itemData.quantity,
-                                  stockStatus: itemData.stockStatus,
-                                });
-                                setSelectedPharmacy(result.pharmacy);
-                                setOrderDialogOpen(true);
-                              }}
-                              sx={{
-                                ...getStockStatusColor(itemData.stockStatus),
-                                fontWeight: 600,
-                                cursor: "pointer",
-                                "&:hover": {
-                                  opacity: 0.8,
-                                  transform: "scale(1.05)",
-                                },
-                              }}
-                            />
-                          ))}
-                          {result.items?.length > 3 && (
-                            <Chip
-                              label={`+${result.items.length - 3} more`}
-                              size="small"
-                              variant="outlined"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/pharmacy/${result.pharmacy._id}`);
-                              }}
-                              sx={{ cursor: "pointer" }}
-                            />
-                          )}
-                        </Box>
-                      </Grid>
-
-                      {/* Price and Actions */}
-                      <Grid item sx={{ textAlign: "right" }}>
-                        <Typography
-                          variant="h4"
-                          fontWeight={700}
-                          color="primary.main"
-                          mb={1}
-                        >
-                          ${result.items?.[0]?.price?.toFixed(2) || "0.00"}
-                        </Typography>
-                        <Chip
-                          label={getStockStatusText(
-                            result.items?.[0]?.stockStatus || "out-of-stock"
-                          )}
+                        <CardContent
                           sx={{
-                            ...getStockStatusColor(
-                              result.items?.[0]?.stockStatus || "out-of-stock"
-                            ),
-                            fontWeight: 600,
-                            mb: 2,
+                            flexGrow: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                            pb: 4,
+                            pt: 3,
+                            px: 3,
+                            overflow: "hidden",
                           }}
-                        />
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                          <Button
-                            variant="outlined"
+                        >
+                          <Box>
+                            <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
+                              {pharmacy.name}
+                            </Typography>
+                            {pharmacy.motto && (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                mb={1}
+                                sx={{ fontStyle: "italic" }}
+                              >
+                                {pharmacy.motto}
+                              </Typography>
+                            )}
+                            <Typography variant="body2" color="text.secondary" mb={2}>
+                              <Room fontSize="small" sx={{ mr: 0.5, color: "primary.main" }} />
+                              {pharmacy.address?.city || "Lebanon"}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label={pharmacy.isOpen !== false ? "Open Now" : "Closed"}
                             size="small"
-                            startIcon={<Room />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              alert(`Opening map for ${result.pharmacy.name}`);
-                            }}
-                          >
-                            Map
-                          </Button>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<Phone />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.location.href = `tel:${result.pharmacy.phone}`;
-                            }}
-                            disabled={
-                              result.items?.[0]?.stockStatus === "out-of-stock"
-                            }
                             sx={{
-                              background:
-                                "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                              bgcolor: pharmacy.isOpen !== false ? "#c8e6c9" : "#ffcdd2",
+                              color: pharmacy.isOpen !== false ? "#2e7d32" : "#c62828",
+                              fontWeight: 600,
+                              width: "fit-content",
+                              mt: 2,
                             }}
-                          >
-                            Call
-                          </Button>
-                        </Box>
-                      </Grid>
+                          />
+                        </CardContent>
+                      </Card>
                     </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Box>
+          </>
         )}
       </Container>
 
-      <ProductOrderDialog
-        open={orderDialogOpen}
+      <ProductDetailsDialog
+        open={detailsDialogOpen}
         onClose={() => {
-          setOrderDialogOpen(false);
+          setDetailsDialogOpen(false);
           setSelectedProduct(null);
-          setSelectedPharmacy(null);
+          setProductPharmacies([]);
         }}
         product={selectedProduct}
-        pharmacy={selectedPharmacy}
-        user={user}
-        onOrderSuccess={(order) => {
-          console.log("Order placed:", order);
-        }}
+        pharmacies={productPharmacies}
+        onSelectPharmacy={(pharmacy) => navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)}
       />
 
       <Footer />

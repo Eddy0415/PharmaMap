@@ -9,6 +9,7 @@ import {
   IconButton,
   Chip,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import ArrowBackIos from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
@@ -26,6 +27,7 @@ import TrendingUp from "@mui/icons-material/TrendingUp";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { pharmacyAPI, medicationAPI } from "../services/api";
+import ProductDetailsDialog from "../components/ProductDetailsDialog";
 
 const carouselSlides = [
   {
@@ -89,6 +91,10 @@ const Home = () => {
   const categoriesRef = useRef(null);
   const productsRef = useRef(null);
   const featuredRef = useRef(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productPharmacies, setProductPharmacies] = useState([]);
+  const [loadingProduct, setLoadingProduct] = useState(false);
 
   useEffect(() => {
     // Load user from localStorage
@@ -316,6 +322,74 @@ const Home = () => {
       console.log(response.data);
     });
     navigate(`/search?category=${encodeURIComponent(categoryName)}`);
+  };
+
+  const collectPharmaciesForItem = (results, itemId, fallbackName) => {
+    if (!results?.length) return [];
+    const pharmaciesMap = new Map();
+    results.forEach((res) => {
+      const matchesId =
+        itemId && (res.item?._id === itemId || res.item?.id === itemId);
+      const matchesName =
+        fallbackName &&
+        (res.item?.name === fallbackName ||
+          res.item?.name?.toLowerCase() === fallbackName?.toLowerCase());
+      if (!(matchesId || matchesName)) return;
+
+      res.inventory?.forEach((inv) => {
+        const phId = inv.pharmacy?._id || inv.pharmacy?.id || inv.pharmacy;
+        if (!pharmaciesMap.has(phId)) {
+          pharmaciesMap.set(phId, {
+            pharmacy: inv.pharmacy,
+            price: inv.price,
+            quantity: inv.quantity,
+            stockStatus: inv.stockStatus,
+          });
+        }
+      });
+    });
+    return Array.from(pharmaciesMap.values());
+  };
+
+  const openProductDetails = async (productName) => {
+    setLoadingProduct(true);
+    try {
+      const response = await medicationAPI.getAll({
+        search: productName,
+        inStock: "true",
+      });
+      const results = response.data.results || [];
+      if (results.length === 0) {
+        setSelectedProduct({ item: { name: productName } });
+        setProductPharmacies([]);
+        setDetailsDialogOpen(true);
+        return;
+      }
+
+      const firstItem = results[0].item || { name: productName };
+      const pharmacies = collectPharmaciesForItem(
+        results,
+        firstItem._id || firstItem.id,
+        firstItem.name
+      );
+      const primaryEntry = pharmacies[0];
+
+      setSelectedProduct({
+        item: firstItem,
+        price: primaryEntry?.price,
+        quantity: primaryEntry?.quantity,
+        stockStatus: primaryEntry?.stockStatus,
+      });
+      setProductPharmacies(pharmacies);
+      setDetailsDialogOpen(true);
+    } catch (error) {
+      console.error("Error loading product details:", error);
+      setSelectedProduct({ item: { name: productName } });
+      setProductPharmacies([]);
+      setDetailsDialogOpen(true);
+    } finally {
+      setLoadingProduct(false);
+    }
   };
 
   return (
@@ -636,12 +710,12 @@ const Home = () => {
           </Typography>
           <Box
             component="section"
-            aria-label="Popular medications"
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 2.5,
-              mb: 6,
+          aria-label="Popular medications"
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2.5,
+            mb: 6,
               "& > *": {
                 flex: "1 1 calc(20% - 20px)",
                 minWidth: "150px",
@@ -680,9 +754,7 @@ const Home = () => {
                       borderColor: "primary.main",
                     },
                   }}
-                  onClick={() =>
-                    navigate(`/search?q=${encodeURIComponent(product.name)}`)
-                  }
+                  onClick={() => openProductDetails(product.name)}
                 >
                   <Box
                     sx={{
@@ -887,6 +959,20 @@ const Home = () => {
           ))}
         </Box>
       </Container>
+
+      <ProductDetailsDialog
+        open={detailsDialogOpen}
+        onClose={() => {
+          setDetailsDialogOpen(false);
+          setSelectedProduct(null);
+          setProductPharmacies([]);
+        }}
+        product={selectedProduct}
+        pharmacies={productPharmacies}
+        onSelectPharmacy={(pharmacy) =>
+          navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)
+        }
+      />
 
       <Footer />
     </Box>

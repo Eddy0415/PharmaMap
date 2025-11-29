@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AppBar,
@@ -28,6 +28,11 @@ const Header = ({
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [displayUser, setDisplayUser] = useState(() => {
+    if (user) return user;
+    const stored = localStorage.getItem("user");
+    return stored ? JSON.parse(stored) : null;
+  });
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -36,6 +41,28 @@ const Header = ({
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
+
+  useEffect(() => {
+    if (user) {
+      setDisplayUser(user);
+      return;
+    }
+    const stored = localStorage.getItem("user");
+    setDisplayUser(stored ? JSON.parse(stored) : null);
+  }, [user]);
+
+  useEffect(() => {
+    const syncUser = () => {
+      const stored = localStorage.getItem("user");
+      setDisplayUser(stored ? JSON.parse(stored) : null);
+    };
+    window.addEventListener("userUpdated", syncUser);
+    window.addEventListener("storage", syncUser);
+    return () => {
+      window.removeEventListener("userUpdated", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -48,6 +75,7 @@ const Header = ({
     handleMenuClose();
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    setDisplayUser(null);
     if (onLogout) onLogout();
     navigate("/");
   };
@@ -299,7 +327,7 @@ const Header = ({
             >
               About Us
             </Button>
-            {user ? (
+            {displayUser ? (
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <IconButton
                   onClick={handleMenuOpen}
@@ -317,8 +345,8 @@ const Header = ({
                       fontSize: { xs: "0.875rem", sm: "1rem" },
                     }}
                   >
-                    {user.firstName?.[0]}
-                    {user.lastName?.[0]}
+                    {displayUser.firstName?.[0]}
+                    {displayUser.lastName?.[0]}
                   </Avatar>
                 </IconButton>
                 <Menu
@@ -334,7 +362,7 @@ const Header = ({
                     },
                   }}
                 >
-                  {user.userType === "pharmacist" ? (
+                  {displayUser.userType === "pharmacist" ? (
                     <MenuItem
                       onClick={() => {
                         handleMenuClose();
