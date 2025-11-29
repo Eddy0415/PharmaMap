@@ -7,7 +7,6 @@ import {
   CardContent,
   Chip,
   Container,
-  Grid,
   InputAdornment,
   TextField,
   Typography,
@@ -178,6 +177,7 @@ const Search = () => {
           </Card>
         ) : (
           <>
+            {/* Products section */}
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" fontWeight={700} color="secondary" mb={2}>
                 Products
@@ -189,84 +189,92 @@ const Search = () => {
                   </Typography>
                 </Card>
               ) : (
-                <Grid container spacing={3} alignItems="stretch">
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                    gap: 3,
+                    alignItems: "stretch",
+                    gridAutoRows: 320, // fixed row height for all product cards
+                  }}
+                >
                   {productResults.map((product) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={product.item?._id || product.item?.name}>
-                      <Card
+                    <Card
+                      key={product.item?._id || product.item?.name}
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        cursor: "pointer",
+                        transition: "all 0.3s",
+                        border: "2px solid transparent",
+                        display: "flex",
+                        flexDirection: "column",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      onClick={() => openProductDetails(product)}
+                    >
+                      <Box
                         sx={{
-                          width: "100%",
-                          minHeight: 320,
-                          cursor: "pointer",
-                          transition: "all 0.3s",
-                          border: "2px solid transparent",
+                          height: 170,
+                          background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+                      </Box>
+                      <CardContent
+                        sx={{
+                          flexGrow: 1,
                           display: "flex",
                           flexDirection: "column",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                            borderColor: "primary.main",
-                          },
+                          justifyContent: "space-between",
+                          pb: 3,
+                          px: 2.5,
+                          overflow: "hidden",
                         }}
-                        onClick={() => openProductDetails(product)}
                       >
-                        <Box
-                          sx={{
-                            height: 170,
-                            background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                            overflow: "hidden",
-                          }}
+                        <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
+                          {product.item?.name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          mb={1}
+                          display="flex"
+                          alignItems="center"
+                          gap={0.5}
                         >
-                          <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
-                        </Box>
-                        <CardContent
-                          sx={{
-                            flexGrow: 1,
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-between",
-                            pb: 3,
-                            px: 2.5,
-                            overflow: "hidden",
-                          }}
+                          <LocalPharmacy fontSize="small" sx={{ color: "primary.main" }} />
+                          {product.item?.category || "General"}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="primary.main"
+                          fontWeight={600}
+                          display="flex"
+                          alignItems="center"
+                          gap={0.5}
+                          sx={{ mt: 1 }}
                         >
-                          <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
-                            {product.item?.name}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            mb={1}
-                            display="flex"
-                            alignItems="center"
-                            gap={0.5}
-                          >
-                            <LocalPharmacy fontSize="small" sx={{ color: "primary.main" }} />
-                            {product.item?.category || "General"}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="primary.main"
-                            fontWeight={600}
-                            display="flex"
-                            alignItems="center"
-                            gap={0.5}
-                            sx={{ mt: 1 }}
-                          >
-                            <TrendingUp fontSize="small" />
-                            {product.pharmacies?.length || 0} pharmacies nearby
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
+                          <TrendingUp fontSize="small" />
+                          {product.pharmacies?.length || 0} pharmacies nearby
+                        </Typography>
+                      </CardContent>
+                    </Card>
                   ))}
-                </Grid>
+                </Box>
               )}
             </Box>
 
+            {/* Pharmacies section */}
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" fontWeight={700} color="secondary" mb={2}>
                 Pharmacies
@@ -278,88 +286,96 @@ const Search = () => {
                   </Typography>
                 </Card>
               ) : (
-                <Grid container spacing={3} alignItems="stretch">
+                <Box
+                  sx={{
+                    display: "grid",
+                    // 3x the product min width: 3 * 220px = 660px
+                    gridTemplateColumns: "repeat(auto-fill, minmax(660px, 1fr))",
+                    gap: 3,
+                    alignItems: "stretch",
+                    gridAutoRows: 400, // fixed row height for all pharmacy cards
+                  }}
+                >
                   {pharmacyResults.map((pharmacy) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={pharmacy._id || pharmacy.id || pharmacy.name}>
-                      <Card
+                    <Card
+                      key={pharmacy._id || pharmacy.id || pharmacy.name}
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        cursor: "pointer",
+                        transition: "all 0.3s",
+                        border: "2px solid transparent",
+                        display: "flex",
+                        flexDirection: "column",
+                        "&:hover": {
+                          transform: "translateY(-5px)",
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      onClick={() =>
+                        navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy.name}`)
+                      }
+                    >
+                      <Box
                         sx={{
-                          width: "100%",
-                          minHeight: 400,
-                          cursor: "pointer",
-                          transition: "all 0.3s",
-                          border: "2px solid transparent",
+                          height: 200,
+                          background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+                      </Box>
+                      <CardContent
+                        sx={{
+                          flexGrow: 1,
                           display: "flex",
                           flexDirection: "column",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                            borderColor: "primary.main",
-                          },
+                          justifyContent: "space-between",
+                          pb: 4,
+                          pt: 3,
+                          px: 3,
+                          overflow: "hidden",
                         }}
-                        onClick={() =>
-                          navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy.name}`)
-                        }
                       >
-                        <Box
-                          sx={{
-                            height: 200,
-                            background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                            overflow: "hidden",
-                          }}
-                        >
-                          <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+                        <Box>
+                          <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
+                            {pharmacy.name}
+                          </Typography>
+                          {pharmacy.motto && (
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              mb={1}
+                              sx={{ fontStyle: "italic" }}
+                            >
+                              {pharmacy.motto}
+                            </Typography>
+                          )}
+                          <Typography variant="body2" color="text.secondary" mb={2}>
+                            <Room fontSize="small" sx={{ mr: 0.5, color: "primary.main" }} />
+                            {pharmacy.address?.city || "Lebanon"}
+                          </Typography>
                         </Box>
-                        <CardContent
+                        <Chip
+                          label={pharmacy.isOpen !== false ? "Open Now" : "Closed"}
+                          size="small"
                           sx={{
-                            flexGrow: 1,
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-between",
-                            pb: 4,
-                            pt: 3,
-                            px: 3,
-                            overflow: "hidden",
+                            bgcolor: pharmacy.isOpen !== false ? "#c8e6c9" : "#ffcdd2",
+                            color: pharmacy.isOpen !== false ? "#2e7d32" : "#c62828",
+                            fontWeight: 600,
+                            width: "fit-content",
+                            mt: 2,
                           }}
-                        >
-                          <Box>
-                            <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
-                              {pharmacy.name}
-                            </Typography>
-                            {pharmacy.motto && (
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                mb={1}
-                                sx={{ fontStyle: "italic" }}
-                              >
-                                {pharmacy.motto}
-                              </Typography>
-                            )}
-                            <Typography variant="body2" color="text.secondary" mb={2}>
-                              <Room fontSize="small" sx={{ mr: 0.5, color: "primary.main" }} />
-                              {pharmacy.address?.city || "Lebanon"}
-                            </Typography>
-                          </Box>
-                          <Chip
-                            label={pharmacy.isOpen !== false ? "Open Now" : "Closed"}
-                            size="small"
-                            sx={{
-                              bgcolor: pharmacy.isOpen !== false ? "#c8e6c9" : "#ffcdd2",
-                              color: pharmacy.isOpen !== false ? "#2e7d32" : "#c62828",
-                              fontWeight: 600,
-                              width: "fit-content",
-                              mt: 2,
-                            }}
-                          />
-                        </CardContent>
-                      </Card>
-                    </Grid>
+                        />
+                      </CardContent>
+                    </Card>
                   ))}
-                </Grid>
+                </Box>
               )}
             </Box>
           </>
@@ -375,7 +391,9 @@ const Search = () => {
         }}
         product={selectedProduct}
         pharmacies={productPharmacies}
-        onSelectPharmacy={(pharmacy) => navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)}
+        onSelectPharmacy={(pharmacy) =>
+          navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)
+        }
       />
 
       <Footer />
