@@ -61,4 +61,3 @@ export const useGeolocation = () => {
 
   return { location, loading, error, requestLocation };
 };
-
