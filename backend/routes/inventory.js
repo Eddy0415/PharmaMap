@@ -47,10 +47,10 @@ router.post("/", async (req, res) => {
       req.body;
 
     // Validate required fields
-    if (!pharmacy || !item || quantity === undefined || price === undefined) {
+    if (!pharmacy || !item || quantity === undefined) {
       return res.status(400).json({
         success: false,
-        message: "Pharmacy, item, quantity, and price are required",
+        message: "Pharmacy, item, and quantity are required",
       });
     }
 
@@ -83,11 +83,12 @@ router.post("/", async (req, res) => {
     }
 
     // Create inventory entry
+    // Price will default to item's basePrice if not provided (handled in pre-save hook)
     const inventory = new Inventory({
       pharmacy,
       item,
       quantity: quantity || 0,
-      price,
+      price: price !== undefined ? price : undefined, // Let pre-save hook set from basePrice if not provided
       lowStockThreshold: lowStockThreshold || 10,
       isAvailable: isAvailable !== undefined ? isAvailable : true,
       lastRestocked: new Date(),

@@ -393,8 +393,12 @@ const seedDatabase = async () => {
           street: randomElement(streets),
           city: randomElement(cities),
           coordinates: {
-            latitude: 33.8 + Math.random() * 0.5, // Lebanon latitude range
-            longitude: 35.4 + Math.random() * 0.8, // Lebanon longitude range
+            type: "Point",
+            // GeoJSON format: [longitude, latitude]
+            coordinates: [
+              35.4 + Math.random() * 0.8, // Lebanon longitude range
+              33.8 + Math.random() * 0.5, // Lebanon latitude range
+            ],
           },
         },
         phone: `01${randomInt(100000, 999999)}`,
@@ -427,15 +431,13 @@ const seedDatabase = async () => {
       const itemsForPharmacy = items.filter(() => Math.random() > 0.3);
 
       for (const item of itemsForPharmacy) {
-        const priceVariation = 0.8 + Math.random() * 0.4; // 80% to 120% of base price
-        const price = Math.round(item.basePrice * priceVariation * 100) / 100;
         const quantity = randomInt(0, 200);
 
         const inventory = new Inventory({
           pharmacy: pharmacy._id,
           item: item._id,
           quantity,
-          price,
+          // price will be automatically set to item.basePrice by pre-save hook
           lowStockThreshold: 10,
           isAvailable: true,
           totalOrders: randomInt(0, 50),
