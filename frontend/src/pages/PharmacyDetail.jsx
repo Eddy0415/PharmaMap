@@ -310,9 +310,11 @@ const PharmacyDetail = () => {
                     variant="outlined"
                     startIcon={<Directions />}
                     onClick={() => {
-                      if (coords?.latitude && coords?.longitude) {
+                      const coordsArray = pharmacy?.address?.coordinates?.coordinates;
+                      if (coordsArray && Array.isArray(coordsArray) && coordsArray.length === 2) {
+                        const [longitude, latitude] = coordsArray;
                         window.open(
-                          `https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`,
+                          `https://www.google.com/maps?q=${latitude},${longitude}`,
                           "_blank"
                         );
                       } else {
@@ -370,19 +372,51 @@ const PharmacyDetail = () => {
               <Typography variant="h6" fontWeight={800} mb={2}>
                 Location
               </Typography>
-              <Box
-                sx={{
-                  height: 420,
-                  borderRadius: 3,
-                  background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "100%",
-                }}
-              >
-                <Room sx={{ fontSize: 72, color: "primary.main" }} />
-              </Box>
+              {pharmacy?.address?.coordinates?.coordinates &&
+              Array.isArray(pharmacy.address.coordinates.coordinates) &&
+              pharmacy.address.coordinates.coordinates.length === 2 ? (
+                <Box
+                  sx={{
+                    height: 420,
+                    borderRadius: 3,
+                    overflow: "hidden",
+                    width: "100%",
+                    border: "1px solid #e0e0e0",
+                  }}
+                >
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://maps.google.com/maps?q=${
+                      pharmacy.address.coordinates.coordinates[1]
+                    },${pharmacy.address.coordinates.coordinates[0]}&hl=en&z=15&output=embed`}
+                    title="Pharmacy Location"
+                  />
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    height: 420,
+                    borderRadius: 3,
+                    background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "100%",
+                    gap: 2,
+                  }}
+                >
+                  <Room sx={{ fontSize: 72, color: "primary.main" }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Location coordinates not available
+                  </Typography>
+                </Box>
+              )}
             </CardContent>
           </Card>
 
