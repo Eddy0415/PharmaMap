@@ -123,6 +123,7 @@ const Register = () => {
         // Store token and user data
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
+        window.dispatchEvent(new Event("userUpdated"));
 
         // Redirect based on user type
         if (response.data.user.userType === "pharmacist") {

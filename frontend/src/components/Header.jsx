@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AppBar,
@@ -18,10 +18,21 @@ import Person from "@mui/icons-material/Person";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import Logout from "@mui/icons-material/Logout";
 
-const Header = ({ user, onLogout }) => {
+const Header = ({
+  user,
+  onLogout,
+  onScrollToCategories,
+  onScrollToProducts,
+  onScrollToFeatured,
+}) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [displayUser, setDisplayUser] = useState(() => {
+    if (user) return user;
+    const stored = localStorage.getItem("user");
+    return stored ? JSON.parse(stored) : null;
+  });
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -30,6 +41,28 @@ const Header = ({ user, onLogout }) => {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
+
+  useEffect(() => {
+    if (user) {
+      setDisplayUser(user);
+      return;
+    }
+    const stored = localStorage.getItem("user");
+    setDisplayUser(stored ? JSON.parse(stored) : null);
+  }, [user]);
+
+  useEffect(() => {
+    const syncUser = () => {
+      const stored = localStorage.getItem("user");
+      setDisplayUser(stored ? JSON.parse(stored) : null);
+    };
+    window.addEventListener("userUpdated", syncUser);
+    window.addEventListener("storage", syncUser);
+    return () => {
+      window.removeEventListener("userUpdated", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -42,8 +75,33 @@ const Header = ({ user, onLogout }) => {
     handleMenuClose();
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    setDisplayUser(null);
     if (onLogout) onLogout();
     navigate("/");
+  };
+
+  const handleCategoriesClick = () => {
+    if (onScrollToCategories) {
+      onScrollToCategories();
+      return;
+    }
+    navigate("/#categories");
+  };
+
+  const handleProductsClick = () => {
+    if (onScrollToProducts) {
+      onScrollToProducts();
+      return;
+    }
+    navigate("/#products");
+  };
+
+  const handleFeaturedClick = () => {
+    if (onScrollToFeatured) {
+      onScrollToFeatured();
+      return;
+    }
+    navigate("/#featured");
   };
 
   return (
@@ -136,10 +194,10 @@ const Header = ({ user, onLogout }) => {
               transform: "translateX(-50%)",
               width: {
                 xs: "calc(100% - 160px)",
-                sm: "400px",
-                md: "450px",
-                lg: "550px",
-                xl: "600px",
+                sm: "250px",
+                md: "290px",
+                lg: "350px",
+                xl: "410px",
               },
               maxWidth: { xs: "calc(100vw - 180px)", sm: "90%" },
               display: { xs: "none", sm: "block" },
@@ -191,7 +249,7 @@ const Header = ({ user, onLogout }) => {
               ml: "auto",
               display: "flex",
               alignItems: "center",
-              gap: { xs: 0.5, sm: 1 },
+              gap: { xs: 0.75, sm: 1.25, md: 1.5 },
               zIndex: 1,
               flexShrink: 0,
             }}
@@ -211,6 +269,51 @@ const Header = ({ user, onLogout }) => {
             </IconButton>
             <Button
               variant="text"
+              onClick={handleCategoriesClick}
+              sx={{
+                color: "white",
+                px: { xs: 1, sm: 1.5 },
+                py: { xs: 0.5, sm: 0.75 },
+                fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                textTransform: "none",
+                borderRadius: { xs: "18px", sm: "22px" },
+                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+              }}
+            >
+              Categories
+            </Button>
+            <Button
+              variant="text"
+              onClick={handleProductsClick}
+              sx={{
+                color: "white",
+                px: { xs: 1, sm: 1.5 },
+                py: { xs: 0.5, sm: 0.75 },
+                fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                textTransform: "none",
+                borderRadius: { xs: "18px", sm: "22px" },
+                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+              }}
+            >
+              Popular
+            </Button>
+            <Button
+              variant="text"
+              onClick={handleFeaturedClick}
+              sx={{
+                color: "white",
+                px: { xs: 1, sm: 1.5 },
+                py: { xs: 0.5, sm: 0.75 },
+                fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                textTransform: "none",
+                borderRadius: { xs: "18px", sm: "22px" },
+                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+              }}
+            >
+              Featured
+            </Button>
+            <Button
+              variant="text"
               onClick={() => navigate("/about")}
               sx={{
                 color: "white",
@@ -224,8 +327,8 @@ const Header = ({ user, onLogout }) => {
             >
               About Us
             </Button>
-            {user ? (
-              <Box>
+            {displayUser ? (
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <IconButton
                   onClick={handleMenuOpen}
                   sx={{
@@ -242,8 +345,8 @@ const Header = ({ user, onLogout }) => {
                       fontSize: { xs: "0.875rem", sm: "1rem" },
                     }}
                   >
-                    {user.firstName?.[0]}
-                    {user.lastName?.[0]}
+                    {displayUser.firstName?.[0]}
+                    {displayUser.lastName?.[0]}
                   </Avatar>
                 </IconButton>
                 <Menu
@@ -259,7 +362,7 @@ const Header = ({ user, onLogout }) => {
                     },
                   }}
                 >
-                  {user.userType === "pharmacist" ? (
+                  {displayUser.userType === "pharmacist" ? (
                     <MenuItem
                       onClick={() => {
                         handleMenuClose();
@@ -294,14 +397,14 @@ const Header = ({ user, onLogout }) => {
                   color: "white",
                   borderColor: "rgba(255,255,255,0.3)",
                   borderRadius: { xs: "20px", sm: "25px" },
-                  fontSize: { xs: "0.875rem", sm: "0.9375rem", md: "1rem" },
+                  fontSize: { xs: "0.8rem", sm: "0.9rem", md: "0.95rem" },
                   "&:hover": {
                     borderColor: "rgba(255,255,255,0.5)",
                     bgcolor: "rgba(255,255,255,0.1)",
                   },
-                  minWidth: { xs: "auto", sm: 100, md: 120 },
-                  px: { xs: 1, sm: 1.5, md: 2 },
-                  py: { xs: 0.5, sm: 0.75 },
+                  minWidth: { xs: "auto", sm: 96, md: 104 },
+                  px: { xs: 0.75, sm: 1.25, md: 1.5 },
+                  py: { xs: 0.5, sm: 0.7 },
                 }}
               >
                 <Box
