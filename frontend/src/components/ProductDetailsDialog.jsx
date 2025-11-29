@@ -35,16 +35,20 @@ const ProductDetailsDialog = ({
   product,
   pharmacies = [],
   onSelectPharmacy,
+  onRequestPharmacy, // optional
 }) => {
   const [showPharmacies, setShowPharmacies] = useState(false);
+  const [requestMode, setRequestMode] = useState(false);
 
   useEffect(() => {
     if (open) {
       setShowPharmacies(false);
+      setRequestMode(false);
     }
   }, [open]);
 
   const pharmacyCount = pharmacies.length;
+  const showRequest = Boolean(onRequestPharmacy);
 
   const composition = useMemo(() => {
     if (!product?.item) return null;
@@ -56,6 +60,16 @@ const ProductDetailsDialog = ({
   }, [product]);
 
   if (!product) return null;
+
+  const handleSelectEntry = async (entry) => {
+    if (requestMode && onRequestPharmacy) {
+      await onRequestPharmacy(entry);
+      setRequestMode(false);
+      setShowPharmacies(false);
+      return;
+    }
+    onSelectPharmacy(entry.pharmacy);
+  };
 
   const renderPharmacyList = () => (
     <Box sx={{ mt: 2 }}>
@@ -104,7 +118,7 @@ const ProductDetailsDialog = ({
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
               <Chip
                 size="small"
-                label={`$${entry.price?.toFixed(2) ?? "—"}`}
+                label={`$${entry.price?.toFixed(2) ?? "N/A"}`}
                 sx={{ fontWeight: 700 }}
               />
               <Chip
@@ -129,13 +143,13 @@ const ProductDetailsDialog = ({
           <Button
             variant="contained"
             size="small"
-            onClick={() => onSelectPharmacy(entry.pharmacy)}
+            onClick={() => handleSelectEntry(entry)}
             sx={{
               background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
               whiteSpace: "nowrap",
             }}
           >
-            View Pharmacy
+            {requestMode ? "Send request" : "View Pharmacy"}
           </Button>
         </Box>
       ))}
@@ -165,7 +179,13 @@ const ProductDetailsDialog = ({
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {showPharmacies && (
-              <IconButton size="small" onClick={() => setShowPharmacies(false)}>
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setShowPharmacies(false);
+                  setRequestMode(false);
+                }}
+              >
                 <ArrowBack fontSize="small" />
               </IconButton>
             )}
@@ -235,6 +255,7 @@ const ProductDetailsDialog = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          gap: 1,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -245,25 +266,43 @@ const ProductDetailsDialog = ({
               : "No pharmacies found nearby"}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          onClick={() => setShowPharmacies((prev) => !prev)}
-          disabled={pharmacyCount === 0}
-          sx={{
-            borderRadius: 999,
-            px: 3,
-            py: 1,
-            background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-            textTransform: "none",
-            fontWeight: 700,
-          }}
-        >
-          {showPharmacies
-            ? "Back to details"
-            : pharmacyCount > 0
-            ? `Available in ${pharmacyCount} pharmacies nearby`
-            : "Not available nearby"}
-        </Button>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setShowPharmacies((prev) => !prev);
+              setRequestMode(false);
+            }}
+            disabled={pharmacyCount === 0}
+            sx={{
+              borderRadius: 999,
+              px: 3,
+              py: 1,
+              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+              textTransform: "none",
+              fontWeight: 700,
+            }}
+          >
+            {showPharmacies
+              ? "Back to details"
+              : pharmacyCount > 0
+              ? `Available in ${pharmacyCount} pharmacies nearby`
+              : "Not available nearby"}
+          </Button>
+          {showRequest && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setRequestMode(true);
+                setShowPharmacies(true);
+              }}
+              disabled={pharmacyCount === 0}
+              sx={{ textTransform: "none", fontWeight: 700 }}
+            >
+              Request
+            </Button>
+          )}
+        </Box>
       </DialogActions>
     </Dialog>
   );

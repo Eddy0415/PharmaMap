@@ -11,7 +11,6 @@ import {
   Grid,
   IconButton,
   InputAdornment,
-  Paper,
   Rating,
   TextField,
   Typography,
@@ -27,8 +26,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import Star from "@mui/icons-material/Star";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import ProductOrderDialog from "../components/ProductOrderDialog";
-import { medicationAPI, pharmacyAPI, userAPI } from "../services/api";
+import ProductDetailsDialog from "../components/ProductDetailsDialog";
+import { medicationAPI, pharmacyAPI, userAPI, orderAPI } from "../services/api";
 
 const PharmacyDetail = () => {
   const { id } = useParams();
@@ -41,8 +40,9 @@ const PharmacyDetail = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
-  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [detailsProduct, setDetailsProduct] = useState(null);
+  const [productPharmacies, setProductPharmacies] = useState([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -139,6 +139,73 @@ const PharmacyDetail = () => {
     }
   };
 
+  const collectPharmaciesForItem = async (itemName, itemId) => {
+    const params = { inStock: "true" };
+    if (itemName) params.search = itemName;
+    const pharmaciesMap = new Map();
+    try {
+      const res = await medicationAPI.getAll(params);
+      res.data.results?.forEach((result) => {
+        const matchesId = itemId && (result.item?._id === itemId || result.item?.id === itemId);
+        const matchesName =
+          itemName &&
+          (result.item?.name === itemName ||
+            result.item?.name?.toLowerCase() === itemName.toLowerCase());
+        if (!(matchesId || matchesName)) return;
+
+        result.inventory?.forEach((inv) => {
+          const phId = inv.pharmacy?._id || inv.pharmacy?.id || inv.pharmacy?.name || inv.pharmacy;
+          if (!pharmaciesMap.has(phId)) {
+            pharmaciesMap.set(phId, {
+              pharmacy: inv.pharmacy,
+              price: inv.price,
+              quantity: inv.quantity,
+              stockStatus: inv.stockStatus,
+            });
+          }
+        });
+      });
+    } catch (error) {
+      console.error("Error collecting pharmacies for item:", error);
+    }
+    return Array.from(pharmaciesMap.values());
+  };
+
+  const openDetails = async (inv) => {
+    setDetailsProduct(inv);
+    const phs = await collectPharmaciesForItem(inv.item?.name, inv.item?._id);
+    setProductPharmacies(phs || []);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleRequestPharmacy = async (entry) => {
+    if (!user?.id) {
+      alert("Please login to send a request");
+      navigate("/login");
+      return;
+    }
+    try {
+      await orderAPI.create({
+        customer: user.id,
+        pharmacy: entry.pharmacy?._id || entry.pharmacy,
+        items: [
+          {
+            item: detailsProduct?.item?._id || detailsProduct?.item,
+            quantity: 1,
+          },
+        ],
+        customerNotes: "Medication request",
+      });
+      alert("Request sent to pharmacy.");
+    } catch (error) {
+      console.error("Error sending request:", error);
+      alert(
+        error?.response?.data?.message ||
+          "Failed to send request. Please try again."
+      );
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
@@ -176,7 +243,7 @@ const PharmacyDetail = () => {
           onClick={() => navigate(-1)}
           sx={{ mb: 3, color: "text.primary" }}
         >
-          Back
+          Back to Results
         </Button>
 
         {/* Hero strip */}
@@ -197,7 +264,6 @@ const PharmacyDetail = () => {
                 <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
               </Box>
             </Grid>
-
             <Grid item xs>
               <Box
                 sx={{
@@ -228,7 +294,6 @@ const PharmacyDetail = () => {
                     {isFavorite ? <Favorite /> : <FavoriteBorder />}
                   </IconButton>
                 </Box>
-
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Button
                     variant="contained"
@@ -239,7 +304,7 @@ const PharmacyDetail = () => {
                       boxShadow: "0 6px 16px rgba(78,205,196,0.35)",
                     }}
                   >
-                    Call pharmacy
+                    Call Pharmacy
                   </Button>
                   <Button
                     variant="outlined"
@@ -255,7 +320,7 @@ const PharmacyDetail = () => {
                       }
                     }}
                   >
-                    Get directions
+                    Get Directions
                   </Button>
                 </Box>
               </Box>
@@ -300,7 +365,7 @@ const PharmacyDetail = () => {
             gap: 3,
           }}
         >
-          <Card sx={{ height: "100%" }}>
+          <Card sx={{ width: "100%", height: "100%" }}>
             <CardContent>
               <Typography variant="h6" fontWeight={800} mb={2}>
                 Location
@@ -321,7 +386,7 @@ const PharmacyDetail = () => {
             </CardContent>
           </Card>
 
-          <Card sx={{ height: "100%" }}>
+          <Card sx={{ width: "100%", height: "100%" }}>
             <CardContent>
               <Typography variant="h6" fontWeight={800} mb={2}>
                 Working Hours
@@ -396,61 +461,86 @@ const PharmacyDetail = () => {
             {filteredInventory.length === 0 ? (
               <Alert severity="info">No medications found</Alert>
             ) : (
-              <Grid container spacing={2}>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: 3,
+                  alignItems: "stretch",
+                  gridAutoRows: 340, // <<< all rows same height
+                }}
+              >
                 {filteredInventory.map((inv) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={inv._id}>
-                    <Paper
-                      onClick={() => {
-                        setSelectedProduct(inv);
-                        setOrderDialogOpen(true);
-                      }}
+                  <Card
+                    key={inv._id}
+                    sx={{
+                      width: "100%",
+                      height: "100%", // fills the 340px row
+                      cursor: "pointer",
+                      transition: "all 0.3s",
+                      border: "2px solid transparent",
+                      display: "flex",
+                      flexDirection: "column",
+                      "&:hover": {
+                        transform: "translateY(-5px)",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                        borderColor: "primary.main",
+                      },
+                    }}
+                    onClick={() => openDetails(inv)}
+                  >
+                    <Box
                       sx={{
-                        p: 2,
-                        height: "100%",
-                        border: "2px solid #f0f0f0",
-                        transition: "all 0.3s",
-                        cursor: "pointer",
+                        height: 170,
+                        background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
                         display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                        "&:hover": {
-                          borderColor: "primary.main",
-                          bgcolor: "#f8fdfd",
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        },
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        overflow: "hidden",
                       }}
                     >
-                      <Typography variant="h6" fontWeight={700} color="secondary">
-                        {inv.item?.name || "Unknown Item"}
+                      <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+                    </Box>
+                    <CardContent
+                      sx={{
+                        flexGrow: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        pb: 3,
+                        px: 2.5,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
+                        {inv.item?.name}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {inv.item?.category || ""} • {inv.item?.dosage || "N/A"}
-                      </Typography>
-                      <Box
-                        sx={{
-                          mt: "auto",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        mb={1}
+                        display="flex"
+                        alignItems="center"
+                        gap={0.5}
                       >
-                        <Typography variant="h6" fontWeight={700} color="primary.main">
-                          ${inv.price?.toFixed(2) || "0.00"}
-                        </Typography>
+                        <LocalPharmacy fontSize="small" sx={{ color: "primary.main" }} />
+                        {inv.item?.category || "General"}
+                      </Typography>
+                      <Box sx={{ mt: "auto", display: "flex", alignItems: "center", gap: 1 }}>
                         <Chip
-                          label={`Stock: ${inv.quantity || 0} units`}
                           size="small"
-                          sx={{
-                            ...getStockStatusColor(inv.stockStatus),
-                            fontWeight: 600,
-                          }}
+                          label={`Stock: ${inv.quantity || 0}`}
+                          sx={{ ...getStockStatusColor(inv.stockStatus), fontWeight: 600 }}
                         />
+                        <Typography variant="body2" color="text.secondary">
+                          {inv.item?.dosage || ""}
+                        </Typography>
                       </Box>
-                    </Paper>
-                  </Grid>
+                    </CardContent>
+                  </Card>
                 ))}
-              </Grid>
+              </Box>
             )}
           </CardContent>
         </Card>
@@ -494,16 +584,13 @@ const PharmacyDetail = () => {
             {reviews.length === 0 ? (
               <Alert severity="info">No reviews yet</Alert>
             ) : (
-              reviews.slice(0, 10).map((review) => (
+              reviews.slice(0, 10).map((review, idx) => (
                 <Box
                   key={review._id}
                   sx={{
                     mb: 3,
                     pb: 3,
-                    borderBottom:
-                      review !== reviews[reviews.length - 1]
-                        ? "1px solid #e0e0e0"
-                        : "none",
+                    borderBottom: idx !== reviews.length - 1 ? "1px solid #e0e0e0" : "none",
                   }}
                 >
                   <Box
@@ -515,8 +602,7 @@ const PharmacyDetail = () => {
                   >
                     <Box>
                       <Typography variant="subtitle1" fontWeight={600}>
-                        {review.user?.firstName || "Anonymous User"}{" "}
-                        {review.user?.lastName || ""}
+                        {review.user?.firstName || "Anonymous User"} {review.user?.lastName || ""}
                       </Typography>
                       <Rating value={review.rating} readOnly size="small" />
                     </Box>
@@ -536,18 +622,19 @@ const PharmacyDetail = () => {
         </Card>
       </Container>
 
-      <ProductOrderDialog
-        open={orderDialogOpen}
+      <ProductDetailsDialog
+        open={detailsDialogOpen}
         onClose={() => {
-          setOrderDialogOpen(false);
-          setSelectedProduct(null);
+          setDetailsDialogOpen(false);
+          setDetailsProduct(null);
+          setProductPharmacies([]);
         }}
-        product={selectedProduct}
-        pharmacy={pharmacy}
-        user={user}
-        onOrderSuccess={() => {
-          // handle success if needed (e.g. show toast, refetch inventory, etc.)
-        }}
+        product={detailsProduct}
+        pharmacies={productPharmacies}
+        onSelectPharmacy={(pharmacy) =>
+          navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)
+        }
+        onRequestPharmacy={handleRequestPharmacy}
       />
 
       <Footer />
