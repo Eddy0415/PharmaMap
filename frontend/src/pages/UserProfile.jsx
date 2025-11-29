@@ -14,6 +14,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  ListItemButton,
   Chip,
   IconButton,
   Paper,
@@ -35,7 +36,6 @@ import Star from "@mui/icons-material/Star";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { userAPI, orderAPI, authAPI } from "../services/api";
-import { useNavigate as useNavigateHook } from "react-router-dom";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -59,12 +59,11 @@ const UserProfile = () => {
   });
 
   useEffect(() => {
-    // Load user from localStorage
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       setUser(userData);
-      fetchUserProfile(userData.id);
+      fetchUserProfile();
       fetchOrders(userData.id);
       fetchFavorites(userData.id);
     } else {
@@ -72,9 +71,8 @@ const UserProfile = () => {
     }
   }, [navigate]);
 
-  const fetchUserProfile = async (userId) => {
+  const fetchUserProfile = async () => {
     try {
-      // Use auth/me since there's no GET /users/:id endpoint
       const response = await authAPI.getMe();
       const profile = response.data.user;
       if (profile) {
@@ -162,7 +160,6 @@ const UserProfile = () => {
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     try {
-      // Validate passwords
       if (
         !passwordData.currentPassword ||
         !passwordData.newPassword ||
@@ -227,7 +224,7 @@ const UserProfile = () => {
   };
 
   const renderProfileSection = () => (
-    <Card>
+    <Card sx={{ width: "100%" }}>
       <CardContent>
         <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
           <Person sx={{ mr: 1, color: "primary.main" }} />
@@ -238,7 +235,7 @@ const UserProfile = () => {
 
         <form onSubmit={handleProfileUpdate}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="First Name"
@@ -249,7 +246,7 @@ const UserProfile = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Last Name"
@@ -260,7 +257,8 @@ const UserProfile = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            {/* Email wider than phone */}
+            <Grid item xs={12} md={8}>
               <TextField
                 fullWidth
                 label="Email Address"
@@ -272,7 +270,7 @@ const UserProfile = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label="Phone Number"
@@ -283,7 +281,7 @@ const UserProfile = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Date of Birth"
@@ -298,7 +296,7 @@ const UserProfile = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 select
@@ -365,7 +363,7 @@ const UserProfile = () => {
   };
 
   const renderOrdersSection = () => (
-    <Card>
+    <Card sx={{ width: "100%" }}>
       <CardContent>
         <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
           <ShoppingBag sx={{ mr: 1, color: "primary.main" }} />
@@ -527,7 +525,6 @@ const UserProfile = () => {
                       size="small"
                       startIcon={<Replay />}
                       onClick={() => {
-                        // Navigate to pharmacy to reorder
                         if (order.pharmacy?._id) {
                           navigate(`/pharmacy/${order.pharmacy._id}`);
                         }
@@ -546,7 +543,7 @@ const UserProfile = () => {
   );
 
   const renderAddressesSection = () => (
-    <Card>
+    <Card sx={{ width: "100%" }}>
       <CardContent>
         <Box
           sx={{
@@ -668,7 +665,7 @@ const UserProfile = () => {
   );
 
   const renderFavoritesSection = () => (
-    <Box>
+    <Box sx={{ width: "100%" }}>
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
@@ -875,7 +872,7 @@ const UserProfile = () => {
   );
 
   const renderSecuritySection = () => (
-    <Card>
+    <Card sx={{ width: "100%" }}>
       <CardContent>
         <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
           <Security sx={{ mr: 1, color: "primary.main" }} />
@@ -886,7 +883,8 @@ const UserProfile = () => {
 
         <form onSubmit={handlePasswordUpdate}>
           <Grid container spacing={2}>
-            <Grid item xs={12}>
+            {/* Three equal-width fields */}
+            <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label="Current Password"
@@ -902,7 +900,7 @@ const UserProfile = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label="New Password"
@@ -919,7 +917,7 @@ const UserProfile = () => {
                 helperText="Password must be at least 8 characters long"
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label="Confirm New Password"
@@ -981,6 +979,16 @@ const UserProfile = () => {
     return null;
   }
 
+  const sidebarButtonSx = {
+    borderRadius: 2,
+    mb: 1,
+    "&.Mui-selected": {
+      background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+      color: "white",
+      "& .MuiListItemIcon-root": { color: "white" },
+    },
+  };
+
   return (
     <Box
       component="main"
@@ -989,10 +997,22 @@ const UserProfile = () => {
       <Header user={user} onLogout={handleLogout} />
 
       <Container component="section" maxWidth="xl" sx={{ py: 5 }}>
-        <Grid container spacing={4}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: "flex-start",
+            gap: 4,
+          }}
+        >
           {/* Sidebar */}
-          <Grid item xs={12} md={3}>
-            <Card sx={{ position: "sticky", top: 90 }}>
+          <Box
+            sx={{
+              width: { xs: "100%", md: 300 },
+              flexShrink: 0,
+            }}
+          >
+            <Card sx={{ position: { md: "sticky" }, top: 90 }}>
               <CardContent>
                 <Box
                   sx={{
@@ -1024,106 +1044,73 @@ const UserProfile = () => {
                 </Box>
 
                 <List>
-                  <ListItem
-                    button
-                    selected={activeSection === "profile"}
-                    onClick={() => setActiveSection("profile")}
-                    sx={{
-                      borderRadius: 2,
-                      mb: 1,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        color: "white",
-                        "& .MuiListItemIcon-root": { color: "white" },
-                      },
-                    }}
-                  >
-                    <ListItemIcon>
-                      <Person />
-                    </ListItemIcon>
-                    <ListItemText primary="Profile Info" />
-                  </ListItem>
-                  <ListItem
-                    button
-                    selected={activeSection === "orders"}
-                    onClick={() => setActiveSection("orders")}
-                    sx={{
-                      borderRadius: 2,
-                      mb: 1,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        color: "white",
-                        "& .MuiListItemIcon-root": { color: "white" },
-                      },
-                    }}
-                  >
-                    <ListItemIcon>
-                      <ShoppingBag />
-                    </ListItemIcon>
-                    <ListItemText primary="My Orders" />
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      selected={activeSection === "profile"}
+                      onClick={() => setActiveSection("profile")}
+                      sx={sidebarButtonSx}
+                    >
+                      <ListItemIcon>
+                        <Person />
+                      </ListItemIcon>
+                      <ListItemText primary="Profile Info" />
+                    </ListItemButton>
                   </ListItem>
 
-                  <ListItem
-                    button
-                    selected={activeSection === "favorites"}
-                    onClick={() => setActiveSection("favorites")}
-                    sx={{
-                      borderRadius: 2,
-                      mb: 1,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        color: "white",
-                        "& .MuiListItemIcon-root": { color: "white" },
-                      },
-                    }}
-                  >
-                    <ListItemIcon>
-                      <Favorite />
-                    </ListItemIcon>
-                    <ListItemText primary="Favorites" />
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      selected={activeSection === "orders"}
+                      onClick={() => setActiveSection("orders")}
+                      sx={sidebarButtonSx}
+                    >
+                      <ListItemIcon>
+                        <ShoppingBag />
+                      </ListItemIcon>
+                      <ListItemText primary="My Orders" />
+                    </ListItemButton>
                   </ListItem>
-                  <ListItem
-                    button
-                    selected={activeSection === "security"}
-                    onClick={() => setActiveSection("security")}
-                    sx={{
-                      borderRadius: 2,
-                      mb: 1,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        color: "white",
-                        "& .MuiListItemIcon-root": { color: "white" },
-                      },
-                    }}
-                  >
-                    <ListItemIcon>
-                      <Security />
-                    </ListItemIcon>
-                    <ListItemText primary="Security" />
+
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      selected={activeSection === "favorites"}
+                      onClick={() => setActiveSection("favorites")}
+                      sx={sidebarButtonSx}
+                    >
+                      <ListItemIcon>
+                        <Favorite />
+                      </ListItemIcon>
+                      <ListItemText primary="Favorites" />
+                    </ListItemButton>
                   </ListItem>
-                  <ListItem
-                    button
-                    onClick={handleLogout}
-                    sx={{
-                      borderRadius: 2,
-                    }}
-                  >
-                    <ListItemIcon>
-                      <Logout />
-                    </ListItemIcon>
-                    <ListItemText primary="Logout" />
+
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      selected={activeSection === "security"}
+                      onClick={() => setActiveSection("security")}
+                      sx={sidebarButtonSx}
+                    >
+                      <ListItemIcon>
+                        <Security />
+                      </ListItemIcon>
+                      <ListItemText primary="Security" />
+                    </ListItemButton>
+                  </ListItem>
+
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={handleLogout} sx={{ borderRadius: 2 }}>
+                      <ListItemIcon>
+                        <Logout />
+                      </ListItemIcon>
+                      <ListItemText primary="Logout" />
+                    </ListItemButton>
                   </ListItem>
                 </List>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
           {/* Main Content */}
-          <Grid item xs={12} md={9}>
+          <Box sx={{ flexGrow: 1 }}>
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="h4"
@@ -1156,8 +1143,8 @@ const UserProfile = () => {
             {activeSection === "addresses" && renderAddressesSection()}
             {activeSection === "favorites" && renderFavoritesSection()}
             {activeSection === "security" && renderSecuritySection()}
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Container>
 
       <Footer />
