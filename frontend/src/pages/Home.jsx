@@ -26,7 +26,7 @@ import ShieldMoon from "@mui/icons-material/ShieldMoon";
 import TrendingUp from "@mui/icons-material/TrendingUp";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { pharmacyAPI, medicationAPI } from "../services/api";
+import { pharmacyAPI, medicationAPI, orderAPI } from "../services/api";
 import ProductDetailsDialog from "../components/ProductDetailsDialog";
 
 const carouselSlides = [
@@ -95,6 +95,7 @@ const Home = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productPharmacies, setProductPharmacies] = useState([]);
   const [loadingProduct, setLoadingProduct] = useState(false);
+  const [requesting, setRequesting] = useState(false);
 
   useEffect(() => {
     // Load user from localStorage
@@ -389,6 +390,36 @@ const Home = () => {
       setDetailsDialogOpen(true);
     } finally {
       setLoadingProduct(false);
+    }
+  };
+
+  const handleRequestPharmacy = async (entry) => {
+    if (!user?.id) {
+      navigate("/login");
+      return false;
+    }
+    if (!selectedProduct?.item?._id && !selectedProduct?.item?.id) {
+      return false;
+    }
+    try {
+      setRequesting(true);
+      await orderAPI.create({
+        customer: user.id,
+        pharmacy: entry.pharmacy?._id || entry.pharmacy,
+        items: [
+          {
+            item: selectedProduct.item._id || selectedProduct.item.id,
+            quantity: 1,
+          },
+        ],
+        customerNotes: "Product request",
+      });
+      return true;
+    } catch (error) {
+      console.error("Request error:", error);
+      return false;
+    } finally {
+      setRequesting(false);
     }
   };
 
@@ -972,6 +1003,7 @@ const Home = () => {
         onSelectPharmacy={(pharmacy) =>
           navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)
         }
+        onRequestPharmacy={handleRequestPharmacy}
       />
 
       <Footer />

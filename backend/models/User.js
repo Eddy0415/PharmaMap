@@ -26,9 +26,14 @@ const userSchema = new Schema({
   // Customer-specific fields
   dateOfBirth: { type: Date },
   gender: {
-    type: String,
-    enum: ["male", "female", "prefer-not"],
-  },
+  type: String,
+  enum: ["male", "female", "other", "prefer-not", ""],
+  default: "",
+},
+
+
+  // Avatar
+  avatarUrl: { type: String },
 
   // Favorites
   favoritePharmacies: [

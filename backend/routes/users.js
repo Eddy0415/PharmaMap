@@ -3,13 +3,23 @@ const router = express.Router();
 const User = require("../models/User");
 const Pharmacy = require("../models/Pharmacy");
 const Item = require("../models/Item");
+const firebaseAuth = require("../middleware/firebaseAuth");
 
 // @route   PUT /api/users/:id
 // @desc    Update user profile
-// @access  Private
-router.put("/:id", async (req, res) => {
+// @access  Private (must be the same user)
+router.put("/:id", firebaseAuth, async (req, res) => {
   try {
-    const { firstName, lastName, phone, dateOfBirth, gender } = req.body;
+    // Ensure the logged-in user matches the :id param
+    if (req.user._id.toString() !== req.params.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to update this user",
+      });
+    }
+
+    const { firstName, lastName, phone, dateOfBirth, gender, avatarUrl } =
+      req.body;
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
@@ -19,6 +29,7 @@ router.put("/:id", async (req, res) => {
         phone,
         dateOfBirth,
         gender,
+        avatarUrl,
         updatedAt: Date.now(),
       },
       { new: true, runValidators: true }
@@ -46,16 +57,24 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+
 // @route   GET /api/users/:id/favorite-items
 // @desc    Get all favorite items for a user
 // @access  Private
-router.get("/:id/favorite-items", async (req, res) => {
+router.get("/:id/favorite-pharmacies", firebaseAuth, async (req, res) => {
   try {
+    if (req.user._id.toString() !== req.params.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to access this user's favorites",
+      });
+    }
+
     const user = await User.findById(req.params.id)
-      .select("favoriteItems")
+      .select("favoritePharmacies")
       .populate(
-        "favoriteItems",
-        "name category imageUrl description form dosage"
+        "favoritePharmacies",
+        "name address phone averageRating totalReviews logoUrl"
       );
 
     if (!user) {
@@ -67,26 +86,35 @@ router.get("/:id/favorite-items", async (req, res) => {
 
     res.json({
       success: true,
-      count: user.favoriteItems.length,
-      favoriteItems: user.favoriteItems,
+      count: user.favoritePharmacies.length,
+      favoritePharmacies: user.favoritePharmacies,
     });
   } catch (error) {
-    console.error("Get favorite items error:", error);
+    console.error("Get favorite pharmacies error:", error);
     res.status(500).json({
       success: false,
-      message: "Error fetching favorite items",
+      message: "Error fetching favorite pharmacies",
       error: error.message,
     });
   }
 });
 
+
+
+
 // @route   POST /api/users/:id/favorite-items/:itemId
 // @desc    Add item to favorites
 // @access  Private
-router.post("/:id/favorite-items/:itemId", async (req, res) => {
+router.post("/:id/favorite-pharmacies/:pharmacyId", firebaseAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    if (req.user._id.toString() !== req.params.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to modify this user's favorites",
+      });
+    }
 
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -94,33 +122,31 @@ router.post("/:id/favorite-items/:itemId", async (req, res) => {
       });
     }
 
-    const item = await Item.findById(req.params.itemId);
-
-    if (!item) {
+    const pharmacy = await Pharmacy.findById(req.params.pharmacyId);
+    if (!pharmacy) {
       return res.status(404).json({
         success: false,
-        message: "Item not found",
+        message: "Pharmacy not found",
       });
     }
 
-    // Check if already in favorites
-    if (user.favoriteItems.includes(req.params.itemId)) {
+    if (user.favoritePharmacies.includes(req.params.pharmacyId)) {
       return res.status(400).json({
         success: false,
-        message: "Item already in favorites",
+        message: "Pharmacy already in favorites",
       });
     }
 
-    user.favoriteItems.push(req.params.itemId);
+    user.favoritePharmacies.push(req.params.pharmacyId);
     await user.save();
 
     res.json({
       success: true,
-      message: "Item added to favorites",
-      favoriteItems: user.favoriteItems,
+      message: "Pharmacy added to favorites",
+      favoritePharmacies: user.favoritePharmacies,
     });
   } catch (error) {
-    console.error("Add favorite item error:", error);
+    console.error("Add favorite pharmacy error:", error);
     res.status(500).json({
       success: false,
       message: "Error adding to favorites",
@@ -129,13 +155,20 @@ router.post("/:id/favorite-items/:itemId", async (req, res) => {
   }
 });
 
+
 // @route   DELETE /api/users/:id/favorite-items/:itemId
 // @desc    Remove item from favorites
 // @access  Private
-router.delete("/:id/favorite-items/:itemId", async (req, res) => {
+router.delete("/:id/favorite-pharmacies/:pharmacyId", firebaseAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    if (req.user._id.toString() !== req.params.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to modify this user's favorites",
+      });
+    }
 
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -143,16 +176,16 @@ router.delete("/:id/favorite-items/:itemId", async (req, res) => {
       });
     }
 
-    user.favoriteItems.pull(req.params.itemId);
+    user.favoritePharmacies.pull(req.params.pharmacyId);
     await user.save();
 
     res.json({
       success: true,
-      message: "Item removed from favorites",
-      favoriteItems: user.favoriteItems,
+      message: "Pharmacy removed from favorites",
+      favoritePharmacies: user.favoritePharmacies,
     });
   } catch (error) {
-    console.error("Remove favorite item error:", error);
+    console.error("Remove favorite pharmacy error:", error);
     res.status(500).json({
       success: false,
       message: "Error removing from favorites",
@@ -160,6 +193,8 @@ router.delete("/:id/favorite-items/:itemId", async (req, res) => {
     });
   }
 });
+;
+
 
 // @route   GET /api/users/:id/favorite-pharmacies
 // @desc    Get all favorite pharmacies for a user
@@ -198,10 +233,16 @@ router.get("/:id/favorite-pharmacies", async (req, res) => {
 // @route   POST /api/users/:id/favorite-pharmacies/:pharmacyId
 // @desc    Add pharmacy to favorites
 // @access  Private
-router.post("/:id/favorite-pharmacies/:pharmacyId", async (req, res) => {
+router.post("/:id/favorite-items/:itemId", firebaseAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    if (req.user._id.toString() !== req.params.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to modify this user's favorites",
+      });
+    }
 
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -209,33 +250,31 @@ router.post("/:id/favorite-pharmacies/:pharmacyId", async (req, res) => {
       });
     }
 
-    const pharmacy = await Pharmacy.findById(req.params.pharmacyId);
-
-    if (!pharmacy) {
+    const item = await Item.findById(req.params.itemId);
+    if (!item) {
       return res.status(404).json({
         success: false,
-        message: "Pharmacy not found",
+        message: "Item not found",
       });
     }
 
-    // Check if already in favorites
-    if (user.favoritePharmacies.includes(req.params.pharmacyId)) {
+    if (user.favoriteItems.includes(req.params.itemId)) {
       return res.status(400).json({
         success: false,
-        message: "Pharmacy already in favorites",
+        message: "Item already in favorites",
       });
     }
 
-    user.favoritePharmacies.push(req.params.pharmacyId);
+    user.favoriteItems.push(req.params.itemId);
     await user.save();
 
     res.json({
       success: true,
-      message: "Pharmacy added to favorites",
-      favoritePharmacies: user.favoritePharmacies,
+      message: "Item added to favorites",
+      favoriteItems: user.favoriteItems,
     });
   } catch (error) {
-    console.error("Add favorite pharmacy error:", error);
+    console.error("Add favorite item error:", error);
     res.status(500).json({
       success: false,
       message: "Error adding to favorites",
@@ -244,13 +283,20 @@ router.post("/:id/favorite-pharmacies/:pharmacyId", async (req, res) => {
   }
 });
 
+
 // @route   DELETE /api/users/:id/favorite-pharmacies/:pharmacyId
 // @desc    Remove pharmacy from favorites
 // @access  Private
-router.delete("/:id/favorite-pharmacies/:pharmacyId", async (req, res) => {
+router.delete("/:id/favorite-pharmacies/:pharmacyId", firebaseAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    if (req.user._id.toString() !== req.params.id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to modify this user's favorites",
+      });
+    }
 
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -275,5 +321,6 @@ router.delete("/:id/favorite-pharmacies/:pharmacyId", async (req, res) => {
     });
   }
 });
+
 
 module.exports = router;

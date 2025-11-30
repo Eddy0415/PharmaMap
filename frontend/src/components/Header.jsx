@@ -28,10 +28,16 @@ const Header = ({
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const normalize = (u) => {
+    if (!u) return null;
+    const id = u.id || u._id || u.userId;
+    return { ...u, id };
+  };
+
   const [displayUser, setDisplayUser] = useState(() => {
-    if (user) return user;
+    if (user) return normalize(user);
     const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : null;
+    return stored ? normalize(JSON.parse(stored)) : null;
   });
 
   const handleMenuOpen = (event) => {
@@ -44,17 +50,17 @@ const Header = ({
 
   useEffect(() => {
     if (user) {
-      setDisplayUser(user);
+      setDisplayUser(normalize(user));
       return;
     }
     const stored = localStorage.getItem("user");
-    setDisplayUser(stored ? JSON.parse(stored) : null);
+    setDisplayUser(stored ? normalize(JSON.parse(stored)) : null);
   }, [user]);
 
   useEffect(() => {
     const syncUser = () => {
       const stored = localStorage.getItem("user");
-      setDisplayUser(stored ? JSON.parse(stored) : null);
+      setDisplayUser(stored ? normalize(JSON.parse(stored)) : null);
     };
     window.addEventListener("userUpdated", syncUser);
     window.addEventListener("storage", syncUser);
@@ -338,6 +344,7 @@ const Header = ({
                   }}
                 >
                   <Avatar
+                    src={displayUser.avatarUrl || undefined}
                     sx={{
                       bgcolor: "#4ecdc4",
                       width: { xs: 32, sm: 40 },

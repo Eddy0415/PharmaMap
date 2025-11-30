@@ -53,11 +53,11 @@ const ProductDetailsDialog = ({
   product,
   pharmacies = [],
   onSelectPharmacy,
-  onRequestPharmacy, // optional
+  onRequestPharmacy, // optional, should return Promise<boolean>
 }) => {
   const [showPharmacies, setShowPharmacies] = useState(false);
-  const [requestMode, setRequestMode] = useState(false);
   const { location, requestLocation } = useGeolocation();
+  const [requestStatus, setRequestStatus] = useState({});
 
   // Sort pharmacies by distance if location is available
   const sortedPharmacies = useMemo(() => {
@@ -88,7 +88,6 @@ const ProductDetailsDialog = ({
   }, [pharmacies, location]);
 
   const pharmacyCount = pharmacies.length;
-  const showRequest = Boolean(onRequestPharmacy);
 
   const composition = useMemo(() => {
     if (!product?.item) return null;
@@ -102,7 +101,7 @@ const ProductDetailsDialog = ({
   useEffect(() => {
     if (open) {
       setShowPharmacies(false);
-      setRequestMode(false);
+      setRequestStatus({});
       // Request location when dialog opens
       requestLocation();
     }
@@ -110,14 +109,21 @@ const ProductDetailsDialog = ({
 
   if (!product) return null;
 
-  const handleSelectEntry = async (entry) => {
-    if (requestMode && onRequestPharmacy) {
-      await onRequestPharmacy(entry);
-      setRequestMode(false);
-      setShowPharmacies(false);
-      return;
-    }
+  const handleSelectEntry = (entry) => {
     onSelectPharmacy(entry.pharmacy);
+  };
+
+  const handleRequestClick = async (entry) => {
+    if (!onRequestPharmacy) return;
+    const id = entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy;
+    setRequestStatus((prev) => ({ ...prev, [id]: "sending" }));
+    try {
+      const ok = await onRequestPharmacy(entry);
+      setRequestStatus((prev) => ({ ...prev, [id]: ok ? "sent" : undefined }));
+    } catch (err) {
+      console.error("Request error", err);
+      setRequestStatus((prev) => ({ ...prev, [id]: undefined }));
+    }
   };
 
   const renderPharmacyList = () => (
@@ -205,17 +211,39 @@ const ProductDetailsDialog = ({
               )}
             </Box>
           </Box>
-          <Button
-            variant="contained"
-            size="small"
-            onClick={() => handleSelectEntry(entry)}
-            sx={{
-              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {requestMode ? "Send request" : "View Pharmacy"}
-          </Button>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => handleSelectEntry(entry)}
+              sx={{
+                background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              View Pharmacy
+            </Button>
+            {onRequestPharmacy && (
+              <Button
+                variant={requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sent" ? "contained" : "outlined"}
+                size="small"
+                onClick={() => handleRequestClick(entry)}
+                disabled={
+                  requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sent" ||
+                  requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sending"
+                }
+                sx={
+                  requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sent"
+                    ? { bgcolor: "#4caf50", color: "white", "&:hover": { bgcolor: "#43a047" } }
+                    : {}
+                }
+              >
+                {requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sent"
+                  ? "Request sent"
+                  : "Request"}
+              </Button>
+            )}
+          </Box>
         </Box>
       ))}
       {pharmacyCount === 0 && (
@@ -336,7 +364,6 @@ const ProductDetailsDialog = ({
             variant="contained"
             onClick={() => {
               setShowPharmacies((prev) => !prev);
-              setRequestMode(false);
             }}
             disabled={pharmacyCount === 0}
             sx={{
@@ -348,25 +375,10 @@ const ProductDetailsDialog = ({
               fontWeight: 700,
             }}
           >
-            {showPharmacies
-              ? "Back to details"
-              : pharmacyCount > 0
+            {pharmacyCount > 0
               ? `Available in ${pharmacyCount} pharmacies nearby`
               : "Not available nearby"}
           </Button>
-          {showRequest && (
-            <Button
-              variant="outlined"
-              onClick={() => {
-                setRequestMode(true);
-                setShowPharmacies(true);
-              }}
-              disabled={pharmacyCount === 0}
-              sx={{ textTransform: "none", fontWeight: 700 }}
-            >
-              Request
-            </Button>
-          )}
         </Box>
       </DialogActions>
     </Dialog>

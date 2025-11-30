@@ -1,3 +1,4 @@
+import { firebaseSignOut } from "../firebase/auth";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -33,9 +34,11 @@ import Work from "@mui/icons-material/Work";
 import Add from "@mui/icons-material/Add";
 import Replay from "@mui/icons-material/Replay";
 import Star from "@mui/icons-material/Star";
+import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { userAPI, orderAPI, authAPI } from "../services/api";
+import { auth } from "../firebase/firebase";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -51,17 +54,26 @@ const UserProfile = () => {
     phone: "",
     dateOfBirth: "",
     gender: "",
+    avatarUrl: "",
   });
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [reorderStatus, setReorderStatus] = useState({});
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
+  const normalizeUser = (u) => {
+    if (!u) return null;
+    const id = u.id || u._id || u.userId;
+    return { ...u, id };
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      const userData = JSON.parse(storedUser);
+      const userData = normalizeUser(JSON.parse(storedUser));
       setUser(userData);
       fetchUserProfile();
       fetchOrders(userData.id);
@@ -74,7 +86,7 @@ const UserProfile = () => {
   const fetchUserProfile = async () => {
     try {
       const response = await authAPI.getMe();
-      const profile = response.data.user;
+      const profile = normalizeUser(response.data.user);
       if (profile) {
         setProfileData({
           firstName: profile.firstName || "",
@@ -85,10 +97,26 @@ const UserProfile = () => {
             ? profile.dateOfBirth.split("T")[0]
             : "",
           gender: profile.gender || "",
+          avatarUrl: profile.avatarUrl || "",
         });
+        setAvatarPreview(profile.avatarUrl || "");
+        setUser((prev) => normalizeUser({ ...prev, ...profile }));
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...JSON.parse(localStorage.getItem("user") || "{}"),
+            ...profile,
+          })
+        );
+        window.dispatchEvent(new Event("userUpdated"));
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
+      if (error?.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+      }
     }
   };
 
@@ -115,47 +143,97 @@ const UserProfile = () => {
   };
 
   const handleRemoveFavoritePharmacy = async (pharmacyId) => {
-    if (!user?.id) return;
+    const userId = user?.id || user?._id;
+    if (!userId) return;
     try {
-      await userAPI.removeFavoritePharmacy(user.id, pharmacyId);
+      await userAPI.removeFavoritePharmacy(userId, pharmacyId);
       setFavoritePharmacies(
         favoritePharmacies.filter((p) => (p._id || p) !== pharmacyId)
       );
-      alert("Pharmacy removed from favorites");
     } catch (error) {
       console.error("Error removing favorite pharmacy:", error);
-      alert("Failed to remove favorite");
     }
   };
 
   const handleRemoveFavoriteItem = async (itemId) => {
-    if (!user?.id) return;
+    const userId = user?.id || user?._id;
+    if (!userId) return;
     try {
-      await userAPI.removeFavoriteItem(user.id, itemId);
+      await userAPI.removeFavoriteItem(userId, itemId);
       setFavoriteItems(favoriteItems.filter((i) => (i._id || i) !== itemId));
-      alert("Item removed from favorites");
     } catch (error) {
       console.error("Error removing favorite item:", error);
-      alert("Failed to remove favorite");
     }
   };
 
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      await userAPI.updateProfile(user.id, profileData);
-      alert("Profile updated successfully!");
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("Failed to update profile");
-    }
-  };
+const handleProfileUpdate = async (e) => {
+  e.preventDefault();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/");
-  };
+  const userId = user?.id || user?._id;
+  if (!userId) {
+    navigate("/login");
+    return;
+  }
+
+  try {
+    // Always refresh Firebase token before saving
+    if (auth.currentUser) {
+      const fresh = await auth.currentUser.getIdToken(true);
+      localStorage.setItem("token", fresh);
+    }
+
+    // Payload to send to backend
+    const payload = {
+      ...profileData,
+      phone: profileData.phone || "",
+      firstName: profileData.firstName || "",
+      lastName: profileData.lastName || "",
+    };
+
+    // Update DB
+    await userAPI.updateProfile(userId, payload);
+
+    // 🔥 FIX: fetch the updated user fresh from backend
+    const refreshed = await authAPI.getMe();
+    const freshUser = refreshed.data.user;
+
+    // Update state + avatar preview
+    setUser(freshUser);
+    setAvatarPreview(freshUser.avatarUrl || "");
+    setProfileData({
+      firstName: freshUser.firstName || "",
+      lastName: freshUser.lastName || "",
+      email: freshUser.email || "",
+      phone: freshUser.phone || "",
+      dateOfBirth: freshUser.dateOfBirth
+        ? freshUser.dateOfBirth.split("T")[0]
+        : "",
+      gender: freshUser.gender || "",
+      avatarUrl: freshUser.avatarUrl || "",
+    });
+
+    // Sync with localStorage
+    localStorage.setItem("user", JSON.stringify(freshUser));
+    window.dispatchEvent(new Event("userUpdated"));
+  } catch (error) {
+    console.error("Error updating profile:", error);
+  }
+};
+
+
+const handleLogout = async () => {
+  try {
+    await firebaseSignOut();
+  } catch (err) {
+    console.error("Firebase logout error:", err);
+  }
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
+  navigate("/");
+};
+
 
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
@@ -165,22 +243,18 @@ const UserProfile = () => {
         !passwordData.newPassword ||
         !passwordData.confirmPassword
       ) {
-        alert("Please fill in all password fields");
         return;
       }
 
       if (passwordData.newPassword !== passwordData.confirmPassword) {
-        alert("New password and confirmation do not match");
         return;
       }
 
       if (passwordData.newPassword.length < 8) {
-        alert("New password must be at least 8 characters long");
         return;
       }
 
       await authAPI.changePassword(passwordData);
-      alert("Password updated successfully!");
       setPasswordData({
         currentPassword: "",
         newPassword: "",
@@ -188,60 +262,93 @@ const UserProfile = () => {
       });
     } catch (error) {
       console.error("Error updating password:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to update password";
-      alert(errorMessage);
     }
   };
 
   const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently deleted."
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const doubleConfirm = window.confirm(
-      "This is your last chance. Are you absolutely sure you want to delete your account?"
-    );
-
-    if (!doubleConfirm) {
-      return;
-    }
-
     try {
       await authAPI.deleteAccount();
-      alert("Your account has been deleted successfully.");
       handleLogout();
     } catch (error) {
       console.error("Error deleting account:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to delete account";
-      alert(errorMessage);
+    }
+  };
+
+const handleAvatarChange = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const result = event.target?.result;
+    if (typeof result === "string") {
+      setAvatarPreview(result);
+
+      // 🔥 Most important part:
+      // mark the profileData as changed immediately
+      setProfileData((prev) => ({
+        ...prev,
+        avatarUrl: result,
+      }));
+    }
+  };
+
+  reader.readAsDataURL(file);
+};
+
+
+  const handleReorder = async (order) => {
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+    setReorderStatus((prev) => ({ ...prev, [order._id]: "sending" }));
+    try {
+      const payload = {
+        customer: userId,
+        pharmacy: order.pharmacy?._id || order.pharmacy,
+        items:
+          order.items?.map((item) => ({
+            item: item.item?._id || item.item?.id || item.item,
+            quantity: item.quantity || 1,
+          })) || [],
+        customerNotes: order.customerNotes,
+      };
+      const res = await orderAPI.create(payload);
+      const newOrder = res.data.order;
+      setOrders((prev) => (newOrder ? [newOrder, ...prev] : prev));
+      setReorderStatus((prev) => ({ ...prev, [order._id]: "sent" }));
+    } catch (error) {
+      console.error("Error reordering:", error);
+      setReorderStatus((prev) => ({ ...prev, [order._id]: undefined }));
     }
   };
 
   const renderProfileSection = () => (
-    <Card sx={{ width: "100%" }}>
-      <CardContent>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-          <Person sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h5" fontWeight={700}>
-            Personal Details
-          </Typography>
-        </Box>
+  <Card sx={{ width: "100%" }}>
+    <CardContent>
+      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+        <Person sx={{ mr: 1, color: "primary.main" }} />
+        <Typography variant="h5" fontWeight={700}>
+          Personal Details
+        </Typography>
+      </Box>
 
-        <form onSubmit={handleProfileUpdate}>
-          <Grid container spacing={2}>
+      <form onSubmit={handleProfileUpdate}>
+        <Grid container spacing={2}>
+          {/* ROW 1: First + Last name */}
+          <Grid container item spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="First Name"
                 value={profileData.firstName}
                 onChange={(e) =>
-                  setProfileData({ ...profileData, firstName: e.target.value })
+                  setProfileData({
+                    ...profileData,
+                    firstName: e.target.value,
+                  })
                 }
                 required
               />
@@ -252,12 +359,18 @@ const UserProfile = () => {
                 label="Last Name"
                 value={profileData.lastName}
                 onChange={(e) =>
-                  setProfileData({ ...profileData, lastName: e.target.value })
+                  setProfileData({
+                    ...profileData,
+                    lastName: e.target.value,
+                  })
                 }
                 required
               />
             </Grid>
-            {/* Email wider than phone */}
+          </Grid>
+
+          {/* ROW 2: Email (wide) + Phone (narrow) */}
+          <Grid container item spacing={2}>
             <Grid item xs={12} md={8}>
               <TextField
                 fullWidth
@@ -265,7 +378,10 @@ const UserProfile = () => {
                 type="email"
                 value={profileData.email}
                 onChange={(e) =>
-                  setProfileData({ ...profileData, email: e.target.value })
+                  setProfileData({
+                    ...profileData,
+                    email: e.target.value,
+                  })
                 }
                 required
               />
@@ -276,11 +392,18 @@ const UserProfile = () => {
                 label="Phone Number"
                 value={profileData.phone}
                 onChange={(e) =>
-                  setProfileData({ ...profileData, phone: e.target.value })
+                  setProfileData({
+                    ...profileData,
+                    phone: e.target.value,
+                  })
                 }
                 required
               />
             </Grid>
+          </Grid>
+
+          {/* ROW 3: Date of birth + Gender */}
+          <Grid container item spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -303,7 +426,10 @@ const UserProfile = () => {
                 label="Gender"
                 value={profileData.gender}
                 onChange={(e) =>
-                  setProfileData({ ...profileData, gender: e.target.value })
+                  setProfileData({
+                    ...profileData,
+                    gender: e.target.value,
+                  })
                 }
                 SelectProps={{ native: true }}
               >
@@ -315,23 +441,24 @@ const UserProfile = () => {
               </TextField>
             </Grid>
           </Grid>
+        </Grid>
 
-          <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
-            <Button
-              type="submit"
-              variant="contained"
-              sx={{
-                background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-              }}
-            >
-              Save Changes
-            </Button>
-            <Button variant="outlined">Reset</Button>
-          </Box>
-        </form>
-      </CardContent>
-    </Card>
-  );
+        <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{
+              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+            }}
+          >
+            Save Changes
+          </Button>
+          <Button variant="outlined">Reset</Button>
+        </Box>
+      </form>
+    </CardContent>
+  </Card>
+);
 
   const getOrderStatusColor = (status) => {
     switch (status) {
@@ -521,16 +648,18 @@ const UserProfile = () => {
                       ${order.totalAmount?.toFixed(2) || "0.00"}
                     </Typography>
                     <Button
-                      variant="outlined"
+                      variant={reorderStatus[order._id] === "sent" ? "contained" : "outlined"}
                       size="small"
                       startIcon={<Replay />}
-                      onClick={() => {
-                        if (order.pharmacy?._id) {
-                          navigate(`/pharmacy/${order.pharmacy._id}`);
-                        }
-                      }}
+                      onClick={() => handleReorder(order)}
+                      disabled={reorderStatus[order._id] === "sent" || reorderStatus[order._id] === "sending"}
+                      sx={
+                        reorderStatus[order._id] === "sent"
+                          ? { bgcolor: "#4caf50", color: "white", "&:hover": { bgcolor: "#43a047" } }
+                          : {}
+                      }
                     >
-                      Reorder
+                      {reorderStatus[order._id] === "sent" ? "Request sent" : "Reorder"}
                     </Button>
                   </Grid>
                 </Grid>
@@ -1023,6 +1152,7 @@ const UserProfile = () => {
                   }}
                 >
                   <Avatar
+                    src={avatarPreview || undefined}
                     sx={{
                       width: 100,
                       height: 100,
@@ -1110,7 +1240,7 @@ const UserProfile = () => {
           </Box>
 
           {/* Main Content */}
-          <Box sx={{ flexGrow: 1 }}>
+          <Box sx={{ flexGrow: 1, width: "100%", display: "block" }}>
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="h4"

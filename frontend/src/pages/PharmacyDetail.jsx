@@ -20,7 +20,6 @@ import Directions from "@mui/icons-material/Directions";
 import Favorite from "@mui/icons-material/Favorite";
 import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
-import Phone from "@mui/icons-material/Phone";
 import Room from "@mui/icons-material/Room";
 import SearchIcon from "@mui/icons-material/Search";
 import Star from "@mui/icons-material/Star";
@@ -43,11 +42,20 @@ const PharmacyDetail = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [detailsProduct, setDetailsProduct] = useState(null);
   const [productPharmacies, setProductPharmacies] = useState([]);
+  const [requestStatus, setRequestStatus] = useState({});
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
+
+  const normalizeUser = (u) => {
+    if (!u) return null;
+    const id = u.id || u._id || u.userId;
+    return { ...u, id };
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      const userData = JSON.parse(storedUser);
+      const userData = normalizeUser(JSON.parse(storedUser));
       setUser(userData);
       if (userData.id) {
         checkFavoriteStatus(userData.id);
@@ -104,8 +112,7 @@ const PharmacyDetail = () => {
   };
 
   const handleToggleFavorite = async () => {
-    if (!user?.id) {
-      alert("Please login to add favorites");
+    if (!user?.id && !user?._id) {
       return;
     }
     try {
@@ -118,13 +125,24 @@ const PharmacyDetail = () => {
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
-      alert("Failed to update favorite");
     }
   };
 
   const filteredInventory = inventory.filter((inv) =>
     (inv.item?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const totalPages = Math.max(1, Math.ceil(filteredInventory.length / pageSize));
+  const paginatedInventory = filteredInventory.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
+  const handlePageChange = (direction) => {
+    setPage((prev) => {
+      if (direction === "next") return Math.min(totalPages, prev + 1);
+      return Math.max(1, prev - 1);
+    });
+  };
 
   const getStockStatusColor = (status) => {
     switch (status) {
@@ -179,14 +197,15 @@ const PharmacyDetail = () => {
   };
 
   const handleRequestPharmacy = async (entry) => {
-    if (!user?.id) {
-      alert("Please login to send a request");
+    const userId = user?.id || user?._id;
+    if (!userId) {
       navigate("/login");
-      return;
+      return false;
     }
     try {
+      setRequestStatus((prev) => ({ ...prev, [entry.pharmacy?._id || entry.pharmacy]: "sending" }));
       await orderAPI.create({
-        customer: user.id,
+        customer: userId,
         pharmacy: entry.pharmacy?._id || entry.pharmacy,
         items: [
           {
@@ -196,13 +215,18 @@ const PharmacyDetail = () => {
         ],
         customerNotes: "Medication request",
       });
-      alert("Request sent to pharmacy.");
+      setRequestStatus((prev) => ({
+        ...prev,
+        [entry.pharmacy?._id || entry.pharmacy]: "sent",
+      }));
+      return true;
     } catch (error) {
       console.error("Error sending request:", error);
-      alert(
-        error?.response?.data?.message ||
-          "Failed to send request. Please try again."
-      );
+      setRequestStatus((prev) => ({
+        ...prev,
+        [entry.pharmacy?._id || entry.pharmacy]: undefined,
+      }));
+      return false;
     }
   };
 
@@ -296,17 +320,6 @@ const PharmacyDetail = () => {
                 </Box>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Button
-                    variant="contained"
-                    startIcon={<Phone />}
-                    onClick={() => (window.location.href = `tel:${pharmacy.phone}`)}
-                    sx={{
-                      background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                      boxShadow: "0 6px 16px rgba(78,205,196,0.35)",
-                    }}
-                  >
-                    Call Pharmacy
-                  </Button>
-                  <Button
                     variant="outlined"
                     startIcon={<Directions />}
                     onClick={() => {
@@ -318,7 +331,7 @@ const PharmacyDetail = () => {
                           "_blank"
                         );
                       } else {
-                        alert("Location coordinates not available");
+                        console.warn("Location coordinates not available");
                       }
                     }}
                   >
@@ -337,12 +350,7 @@ const PharmacyDetail = () => {
                   </Box>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Phone sx={{ color: "primary.main" }} />
-                    <Typography variant="body1" color="text.secondary">
-                      {pharmacy.phone || "N/A"}
-                    </Typography>
-                  </Box>
+                  {/* Phone removed per request */}
                 </Grid>
                 <Grid item xs={12} sm={4}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -477,16 +485,19 @@ const PharmacyDetail = () => {
               </Typography>
             </Box>
 
-            <TextField
-              fullWidth
-              placeholder="Search in this pharmacy..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ mb: 3 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "primary.main" }} />
+          <TextField
+            fullWidth
+            placeholder="Search in this pharmacy..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            sx={{ mb: 3 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "primary.main" }} />
                   </InputAdornment>
                 ),
               }}
@@ -504,7 +515,7 @@ const PharmacyDetail = () => {
                   gridAutoRows: 340, // <<< all rows same height
                 }}
               >
-                {filteredInventory.map((inv) => (
+                {paginatedInventory.map((inv) => (
                   <Card
                     key={inv._id}
                     sx={{
@@ -574,6 +585,35 @@ const PharmacyDetail = () => {
                     </CardContent>
                   </Card>
                 ))}
+              </Box>
+            )}
+            {filteredInventory.length > pageSize && (
+              <Box
+                sx={{
+                  mt: 3,
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 2,
+                  alignItems: "center",
+                }}
+              >
+                <Button
+                  variant="outlined"
+                  onClick={() => handlePageChange("prev")}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  Page {page} of {totalPages}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={() => handlePageChange("next")}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
               </Box>
             )}
           </CardContent>

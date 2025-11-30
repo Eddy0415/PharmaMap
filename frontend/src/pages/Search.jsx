@@ -19,7 +19,7 @@ import Room from "@mui/icons-material/Room";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ProductDetailsDialog from "../components/ProductDetailsDialog";
-import { medicationAPI, pharmacyAPI } from "../services/api";
+import { medicationAPI, pharmacyAPI, orderAPI } from "../services/api";
 
 const Search = () => {
   const navigate = useNavigate();
@@ -114,6 +114,33 @@ const Search = () => {
     });
     setProductPharmacies(product.pharmacies || []);
     setDetailsDialogOpen(true);
+  };
+
+  const handleRequestPharmacy = async (entry) => {
+    if (!user?.id) {
+      navigate("/login");
+      return false;
+    }
+    if (!selectedProduct?.item?._id && !selectedProduct?.item?.id) {
+      return false;
+    }
+    try {
+      await orderAPI.create({
+        customer: user.id,
+        pharmacy: entry.pharmacy?._id || entry.pharmacy,
+        items: [
+          {
+            item: selectedProduct.item._id || selectedProduct.item.id,
+            quantity: 1,
+          },
+        ],
+        customerNotes: "Product request",
+      });
+      return true;
+    } catch (error) {
+      console.error("Request error:", error);
+      return false;
+    }
   };
 
   return (
@@ -395,6 +422,7 @@ const Search = () => {
         onSelectPharmacy={(pharmacy) =>
           navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)
         }
+        onRequestPharmacy={handleRequestPharmacy}
       />
 
       <Footer />

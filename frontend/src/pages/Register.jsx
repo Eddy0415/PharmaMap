@@ -102,7 +102,11 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await signup(formData.email, formData.password);
+      await signup({
+        ...formData,
+        userType: accountType === "pharmacy" ? "pharmacist" : "customer",
+      });
+      window.dispatchEvent(new Event("userUpdated"));
       navigate("/");
     } catch (error) {
       setError(error?.message || "Registration failed. Please try again.");

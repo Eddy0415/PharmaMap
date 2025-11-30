@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Pharmacy = require("../models/Pharmacy");
+const firebaseAuth = require("../middleware/firebaseAuth");
+const admin = require("firebase-admin");
 
-// @route   POST /api/auth/register
-// @desc    Register a new user
-// @access  Public
+// =======================
+// REGISTER (used in signup)
+// =======================
 router.post("/register", async (req, res) => {
   try {
     const {
@@ -31,19 +32,19 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Create user
+    // Create user in Mongo
     const user = new User({
       firstName,
       lastName,
       email,
       phone,
-      password,
+      password, // still stored (hashed by model)
       userType,
     });
 
     await user.save();
 
-    // If pharmacist account, create pharmacy
+    // If pharmacist, create pharmacy too
     if (userType === "pharmacist") {
       const pharmacy = new Pharmacy({
         owner: user._id,
@@ -108,23 +109,16 @@ router.post("/register", async (req, res) => {
       await user.save();
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, userType: user.userType },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
     res.status(201).json({
       success: true,
       message: "User registered successfully",
-      token,
       user: {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         userType: user.userType,
+        avatarUrl: user.avatarUrl || "",
       },
     });
   } catch (error) {
@@ -137,84 +131,22 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// @route   POST /api/auth/login
-// @desc    Login user
-// @access  Public
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    console.log("Login attempt:", email);
-    // Check if user exists
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
-
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, userType: user.userType },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    res.json({
-      success: true,
-      message: "Login successful",
-      token,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        userType: user.userType,
-      },
-    });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error logging in",
-      error: error.message,
-    });
-  }
+// =======================
+// LOGIN (now basically disabled – you use Firebase on frontend)
+// =======================
+router.post("/login", (req, res) => {
+  return res.status(400).json({
+    success: false,
+    message: "Email/password login is handled by Firebase on the client.",
+  });
 });
 
-// @route   GET /api/auth/me
-// @desc    Get current user
-// @access  Private
-router.get("/me", async (req, res) => {
+// =======================
+// GET CURRENT USER (used by authAPI.getMe)
+// =======================
+router.get("/me", firebaseAuth, async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided",
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select("-password");
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
+    const user = req.user; // set by firebaseAuth
     res.json({
       success: true,
       user,
@@ -229,33 +161,13 @@ router.get("/me", async (req, res) => {
   }
 });
 
-// @route   PUT /api/auth/password
-// @desc    Update user password
-// @access  Private
-router.put("/password", async (req, res) => {
+// =======================
+// CHANGE PASSWORD (Firebase + Mongo sync)
+// =======================
+router.put("/password", firebaseAuth, async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided",
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
     const { currentPassword, newPassword, confirmPassword } = req.body;
 
-    // Validate input
     if (!currentPassword || !newPassword || !confirmPassword) {
       return res.status(400).json({
         success: false,
@@ -263,7 +175,6 @@ router.put("/password", async (req, res) => {
       });
     }
 
-    // Check if new password matches confirmation
     if (newPassword !== confirmPassword) {
       return res.status(400).json({
         success: false,
@@ -271,15 +182,6 @@ router.put("/password", async (req, res) => {
       });
     }
 
-    // Check if new password is different from current
-    if (currentPassword === newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "New password must be different from current password",
-      });
-    }
-
-    // Validate new password length
     if (newPassword.length < 8) {
       return res.status(400).json({
         success: false,
@@ -287,7 +189,14 @@ router.put("/password", async (req, res) => {
       });
     }
 
-    // Verify current password
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(401).json({
@@ -296,7 +205,11 @@ router.put("/password", async (req, res) => {
       });
     }
 
-    // Update password
+    const userRecord = await admin.auth().getUserByEmail(user.email);
+    await admin.auth().updateUser(userRecord.uid, {
+      password: newPassword,
+    });
+
     user.password = newPassword;
     await user.save();
 
@@ -314,22 +227,13 @@ router.put("/password", async (req, res) => {
   }
 });
 
-// @route   DELETE /api/auth/account
-// @desc    Delete user account
-// @access  Private
-router.delete("/account", async (req, res) => {
+
+// =======================
+// DELETE ACCOUNT (Firebase + Mongo + Pharmacy)
+// =======================
+router.delete("/account", firebaseAuth, async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided",
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({
@@ -338,12 +242,17 @@ router.delete("/account", async (req, res) => {
       });
     }
 
-    // If user is a pharmacist, delete the pharmacy as well
     if (user.userType === "pharmacist") {
       await Pharmacy.deleteOne({ owner: user._id });
     }
 
-    // Delete the user
+    try {
+      const userRecord = await admin.auth().getUserByEmail(user.email);
+      await admin.auth().deleteUser(userRecord.uid);
+    } catch (err) {
+      console.warn("Firebase deleteUser skipped:", err.message);
+    }
+
     await User.deleteOne({ _id: user._id });
 
     res.json({
