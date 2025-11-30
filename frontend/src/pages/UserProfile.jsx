@@ -20,6 +20,7 @@ import {
   IconButton,
   Paper,
   Divider,
+  InputAdornment,
 } from "@mui/material";
 import Person from "@mui/icons-material/Person";
 import ShoppingBag from "@mui/icons-material/ShoppingBag";
@@ -34,11 +35,12 @@ import Work from "@mui/icons-material/Work";
 import Add from "@mui/icons-material/Add";
 import Replay from "@mui/icons-material/Replay";
 import Star from "@mui/icons-material/Star";
-import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { userAPI, orderAPI, authAPI } from "../services/api";
 import { auth } from "../firebase/firebase";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -63,6 +65,13 @@ const UserProfile = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const [saveStatus, setSaveStatus] = useState("idle");
+  const [passwordStatus, setPasswordStatus] = useState("idle");
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
 
   const normalizeUser = (u) => {
     if (!u) return null;
@@ -81,6 +90,17 @@ const UserProfile = () => {
     } else {
       navigate("/login");
     }
+    const syncFavorites = () => {
+      const current = localStorage.getItem("user");
+      const parsed = current ? normalizeUser(JSON.parse(current)) : null;
+      if (parsed?.id) {
+        fetchFavorites(parsed.id);
+      }
+    };
+    window.addEventListener("userUpdated", syncFavorites);
+    return () => {
+      window.removeEventListener("userUpdated", syncFavorites);
+    };
   }, [navigate]);
 
   const fetchUserProfile = async () => {
@@ -130,17 +150,26 @@ const UserProfile = () => {
   };
 
   const fetchFavorites = async (userId) => {
-    try {
-      const [pharmaciesRes, itemsRes] = await Promise.all([
-        userAPI.getFavoritePharmacies(userId),
-        userAPI.getFavoriteItems(userId),
-      ]);
-      setFavoritePharmacies(pharmaciesRes.data.favoritePharmacies || []);
-      setFavoriteItems(itemsRes.data.favoriteItems || []);
-    } catch (error) {
-      console.error("Error fetching favorites:", error);
-    }
-  };
+  // ---- FAVORITE PHARMACIES ----
+  try {
+    const pharmaciesRes = await userAPI.getFavoritePharmacies(userId);
+    setFavoritePharmacies(pharmaciesRes.data.favoritePharmacies || []);
+  } catch (error) {
+    console.error("Error fetching favorite pharmacies:", error);
+    setFavoritePharmacies([]);
+  }
+
+  // ---- FAVORITE ITEMS ----
+  // This will work only after backend endpoints are added
+  try {
+    const itemsRes = await userAPI.getFavoriteItems(userId);
+    setFavoriteItems(itemsRes.data.favoriteItems || []);
+  } catch (error) {
+    console.error("Error fetching favorite items:", error);
+    setFavoriteItems([]);
+  }
+};
+
 
   const handleRemoveFavoritePharmacy = async (pharmacyId) => {
     const userId = user?.id || user?._id;
@@ -176,6 +205,7 @@ const handleProfileUpdate = async (e) => {
   }
 
   try {
+    setSaveStatus("saving");
     // Always refresh Firebase token before saving
     if (auth.currentUser) {
       const fresh = await auth.currentUser.getIdToken(true);
@@ -215,8 +245,10 @@ const handleProfileUpdate = async (e) => {
     // Sync with localStorage
     localStorage.setItem("user", JSON.stringify(freshUser));
     window.dispatchEvent(new Event("userUpdated"));
+    setSaveStatus("saved");
   } catch (error) {
     console.error("Error updating profile:", error);
+    setSaveStatus("idle");
   }
 };
 
@@ -235,11 +267,11 @@ const handleLogout = async () => {
 };
 
 
-  const handlePasswordUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      if (
-        !passwordData.currentPassword ||
+const handlePasswordUpdate = async (e) => {
+  e.preventDefault();
+  try {
+    if (
+      !passwordData.currentPassword ||
         !passwordData.newPassword ||
         !passwordData.confirmPassword
       ) {
@@ -250,29 +282,34 @@ const handleLogout = async () => {
         return;
       }
 
-      if (passwordData.newPassword.length < 8) {
-        return;
-      }
-
-      await authAPI.changePassword(passwordData);
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-    } catch (error) {
-      console.error("Error updating password:", error);
+    if (passwordData.newPassword.length < 8) {
+      return;
     }
-  };
 
-  const handleDeleteAccount = async () => {
-    try {
-      await authAPI.deleteAccount();
-      handleLogout();
-    } catch (error) {
-      console.error("Error deleting account:", error);
-    }
-  };
+    setPasswordStatus("saving");
+    await authAPI.changePassword(passwordData);
+    setPasswordData({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+    setPasswordStatus("saved");
+  } catch (error) {
+    console.error("Error updating password:", error);
+    setPasswordStatus("idle");
+  }
+};
+
+const handleDeleteAccount = async () => {
+  const confirmDelete = window.confirm("Are you sure you want to delete?");
+  if (!confirmDelete) return;
+  try {
+    await authAPI.deleteAccount();
+    handleLogout();
+  } catch (error) {
+    console.error("Error deleting account:", error);
+  }
+};
 
 const handleAvatarChange = (e) => {
   const file = e.target.files?.[0];
@@ -369,38 +406,38 @@ const handleAvatarChange = (e) => {
             </Grid>
           </Grid>
 
-          {/* ROW 2: Email (wide) + Phone (narrow) */}
-          <Grid container item spacing={2}>
-            <Grid item xs={12} md={8}>
-              <TextField
-                fullWidth
-                label="Email Address"
-                type="email"
-                value={profileData.email}
-                onChange={(e) =>
-                  setProfileData({
-                    ...profileData,
-                    email: e.target.value,
-                  })
-                }
-                required
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Phone Number"
-                value={profileData.phone}
-                onChange={(e) =>
-                  setProfileData({
-                    ...profileData,
-                    phone: e.target.value,
-                  })
-                }
-                required
-              />
-            </Grid>
-          </Grid>
+          {/* ROW 2: Phone (narrow) + Email (wide, read-only) */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 2,
+              width: "50%",
+            }}
+          >
+            <TextField
+              fullWidth
+              label="Phone Number"
+              value={profileData.phone}
+              onChange={(e) =>
+                setProfileData({
+                  ...profileData,
+                  phone: e.target.value,
+                })
+              }
+              required
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              fullWidth
+              label="Email Address"
+              type="email"
+              value={profileData.email}
+              InputProps={{ readOnly: true }}
+              disabled
+              sx={{ flex: 2 }}
+            />
+          </Box>
 
           {/* ROW 3: Date of birth + Gender */}
           <Grid container item spacing={2}>
@@ -448,12 +485,18 @@ const handleAvatarChange = (e) => {
             type="submit"
             variant="contained"
             sx={{
-              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+              background:
+                saveStatus === "saved"
+                  ? "linear-gradient(135deg, #4caf50 0%, #388e3c 100%)"
+                  : "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
             }}
           >
-            Save Changes
+            {saveStatus === "saving"
+              ? "Saving..."
+              : saveStatus === "saved"
+              ? "Saved"
+              : "Save Changes"}
           </Button>
-          <Button variant="outlined">Reset</Button>
         </Box>
       </form>
     </CardContent>
@@ -1017,7 +1060,7 @@ const handleAvatarChange = (e) => {
               <TextField
                 fullWidth
                 label="Current Password"
-                type="password"
+                type={showPasswords.current ? "text" : "password"}
                 placeholder="Enter current password"
                 value={passwordData.currentPassword}
                 onChange={(e) =>
@@ -1027,13 +1070,30 @@ const handleAvatarChange = (e) => {
                   })
                 }
                 required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() =>
+                          setShowPasswords((prev) => ({
+                            ...prev,
+                            current: !prev.current,
+                          }))
+                        }
+                        edge="end"
+                      >
+                        {showPasswords.current ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label="New Password"
-                type="password"
+                type={showPasswords.next ? "text" : "password"}
                 placeholder="Enter new password"
                 value={passwordData.newPassword}
                 onChange={(e) =>
@@ -1044,13 +1104,30 @@ const handleAvatarChange = (e) => {
                 }
                 required
                 helperText="Password must be at least 8 characters long"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() =>
+                          setShowPasswords((prev) => ({
+                            ...prev,
+                            next: !prev.next,
+                          }))
+                        }
+                        edge="end"
+                      >
+                        {showPasswords.next ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label="Confirm New Password"
-                type="password"
+                type={showPasswords.confirm ? "text" : "password"}
                 placeholder="Confirm new password"
                 value={passwordData.confirmPassword}
                 onChange={(e) =>
@@ -1060,6 +1137,23 @@ const handleAvatarChange = (e) => {
                   })
                 }
                 required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() =>
+                          setShowPasswords((prev) => ({
+                            ...prev,
+                            confirm: !prev.confirm,
+                          }))
+                        }
+                        edge="end"
+                      >
+                        {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
           </Grid>
@@ -1069,10 +1163,17 @@ const handleAvatarChange = (e) => {
             variant="contained"
             sx={{
               mt: 2,
-              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+              background:
+                passwordStatus === "saved"
+                  ? "linear-gradient(135deg, #4caf50 0%, #388e3c 100%)"
+                  : "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
             }}
           >
-            Update Password
+            {passwordStatus === "saving"
+              ? "Updating..."
+              : passwordStatus === "saved"
+              ? "Password updated"
+              : "Update Password"}
           </Button>
         </form>
 

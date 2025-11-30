@@ -52,6 +52,8 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pharmacyStreet, setPharmacyStreet] = useState("");
+  const [pharmacyCity, setPharmacyCity] = useState("");
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
@@ -103,9 +105,21 @@ const Register = () => {
 
     try {
       await signup({
-        ...formData,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
         userType: accountType === "pharmacy" ? "pharmacist" : "customer",
-      });
+
+        pharmacyName:
+          accountType === "pharmacy" ? formData.pharmacyName : undefined,
+        pharmacyStreet:
+          accountType === "pharmacy" ? formData.pharmacyAddress : undefined,
+        pharmacyCity:
+          accountType === "pharmacy" ? formData.city : undefined,
+});
+
       window.dispatchEvent(new Event("userUpdated"));
       navigate("/");
     } catch (error) {

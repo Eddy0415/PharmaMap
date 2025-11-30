@@ -45,69 +45,45 @@ router.post("/register", async (req, res) => {
     await user.save();
 
     // If pharmacist, create pharmacy too
-    if (userType === "pharmacist") {
-      const pharmacy = new Pharmacy({
-        owner: user._id,
-        name: pharmacyName,
-        licenseNumber: license,
-        address: {
-          street: pharmacyAddress,
-          city: city,
-        },
-        phone: phone,
-        email: email,
-        workingHours: [
-          {
-            day: "Monday",
-            openTime: "08:00",
-            closeTime: "22:00",
-            isClosed: false,
-          },
-          {
-            day: "Tuesday",
-            openTime: "08:00",
-            closeTime: "22:00",
-            isClosed: false,
-          },
-          {
-            day: "Wednesday",
-            openTime: "08:00",
-            closeTime: "22:00",
-            isClosed: false,
-          },
-          {
-            day: "Thursday",
-            openTime: "08:00",
-            closeTime: "22:00",
-            isClosed: false,
-          },
-          {
-            day: "Friday",
-            openTime: "08:00",
-            closeTime: "22:00",
-            isClosed: false,
-          },
-          {
-            day: "Saturday",
-            openTime: "09:00",
-            closeTime: "21:00",
-            isClosed: false,
-          },
-          {
-            day: "Sunday",
-            openTime: "09:00",
-            closeTime: "18:00",
-            isClosed: false,
-          },
-        ],
-      });
+    // If pharmacist, automatically create their pharmacy in MongoDB
+if (userType === "pharmacist") {
 
-      await pharmacy.save();
+  const newPharmacy = await Pharmacy.create({
+    name: pharmacyName || `${firstName} ${lastName}'s Pharmacy`,
 
-      // Link pharmacy to user
-      user.pharmacy = pharmacy._id;
-      await user.save();
-    }
+    // BASIC CONTACT INFO
+    phone: pharmacyPhone || "",
+    email: pharmacyEmail || "",
+
+    // ADDRESS (empty until pharmacist fills dashboard)
+    address: {
+      street: pharmacyStreet || "",
+      city: pharmacyCity || "",
+      coordinates: {
+        type: "Point",
+        coordinates: pharmacyCoordinates || [0, 0],
+      },
+    },
+
+    // WORKING HOURS
+    workingHours: pharmacyWorkingHours || [
+      { day: "Monday", openTime: "", closeTime: "", isClosed: false },
+      { day: "Tuesday", openTime: "", closeTime: "", isClosed: false },
+      { day: "Wednesday", openTime: "", closeTime: "", isClosed: false },
+      { day: "Thursday", openTime: "", closeTime: "", isClosed: false },
+      { day: "Friday", openTime: "", closeTime: "", isClosed: false },
+      { day: "Saturday", openTime: "", closeTime: "", isClosed: false },
+      { day: "Sunday", openTime: "", closeTime: "", isClosed: true },
+    ],
+
+    user: newUser._id, // pharmacy owner reference
+  });
+
+  // Link pharmacy ID back to user
+  newUser.pharmacy = newPharmacy._id;
+  await newUser.save();
+}
+
 
     res.status(201).json({
       success: true,
