@@ -281,7 +281,7 @@ router.post("/", async (req, res) => {
       pharmacy,
       items: orderItems,
       totalAmount: Math.round(totalAmount * 100) / 100,
-      customerNotes,
+      customerNotes: customerNotes || "",
     });
 
     await order.save();

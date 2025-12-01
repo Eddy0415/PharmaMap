@@ -9,6 +9,9 @@ import {
   Chip,
   Button,
   IconButton,
+  TextField,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import Close from "@mui/icons-material/Close";
 import ArrowBack from "@mui/icons-material/ArrowBack";
@@ -17,6 +20,7 @@ import CheckCircle from "@mui/icons-material/CheckCircle";
 import Room from "@mui/icons-material/Room";
 import Add from "@mui/icons-material/Add";
 import Remove from "@mui/icons-material/Remove";
+import Sort from "@mui/icons-material/Sort";
 import { useGeolocation } from "../hooks/useGeolocation";
 
 const InfoRow = ({ label, value }) => {
@@ -56,17 +60,28 @@ const ProductDetailsDialog = ({
   pharmacies = [],
   onSelectPharmacy,
   onRequestPharmacy, // optional, should return Promise<boolean>
+  singlePharmacyEntry,
 }) => {
+  const isSinglePharmacy = !!singlePharmacyEntry;
   const [showPharmacies, setShowPharmacies] = useState(false);
   const { location, requestLocation } = useGeolocation();
   const [requestStatus, setRequestStatus] = useState({});
   const [quantities, setQuantities] = useState({});
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [requestEntry, setRequestEntry] = useState(null);
+  const [requestQuantity, setRequestQuantity] = useState(1);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [listMode, setListMode] = useState("all");
+  const [sortMode, setSortMode] = useState("distance");
+  const [sortMenuAnchor, setSortMenuAnchor] = useState(null);
+  const isAllSelected = showPharmacies && listMode === "all";
+  const isNearbySelected = showPharmacies && listMode === "nearby";
 
   // Sort pharmacies by distance if location is available
   const sortedPharmacies = useMemo(() => {
     if (!location || pharmacies.length === 0) return pharmacies;
 
-    return [...pharmacies].map((entry) => {
+    const distanceSorted = [...pharmacies].map((entry) => {
       const coords = entry.pharmacy?.address?.coordinates?.coordinates;
       let distance = null;
       
@@ -81,16 +96,39 @@ const ProductDetailsDialog = ({
       }
       
       return { ...entry, distance };
-    }).sort((a, b) => {
-      // Sort by distance (nearest first)
+    });
+
+    // Base sort by distance (nearest first)
+    return distanceSorted.sort((a, b) => {
       if (a.distance === null && b.distance === null) return 0;
-      if (a.distance === null) return 1; // Put pharmacies without coordinates at the end
+      if (a.distance === null) return 1;
       if (b.distance === null) return -1;
       return a.distance - b.distance;
     });
   }, [pharmacies, location]);
 
-  const pharmacyCount = pharmacies.length;
+  const visiblePharmacies =
+    listMode === "nearby"
+      ? sortedPharmacies.filter(
+          (entry) => entry.distance !== null && entry.distance !== undefined && entry.distance <= 10
+        )
+      : sortedPharmacies;
+
+  const sortedVisiblePharmacies = useMemo(() => {
+    const cloned = [...visiblePharmacies];
+    if (sortMode === "name") {
+      cloned.sort((a, b) => (a.pharmacy?.name || "").localeCompare(b.pharmacy?.name || ""));
+    } else if (sortMode === "price") {
+      cloned.sort((a, b) => (a.price || 0) - (b.price || 0));
+    }
+    // default distance sort already applied in sortedPharmacies
+    return cloned;
+  }, [visiblePharmacies, sortMode]);
+
+  const pharmacyCount = isSinglePharmacy ? 1 : pharmacies.length;
+  const nearbyCount = sortedPharmacies.filter(
+    (p) => p.distance !== null && p.distance !== undefined && p.distance <= 10
+  ).length;
 
   const composition = useMemo(() => {
     if (!product?.item) return null;
@@ -106,6 +144,11 @@ const ProductDetailsDialog = ({
       setShowPharmacies(false);
       setRequestStatus({});
       setQuantities({});
+      setRequestDialogOpen(false);
+      setRequestEntry(null);
+      setRequestQuantity(1);
+      setRequestMessage("");
+      setListMode("all");
       // Request location when dialog opens
       requestLocation();
     }
@@ -117,31 +160,81 @@ const ProductDetailsDialog = ({
     onSelectPharmacy(entry.pharmacy);
   };
 
-  const handleRequestClick = async (entry) => {
-    if (!onRequestPharmacy) return;
+  const openRequestDialog = (entry) => {
     const id = String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy);
     const qty = Number(quantities[String(id)] ?? 1);
+    setRequestEntry(entry);
+    setRequestQuantity(qty);
+    setRequestMessage("");
+    setRequestDialogOpen(true);
+  };
+
+  const handleSendRequest = async () => {
+    if (!onRequestPharmacy || !requestEntry) return;
+    const id = String(
+      requestEntry.pharmacy._id || requestEntry.pharmacy.id || requestEntry.pharmacy
+    );
     setRequestStatus((prev) => ({ ...prev, [id]: "sending" }));
     try {
-      const ok = await onRequestPharmacy(entry, qty);
-      setRequestStatus((prev) => ({ ...prev, [id]: ok ? "sent" : undefined }));
+      const ok = await onRequestPharmacy(requestEntry, requestQuantity, requestMessage);
+      if (ok) {
+        setQuantities((prev) => ({ ...prev, [id]: requestQuantity }));
+        setRequestStatus((prev) => ({ ...prev, [id]: "sent" }));
+        setRequestDialogOpen(false);
+      } else {
+        setRequestStatus((prev) => ({ ...prev, [id]: undefined }));
+      }
     } catch (err) {
       console.error("Request error", err);
       setRequestStatus((prev) => ({ ...prev, [id]: undefined }));
     }
   };
 
-  const adjustQuantity = (id, delta) => {
-    setQuantities((prev) => {
-      const current = Number(prev[String(id)] ?? 1);
-      const next = Math.max(1, current + delta);
-      return { ...prev, [id]: next };
-    });
-  };
-
   const renderPharmacyList = () => (
     <Box sx={{ mt: 2 }}>
-      {sortedPharmacies.map((entry) => (
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+        <IconButton
+          size="small"
+          onClick={(e) => setSortMenuAnchor(e.currentTarget)}
+          aria-label="Sort pharmacies"
+        >
+          <Sort />
+        </IconButton>
+        <Menu
+          anchorEl={sortMenuAnchor}
+          open={Boolean(sortMenuAnchor)}
+          onClose={() => setSortMenuAnchor(null)}
+        >
+          <MenuItem
+            selected={sortMode === "name"}
+            onClick={() => {
+              setSortMode("name");
+              setSortMenuAnchor(null);
+            }}
+          >
+            Sort by Name (A → Z)
+          </MenuItem>
+          <MenuItem
+            selected={sortMode === "price"}
+            onClick={() => {
+              setSortMode("price");
+              setSortMenuAnchor(null);
+            }}
+          >
+            Sort by Price (Low → High)
+          </MenuItem>
+          <MenuItem
+            selected={sortMode === "distance"}
+            onClick={() => {
+              setSortMode("distance");
+              setSortMenuAnchor(null);
+            }}
+          >
+            Sort by Distance (Nearest First)
+          </MenuItem>
+        </Menu>
+      </Box>
+      {sortedVisiblePharmacies.map((entry) => (
         <Box
           key={String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy.name)}
           sx={{
@@ -225,47 +318,6 @@ const ProductDetailsDialog = ({
             </Box>
           </Box>
           <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-                bgcolor: "#f5f5f5",
-                borderRadius: 2,
-                px: 1,
-                py: 0.25,
-              }}
-            >
-              <IconButton
-                size="small"
-                onClick={() =>
-                  adjustQuantity(
-                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy),
-                    -1
-                  )
-                }
-              >
-                <Remove fontSize="small" />
-              </IconButton>
-              <Typography variant="body2" fontWeight={700}>
-                {Number(
-                  quantities[
-                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
-                  ] ?? 1
-                )}
-              </Typography>
-              <IconButton
-                size="small"
-                onClick={() =>
-                  adjustQuantity(
-                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy),
-                    1
-                  )
-                }
-              >
-                <Add fontSize="small" />
-              </IconButton>
-            </Box>
             <Button
               variant="contained"
               size="small"
@@ -287,7 +339,7 @@ const ProductDetailsDialog = ({
                     : "outlined"
                 }
                 size="small"
-                onClick={() => handleRequestClick(entry)}
+                onClick={() => openRequestDialog(entry)}
                 disabled={
                   requestStatus[
                     String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
@@ -314,9 +366,9 @@ const ProductDetailsDialog = ({
           </Box>
         </Box>
       ))}
-      {pharmacyCount === 0 && (
+      {visiblePharmacies.length === 0 && (
         <Typography color="text.secondary" textAlign="center" sx={{ py: 3 }}>
-          No pharmacies found for this product.
+          No pharmacies found for this filter.
         </Typography>
       )}
     </Box>
@@ -339,19 +391,22 @@ const ProductDetailsDialog = ({
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            {showPharmacies && (
+            {showPharmacies && !isSinglePharmacy && (
               <IconButton
                 size="small"
                 onClick={() => {
                   setShowPharmacies(false);
-                  setRequestMode(false);
                 }}
               >
                 <ArrowBack fontSize="small" />
               </IconButton>
             )}
             <Typography variant="h5" fontWeight={800} color="secondary">
-              {showPharmacies ? "Available Pharmacies" : product.item?.name || "Product"}
+              {showPharmacies && !isSinglePharmacy
+                ? listMode === "nearby"
+                  ? "Pharmacies Nearby"
+                  : "Available Pharmacies"
+                : product.item?.name || "Product"}
             </Typography>
           </Box>
           <IconButton onClick={onClose} size="small">
@@ -361,7 +416,7 @@ const ProductDetailsDialog = ({
       </DialogTitle>
 
       <DialogContent dividers sx={{ pt: 2, pb: 3 }}>
-        {!showPharmacies ? (
+        {!showPharmacies || isSinglePharmacy ? (
           <>
             <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center" }}>
               <Box
@@ -389,9 +444,7 @@ const ProductDetailsDialog = ({
                   {product.item?.dosage && (
                     <Chip label={product.item.dosage} size="small" />
                   )}
-                  {product.item?.form && (
-                    <Chip label={product.item.form} size="small" />
-                  )}
+                  {product.item?.form && <Chip label={product.item.form} size="small" />}
                   {product.item?.brand && (
                     <Chip label={product.item.brand} size="small" />
                   )}
@@ -422,33 +475,194 @@ const ProductDetailsDialog = ({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <CheckCircle sx={{ color: "#2e7d32" }} />
           <Typography variant="body2" fontWeight={600} color="text.secondary">
-            {pharmacyCount > 0
-              ? `${pharmacyCount} pharmacies carry this product`
-              : "No pharmacies found nearby"}
+            {pharmacyCount === 0
+              ? "No pharmacies found"
+              : isNearbySelected
+              ? `${nearbyCount} pharmacies who carry this product are less than 10km away!`
+              : `${pharmacyCount} pharmacies carry this product`}
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", gap: 1 }}>
+        {!isSinglePharmacy && (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant={isAllSelected ? "contained" : "outlined"}
+              onClick={() => {
+                setListMode("all");
+                setShowPharmacies(true);
+              }}
+              disabled={pharmacyCount === 0}
+              sx={{
+                borderRadius: 999,
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                fontWeight: 700,
+                background: isAllSelected
+                  ? "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)"
+                  : "white",
+                color: isAllSelected ? "white" : "primary.main",
+                border: isAllSelected ? "none" : "1px solid #ccc",
+              }}
+            >
+              {`Available in ${pharmacyCount} pharmacies`}
+            </Button>
+            <Button
+              variant={isNearbySelected ? "contained" : "outlined"}
+              onClick={() => {
+                setListMode("nearby");
+                setShowPharmacies(true);
+              }}
+              disabled={
+                visiblePharmacies.filter(
+                  (p) => p.distance !== null && p.distance !== undefined && p.distance <= 10
+                ).length === 0
+              }
+              sx={{
+                borderRadius: 999,
+                px: 3,
+                py: 1,
+                background: isNearbySelected
+                  ? "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)"
+                  : "white",
+                color: isNearbySelected ? "white" : "primary.main",
+                border: isNearbySelected ? "none" : "1px solid #ccc",
+                textTransform: "none",
+                fontWeight: 700,
+              }}
+            >
+              {`${visiblePharmacies.filter(
+                (p) => p.distance !== null && p.distance !== undefined && p.distance <= 10
+              ).length} nearby`}
+            </Button>
+          </Box>
+        )}
+        {isSinglePharmacy && singlePharmacyEntry && (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="contained"
+              onClick={() => openRequestDialog(singlePharmacyEntry)}
+              sx={{
+                borderRadius: 999,
+                px: 3,
+                py: 1,
+                background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                textTransform: "none",
+                fontWeight: 700,
+              }}
+            >
+              Request
+            </Button>
+          </Box>
+        )}
+      </DialogActions>
+
+      <Dialog open={requestDialogOpen} onClose={() => setRequestDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Request Product</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              Quantity
+            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                bgcolor: "#f5f5f5",
+                borderRadius: 2,
+                px: 1,
+                py: 0.25,
+              }}
+            >
+              <IconButton
+                size="small"
+                onClick={() => setRequestQuantity((prev) => Math.max(1, prev - 1))}
+              >
+                <Remove fontSize="small" />
+              </IconButton>
+              <Typography variant="body2" fontWeight={700}>
+                {requestQuantity}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={() => setRequestQuantity((prev) => prev + 1)}
+              >
+                <Add fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="Message to pharmacy"
+            value={requestMessage}
+            onChange={(e) => setRequestMessage(e.target.value)}
+            placeholder="Add details or instructions"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRequestDialogOpen(false)}>Cancel</Button>
           <Button
             variant="contained"
-            onClick={() => {
-              setShowPharmacies((prev) => !prev);
-            }}
-            disabled={pharmacyCount === 0}
+            onClick={handleSendRequest}
+            disabled={
+              requestStatus[
+                requestEntry
+                  ? String(
+                      requestEntry.pharmacy._id ||
+                        requestEntry.pharmacy.id ||
+                        requestEntry.pharmacy
+                    )
+                  : ""
+              ] === "sending" ||
+              requestStatus[
+                requestEntry
+                  ? String(
+                      requestEntry.pharmacy._id ||
+                        requestEntry.pharmacy.id ||
+                        requestEntry.pharmacy
+                    )
+                  : ""
+              ] === "sent"
+            }
             sx={{
-              borderRadius: 999,
-              px: 3,
-              py: 1,
-              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-              textTransform: "none",
-              fontWeight: 700,
+              background:
+                requestStatus[
+                  requestEntry
+                    ? String(
+                        requestEntry.pharmacy._id ||
+                          requestEntry.pharmacy.id ||
+                          requestEntry.pharmacy
+                      )
+                    : ""
+                ] === "sent"
+                  ? "#4caf50"
+                  : "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
             }}
           >
-            {pharmacyCount > 0
-              ? `Available in ${pharmacyCount} pharmacies nearby`
-              : "Not available nearby"}
+            {requestStatus[
+              requestEntry
+                ? String(
+                    requestEntry.pharmacy._id || requestEntry.pharmacy.id || requestEntry.pharmacy
+                  )
+                : ""
+            ] === "sending"
+              ? "Sending..."
+              : requestStatus[
+                  requestEntry
+                    ? String(
+                        requestEntry.pharmacy._id ||
+                          requestEntry.pharmacy.id ||
+                          requestEntry.pharmacy
+                      )
+                    : ""
+                ] === "sent"
+              ? "Sent"
+              : "Send Request"}
           </Button>
-        </Box>
-      </DialogActions>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

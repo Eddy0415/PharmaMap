@@ -228,14 +228,15 @@ const PharmacyDetail = () => {
     setDetailsDialogOpen(true);
   };
 
-  const handleRequestPharmacy = async (entry, qty) => {
+  const handleRequestPharmacy = async (entry, qty, message) => {
     const userId = user?.id || user?._id;
     if (!userId) {
       navigate("/login");
       return false;
     }
     try {
-      setRequestStatus((prev) => ({ ...prev, [entry.pharmacy?._id || entry.pharmacy]: "sending" }));
+      const key = String(entry.pharmacy?._id || entry.pharmacy);
+      setRequestStatus((prev) => ({ ...prev, [key]: "sending" }));
       await orderAPI.create({
         customer: userId,
         pharmacy: entry.pharmacy?._id || entry.pharmacy,
@@ -248,18 +249,18 @@ const PharmacyDetail = () => {
           },
         ],
         totalAmount: entry.price * qty,
-        customerNotes: "Medication request",
+        customerNotes: message || "",
       });
       setRequestStatus((prev) => ({
         ...prev,
-        [entry.pharmacy?._id || entry.pharmacy]: "sent",
+        [key]: "sent",
       }));
       return true;
     } catch (error) {
       console.error("Error sending request:", error);
       setRequestStatus((prev) => ({
         ...prev,
-        [entry.pharmacy?._id || entry.pharmacy]: undefined,
+        [String(entry.pharmacy?._id || entry.pharmacy)]: undefined,
       }));
       return false;
     }
@@ -753,7 +754,17 @@ const PharmacyDetail = () => {
         onSelectPharmacy={(pharmacy) =>
           navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)
         }
-        onRequestPharmacy={(entry, qty) => handleRequestPharmacy(entry, qty)}
+        onRequestPharmacy={(entry, qty, message) => handleRequestPharmacy(entry, qty, message)}
+        singlePharmacyEntry={
+          pharmacy && detailsProduct
+            ? {
+                pharmacy,
+                price: detailsProduct.price,
+                quantity: detailsProduct.quantity,
+                stockStatus: detailsProduct.stockStatus,
+              }
+            : null
+        }
       />
 
       <ReviewDialog
