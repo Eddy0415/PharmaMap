@@ -23,7 +23,6 @@ const Header = ({
   onLogout,
   onScrollToCategories,
   onScrollToProducts,
-  onScrollToFeatured,
 }) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -100,14 +99,6 @@ const Header = ({
       return;
     }
     navigate("/#products");
-  };
-
-  const handleFeaturedClick = () => {
-    if (onScrollToFeatured) {
-      onScrollToFeatured();
-      return;
-    }
-    navigate("/#featured");
   };
 
   return (
@@ -302,21 +293,6 @@ const Header = ({
               }}
             >
               Popular
-            </Button>
-            <Button
-              variant="text"
-              onClick={handleFeaturedClick}
-              sx={{
-                color: "white",
-                px: { xs: 1, sm: 1.5 },
-                py: { xs: 0.5, sm: 0.75 },
-                fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                textTransform: "none",
-                borderRadius: { xs: "18px", sm: "22px" },
-                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-              }}
-            >
-              Featured
             </Button>
             <Button
               variant="text"

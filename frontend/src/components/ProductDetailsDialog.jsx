@@ -21,7 +21,10 @@ import Room from "@mui/icons-material/Room";
 import Add from "@mui/icons-material/Add";
 import Remove from "@mui/icons-material/Remove";
 import Sort from "@mui/icons-material/Sort";
+import Favorite from "@mui/icons-material/Favorite";
+import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import { useGeolocation } from "../hooks/useGeolocation";
+import { userAPI } from "../services/api";
 
 const InfoRow = ({ label, value }) => {
   if (!value) return null;
@@ -77,6 +80,10 @@ const ProductDetailsDialog = ({
   const isAllSelected = showPharmacies && listMode === "all";
   const isNearbySelected = showPharmacies && listMode === "nearby";
 
+  // ⭐ Favorites
+  const [user, setUser] = useState(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+
   // Sort pharmacies by distance if location is available
   const sortedPharmacies = useMemo(() => {
     if (!location || pharmacies.length === 0) return pharmacies;
@@ -84,7 +91,7 @@ const ProductDetailsDialog = ({
     const distanceSorted = [...pharmacies].map((entry) => {
       const coords = entry.pharmacy?.address?.coordinates?.coordinates;
       let distance = null;
-      
+
       if (coords && Array.isArray(coords) && coords.length === 2) {
         const [longitude, latitude] = coords;
         distance = calculateDistance(
@@ -94,7 +101,7 @@ const ProductDetailsDialog = ({
           longitude
         );
       }
-      
+
       return { ...entry, distance };
     });
 
@@ -110,14 +117,19 @@ const ProductDetailsDialog = ({
   const visiblePharmacies =
     listMode === "nearby"
       ? sortedPharmacies.filter(
-          (entry) => entry.distance !== null && entry.distance !== undefined && entry.distance <= 10
+          (entry) =>
+            entry.distance !== null &&
+            entry.distance !== undefined &&
+            entry.distance <= 10
         )
       : sortedPharmacies;
 
   const sortedVisiblePharmacies = useMemo(() => {
     const cloned = [...visiblePharmacies];
     if (sortMode === "name") {
-      cloned.sort((a, b) => (a.pharmacy?.name || "").localeCompare(b.pharmacy?.name || ""));
+      cloned.sort((a, b) =>
+        (a.pharmacy?.name || "").localeCompare(b.pharmacy?.name || "")
+      );
     } else if (sortMode === "price") {
       cloned.sort((a, b) => (a.price || 0) - (b.price || 0));
     }
@@ -139,20 +151,44 @@ const ProductDetailsDialog = ({
     );
   }, [product]);
 
+  // Reset dialog + request location on open
   useEffect(() => {
-    if (open) {
-      setShowPharmacies(false);
-      setRequestStatus({});
-      setQuantities({});
-      setRequestDialogOpen(false);
-      setRequestEntry(null);
-      setRequestQuantity(1);
-      setRequestMessage("");
-      setListMode("all");
-      // Request location when dialog opens
-      requestLocation();
-    }
+    if (!open) return;
+    setShowPharmacies(false);
+    setRequestStatus({});
+    setQuantities({});
+    setRequestDialogOpen(false);
+    setRequestEntry(null);
+    setRequestQuantity(1);
+    setRequestMessage("");
+    setListMode("all");
+    // Request location when dialog opens
+    requestLocation();
   }, [open, requestLocation]);
+
+  // Load user from localStorage and set initial favorite state
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      const normalized = {
+        ...parsed,
+        id: parsed.id || parsed._id || parsed.userId,
+      };
+      setUser(normalized);
+
+      if (product?.item?._id || product?.item?.id) {
+        const itemId = product.item._id || product.item.id;
+        const favs = normalized.favoriteItems || [];
+        setIsFavorite(favs.includes(itemId));
+      } else {
+        setIsFavorite(false);
+      }
+    } else {
+      setUser(null);
+      setIsFavorite(false);
+    }
+  }, [open, product]);
 
   if (!product) return null;
 
@@ -176,7 +212,11 @@ const ProductDetailsDialog = ({
     );
     setRequestStatus((prev) => ({ ...prev, [id]: "sending" }));
     try {
-      const ok = await onRequestPharmacy(requestEntry, requestQuantity, requestMessage);
+      const ok = await onRequestPharmacy(
+        requestEntry,
+        requestQuantity,
+        requestMessage
+      );
       if (ok) {
         setQuantities((prev) => ({ ...prev, [id]: requestQuantity }));
         setRequestStatus((prev) => ({ ...prev, [id]: "sent" }));
@@ -187,6 +227,44 @@ const ProductDetailsDialog = ({
     } catch (err) {
       console.error("Request error", err);
       setRequestStatus((prev) => ({ ...prev, [id]: undefined }));
+    }
+  };
+
+  // ⭐ Toggle favorite product
+  const handleToggleFavorite = async () => {
+    if (!user?.id) return;
+    const itemId = product.item?._id || product.item?.id;
+    if (!itemId) return;
+
+    try {
+      if (isFavorite) {
+        // Remove favorite
+        await userAPI.removeFavoriteItem(user.id, itemId);
+        setIsFavorite(false);
+
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const favs = parsed.favoriteItems || [];
+          parsed.favoriteItems = favs.filter((id) => id !== itemId);
+          localStorage.setItem("user", JSON.stringify(parsed));
+        }
+      } else {
+        // Add favorite
+        await userAPI.addFavoriteItem(user.id, itemId);
+        setIsFavorite(true);
+
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const favs = parsed.favoriteItems || [];
+          if (!favs.includes(itemId)) favs.push(itemId);
+          parsed.favoriteItems = favs;
+          localStorage.setItem("user", JSON.stringify(parsed));
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favourite:", err);
     }
   };
 
@@ -236,7 +314,9 @@ const ProductDetailsDialog = ({
       </Box>
       {sortedVisiblePharmacies.map((entry) => (
         <Box
-          key={String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy.name)}
+          key={String(
+            entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy.name
+          )}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -273,10 +353,20 @@ const ProductDetailsDialog = ({
               sx={{ mt: 0.25 }}
             >
               {entry.pharmacy.address?.street
-                ? `${entry.pharmacy.address.street}, ${entry.pharmacy.address.city || ""}`
+                ? `${entry.pharmacy.address.street}, ${
+                    entry.pharmacy.address.city || ""
+                  }`
                 : entry.pharmacy.address?.city || "Lebanon"}
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, flexWrap: "wrap" }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                mt: 0.5,
+                flexWrap: "wrap",
+              }}
+            >
               <Chip
                 size="small"
                 label={`$${entry.price?.toFixed(2) ?? "N/A"}`}
@@ -333,7 +423,9 @@ const ProductDetailsDialog = ({
               <Button
                 variant={
                   requestStatus[
-                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                    String(
+                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
+                    )
                   ] === "sent"
                     ? "contained"
                     : "outlined"
@@ -342,22 +434,34 @@ const ProductDetailsDialog = ({
                 onClick={() => openRequestDialog(entry)}
                 disabled={
                   requestStatus[
-                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                    String(
+                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
+                    )
                   ] === "sent" ||
                   requestStatus[
-                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                    String(
+                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
+                    )
                   ] === "sending"
                 }
                 sx={
                   requestStatus[
-                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                    String(
+                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
+                    )
                   ] === "sent"
-                    ? { bgcolor: "#4caf50", color: "white", "&:hover": { bgcolor: "#43a047" } }
+                    ? {
+                        bgcolor: "#4caf50",
+                        color: "white",
+                        "&:hover": { bgcolor: "#43a047" },
+                      }
                     : {}
                 }
               >
                 {requestStatus[
-                  String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                  String(
+                    entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
+                  )
                 ] === "sent"
                   ? "Request sent"
                   : "Request"}
@@ -434,9 +538,23 @@ const ProductDetailsDialog = ({
                 <LocalPharmacy sx={{ fontSize: 48, color: "primary.main" }} />
               </Box>
               <Box sx={{ flex: 1 }}>
-                <Typography variant="h6" fontWeight={700} color="secondary">
-                  {product.item?.name}
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography variant="h6" fontWeight={700} color="secondary">
+                    {product.item?.name}
+                  </Typography>
+
+                  {user && (
+                    <IconButton
+                      size="small"
+                      onClick={handleToggleFavorite}
+                      sx={{
+                        color: isFavorite ? "error.main" : "text.secondary",
+                      }}
+                    >
+                      {isFavorite ? <Favorite /> : <FavoriteBorder />}
+                    </IconButton>
+                  )}
+                </Box>
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
                   {product.item?.category && (
                     <Chip label={product.item.category} size="small" />
@@ -444,7 +562,9 @@ const ProductDetailsDialog = ({
                   {product.item?.dosage && (
                     <Chip label={product.item.dosage} size="small" />
                   )}
-                  {product.item?.form && <Chip label={product.item.form} size="small" />}
+                  {product.item?.form && (
+                    <Chip label={product.item.form} size="small" />
+                  )}
                   {product.item?.brand && (
                     <Chip label={product.item.brand} size="small" />
                   )}
@@ -514,7 +634,10 @@ const ProductDetailsDialog = ({
               }}
               disabled={
                 visiblePharmacies.filter(
-                  (p) => p.distance !== null && p.distance !== undefined && p.distance <= 10
+                  (p) =>
+                    p.distance !== null &&
+                    p.distance !== undefined &&
+                    p.distance <= 10
                 ).length === 0
               }
               sx={{
@@ -531,7 +654,10 @@ const ProductDetailsDialog = ({
               }}
             >
               {`${visiblePharmacies.filter(
-                (p) => p.distance !== null && p.distance !== undefined && p.distance <= 10
+                (p) =>
+                  p.distance !== null &&
+                  p.distance !== undefined &&
+                  p.distance <= 10
               ).length} nearby`}
             </Button>
           </Box>
@@ -556,7 +682,12 @@ const ProductDetailsDialog = ({
         )}
       </DialogActions>
 
-      <Dialog open={requestDialogOpen} onClose={() => setRequestDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={requestDialogOpen}
+        onClose={() => setRequestDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Request Product</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
@@ -576,7 +707,9 @@ const ProductDetailsDialog = ({
             >
               <IconButton
                 size="small"
-                onClick={() => setRequestQuantity((prev) => Math.max(1, prev - 1))}
+                onClick={() =>
+                  setRequestQuantity((prev) => Math.max(1, prev - 1))
+                }
               >
                 <Remove fontSize="small" />
               </IconButton>
@@ -644,7 +777,9 @@ const ProductDetailsDialog = ({
             {requestStatus[
               requestEntry
                 ? String(
-                    requestEntry.pharmacy._id || requestEntry.pharmacy.id || requestEntry.pharmacy
+                    requestEntry.pharmacy._id ||
+                      requestEntry.pharmacy.id ||
+                      requestEntry.pharmacy
                   )
                 : ""
             ] === "sending"

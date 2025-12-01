@@ -19,12 +19,12 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Auth APIs
+// ==============================
+// AUTH APIs
+// ==============================
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
   register: (userData) => api.post("/auth/register", userData),
@@ -33,7 +33,9 @@ export const authAPI = {
   deleteAccount: () => api.delete("/auth/account"),
 };
 
-// Pharmacy APIs
+// ==============================
+// PHARMACY APIs
+// ==============================
 export const pharmacyAPI = {
   getAll: (params) => api.get("/pharmacies", { params }),
   getFeatured: () => api.get("/pharmacies/featured"),
@@ -44,7 +46,9 @@ export const pharmacyAPI = {
   getReviews: (id) => api.get(`/pharmacies/${id}/reviews`),
 };
 
-// Medication APIs
+// ==============================
+// MEDICATION APIs
+// ==============================
 export const medicationAPI = {
   getAll: (params) => api.get("/medications", { params }),
   getById: (id) => api.get(`/medications/${id}`),
@@ -56,7 +60,9 @@ export const medicationAPI = {
   delete: (id) => api.delete(`/medications/${id}`),
 };
 
-// Order APIs
+// ==============================
+// ORDER APIs
+// ==============================
 export const orderAPI = {
   getAll: (params) => api.get("/orders", { params }),
   getById: (id) => api.get(`/orders/${id}`),
@@ -67,25 +73,42 @@ export const orderAPI = {
     api.get(`/orders/pharmacy/${pharmacyId}/most-ordered`),
 };
 
-// User APIs
+// ==============================
+// USER APIs (FULLY FIXED)
+// ==============================
 export const userAPI = {
+  // Profile
   getProfile: (id) => api.get(`/users/${id}`),
   updateProfile: (id, data) => api.put(`/users/${id}`, data),
-  // Favorite Items
-  getFavoriteItems: (id) => api.get(`/users/${id}/favorite-items`),
+
+  // ------------------------------
+  // FAVORITE PRODUCTS (ITEMS)
+  // ------------------------------
+  getFavoriteItems: (id) =>
+    api.get(`/users/${id}/favorite-items`),
+
   addFavoriteItem: (id, itemId) =>
     api.post(`/users/${id}/favorite-items/${itemId}`),
+
   removeFavoriteItem: (id, itemId) =>
     api.delete(`/users/${id}/favorite-items/${itemId}`),
-  // Favorite Pharmacies
-  getFavoritePharmacies: (id) => api.get(`/users/${id}/favorite-pharmacies`),
+
+  // ------------------------------
+  // FAVORITE PHARMACIES
+  // ------------------------------
+  getFavoritePharmacies: (id) =>
+    api.get(`/users/${id}/favorite-pharmacies`),
+
   addFavoritePharmacy: (id, pharmacyId) =>
     api.post(`/users/${id}/favorite-pharmacies/${pharmacyId}`),
+
   removeFavoritePharmacy: (id, pharmacyId) =>
     api.delete(`/users/${id}/favorite-pharmacies/${pharmacyId}`),
 };
 
-// Review APIs
+// ==============================
+// REVIEW APIs
+// ==============================
 export const reviewAPI = {
   getAll: (params) => api.get("/reviews", { params }),
   getById: (id) => api.get(`/reviews/${id}`),
@@ -96,7 +119,9 @@ export const reviewAPI = {
   getByUser: (userId) => api.get(`/reviews/user/${userId}`),
 };
 
-// Inventory APIs
+// ==============================
+// INVENTORY APIs
+// ==============================
 export const inventoryAPI = {
   getAll: (params) => api.get("/inventory", { params }),
   add: (inventoryData) => api.post("/inventory", inventoryData),

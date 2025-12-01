@@ -170,17 +170,16 @@ const CustomerHome = () => {
       const pharmacies = response.data.pharmacies?.slice(0, 5) || [];
       
       const fallbackPharmacies = [
-        { name: "Al Rahbani Pharmacy", motto: "We strive to help", city: "Beirut" },
-        { name: "Maen Pharmacy", motto: "Your health is our priority", city: "Beirut" },
-        { name: "Rallan Pharmacy", motto: "Caring for you", city: "Beirut" },
-        { name: "Salam Pharmacy", motto: "Quality care, quality service", city: "Tripoli" },
-        { name: "Al Hayat Pharmacy", motto: "Your trusted health partner", city: "Sidon" },
+        { name: "Al Rahbani Pharmacy", city: "Beirut" },
+        { name: "Maen Pharmacy", city: "Beirut" },
+        { name: "Rallan Pharmacy", city: "Beirut" },
+        { name: "Salam Pharmacy", city: "Tripoli" },
+        { name: "Al Hayat Pharmacy", city: "Sidon" },
       ];
       
       const mergedPharmacies = pharmacies.length > 0
         ? pharmacies.map((pharmacy, index) => ({
             ...pharmacy,
-            motto: pharmacy.motto || pharmacy.tagline || fallbackPharmacies[index]?.motto || "",
           }))
         : fallbackPharmacies.map(p => ({ 
             ...p, 
@@ -193,11 +192,11 @@ const CustomerHome = () => {
     } catch (error) {
       console.error("Error fetching featured pharmacies:", error);
       const fallbackPharmacies = [
-        { name: "Al Rahbani Pharmacy", motto: "We strive to help", city: "Beirut", _id: "al-rahbani", address: { city: "Beirut" }, isOpen: true },
-        { name: "Maen Pharmacy", motto: "Your health is our priority", city: "Beirut", _id: "maen", address: { city: "Beirut" }, isOpen: true },
-        { name: "Rallan Pharmacy", motto: "Caring for you", city: "Beirut", _id: "rallan", address: { city: "Beirut" }, isOpen: true },
-        { name: "Salam Pharmacy", motto: "Quality care, quality service", city: "Tripoli", _id: "salam", address: { city: "Tripoli" }, isOpen: true },
-        { name: "Al Hayat Pharmacy", motto: "Your trusted health partner", city: "Sidon", _id: "al-hayat", address: { city: "Sidon" }, isOpen: true },
+        { name: "Al Rahbani Pharmacy", city: "Beirut", _id: "al-rahbani", address: { city: "Beirut" }, isOpen: true },
+        { name: "Maen Pharmacy", city: "Beirut", _id: "maen", address: { city: "Beirut" }, isOpen: true },
+        { name: "Rallan Pharmacy", city: "Beirut", _id: "rallan", address: { city: "Beirut" }, isOpen: true },
+        { name: "Salam Pharmacy", city: "Tripoli", _id: "salam", address: { city: "Tripoli" }, isOpen: true },
+        { name: "Al Hayat Pharmacy", city: "Sidon", _id: "al-hayat", address: { city: "Sidon" }, isOpen: true },
       ];
       setFeaturedPharmacies(fallbackPharmacies);
     }
@@ -937,20 +936,16 @@ const CustomerHome = () => {
                   flexShrink: 0,
                 }}
               >
-                <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
-              </Box>
-              <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", pb: 3 }}>
-                <Box>
-                  <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={600}
+                    color="secondary"
+                    mb={1}
+                  >
                     {pharmacy.name}
                   </Typography>
-                  {pharmacy.motto && (
-                    <Typography variant="body2" color="text.secondary" mb={1} sx={{ fontStyle: "italic" }}>
-                      {pharmacy.motto}
-                    </Typography>
-                  )}
                   <Typography variant="body2" color="text.secondary" mb={2}>
-                    📍 {pharmacy.address?.city || pharmacy.city || "Lebanon"}
+                    dY"? {pharmacy.address?.city || pharmacy.city || "Lebanon"}
                   </Typography>
                 </Box>
                 <Chip
@@ -963,7 +958,6 @@ const CustomerHome = () => {
                     mt: 2,
                   }}
                 />
-              </CardContent>
             </Card>
           ))}
         </Box>
@@ -975,4 +969,3 @@ const CustomerHome = () => {
 };
 
 export default CustomerHome;
-

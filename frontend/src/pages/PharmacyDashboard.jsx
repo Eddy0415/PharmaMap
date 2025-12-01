@@ -83,7 +83,6 @@ const PharmacyDashboard = () => {
   });
   const [pharmacyForm, setPharmacyForm] = useState({
     name: "",
-    motto: "",
     city: "",
     street: "",
     workingHours: [],
@@ -133,7 +132,6 @@ const PharmacyDashboard = () => {
     if (pharmacy) {
       setPharmacyForm({
         name: pharmacy.name || "",
-        motto: pharmacy.motto || pharmacy.tagline || pharmacy.description || "",
         city: pharmacy.address?.city || "",
         street: pharmacy.address?.street || "",
         workingHours:
@@ -327,19 +325,16 @@ const PharmacyDashboard = () => {
     if (!pharmacy?._id) return;
     setPharmacySaveStatus("saving");
     setPharmacySaveError("");
-    try {
-      const payload = {
-        name: pharmacyForm.name,
-        motto: pharmacyForm.motto,
-        tagline: pharmacyForm.motto,
-        description: pharmacyForm.motto,
-        address: {
-          ...pharmacy.address,
-          city: pharmacyForm.city,
-          street: pharmacyForm.street || pharmacy.address?.street || "",
-        },
-        workingHours: pharmacyForm.workingHours,
-      };
+      try {
+        const payload = {
+          name: pharmacyForm.name,
+          address: {
+            ...pharmacy.address,
+            city: pharmacyForm.city,
+            street: pharmacyForm.street || pharmacy.address?.street || "",
+          },
+          workingHours: pharmacyForm.workingHours,
+        };
       await pharmacyAPI.update(pharmacy._id, payload);
       const refreshed = await pharmacyAPI.getById(pharmacy._id);
       setPharmacy(refreshed.data.pharmacy || pharmacy);
@@ -1136,22 +1131,14 @@ const PharmacyDashboard = () => {
                   )}
 
                   <Grid container spacing={2} sx={{ mb: 3 }}>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Pharmacy Name"
-                        value={pharmacyForm.name}
-                        onChange={(e) => handlePharmacyInputChange("name", e.target.value)}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Motto / Description"
-                        value={pharmacyForm.motto}
-                        onChange={(e) => handlePharmacyInputChange("motto", e.target.value)}
-                      />
-                    </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Pharmacy Name"
+                          value={pharmacyForm.name}
+                          onChange={(e) => handlePharmacyInputChange("name", e.target.value)}
+                        />
+                      </Grid>
                     <Grid item xs={12} md={6}>
                       <TextField
                         fullWidth

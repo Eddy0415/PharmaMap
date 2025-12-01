@@ -397,16 +397,6 @@ const Search = () => {
                             >
                               {pharmacy.name}
                             </Typography>
-                            {pharmacy.motto && (
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                mb={1}
-                                sx={{ fontStyle: "italic" }}
-                              >
-                                {pharmacy.motto}
-                              </Typography>
-                            )}
                             <Box
                               sx={{
                                 display: "flex",
