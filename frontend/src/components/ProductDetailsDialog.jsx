@@ -15,6 +15,8 @@ import ArrowBack from "@mui/icons-material/ArrowBack";
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
 import CheckCircle from "@mui/icons-material/CheckCircle";
 import Room from "@mui/icons-material/Room";
+import Add from "@mui/icons-material/Add";
+import Remove from "@mui/icons-material/Remove";
 import { useGeolocation } from "../hooks/useGeolocation";
 
 const InfoRow = ({ label, value }) => {
@@ -58,6 +60,7 @@ const ProductDetailsDialog = ({
   const [showPharmacies, setShowPharmacies] = useState(false);
   const { location, requestLocation } = useGeolocation();
   const [requestStatus, setRequestStatus] = useState({});
+  const [quantities, setQuantities] = useState({});
 
   // Sort pharmacies by distance if location is available
   const sortedPharmacies = useMemo(() => {
@@ -102,6 +105,7 @@ const ProductDetailsDialog = ({
     if (open) {
       setShowPharmacies(false);
       setRequestStatus({});
+      setQuantities({});
       // Request location when dialog opens
       requestLocation();
     }
@@ -115,10 +119,11 @@ const ProductDetailsDialog = ({
 
   const handleRequestClick = async (entry) => {
     if (!onRequestPharmacy) return;
-    const id = entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy;
+    const id = String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy);
+    const qty = Number(quantities[String(id)] ?? 1);
     setRequestStatus((prev) => ({ ...prev, [id]: "sending" }));
     try {
-      const ok = await onRequestPharmacy(entry);
+      const ok = await onRequestPharmacy(entry, qty);
       setRequestStatus((prev) => ({ ...prev, [id]: ok ? "sent" : undefined }));
     } catch (err) {
       console.error("Request error", err);
@@ -126,11 +131,19 @@ const ProductDetailsDialog = ({
     }
   };
 
+  const adjustQuantity = (id, delta) => {
+    setQuantities((prev) => {
+      const current = Number(prev[String(id)] ?? 1);
+      const next = Math.max(1, current + delta);
+      return { ...prev, [id]: next };
+    });
+  };
+
   const renderPharmacyList = () => (
     <Box sx={{ mt: 2 }}>
       {sortedPharmacies.map((entry) => (
         <Box
-          key={entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy.name}
+          key={String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy.name)}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -212,6 +225,47 @@ const ProductDetailsDialog = ({
             </Box>
           </Box>
           <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                bgcolor: "#f5f5f5",
+                borderRadius: 2,
+                px: 1,
+                py: 0.25,
+              }}
+            >
+              <IconButton
+                size="small"
+                onClick={() =>
+                  adjustQuantity(
+                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy),
+                    -1
+                  )
+                }
+              >
+                <Remove fontSize="small" />
+              </IconButton>
+              <Typography variant="body2" fontWeight={700}>
+                {Number(
+                  quantities[
+                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                  ] ?? 1
+                )}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={() =>
+                  adjustQuantity(
+                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy),
+                    1
+                  )
+                }
+              >
+                <Add fontSize="small" />
+              </IconButton>
+            </Box>
             <Button
               variant="contained"
               size="small"
@@ -225,20 +279,34 @@ const ProductDetailsDialog = ({
             </Button>
             {onRequestPharmacy && (
               <Button
-                variant={requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sent" ? "contained" : "outlined"}
+                variant={
+                  requestStatus[
+                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                  ] === "sent"
+                    ? "contained"
+                    : "outlined"
+                }
                 size="small"
                 onClick={() => handleRequestClick(entry)}
                 disabled={
-                  requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sent" ||
-                  requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sending"
+                  requestStatus[
+                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                  ] === "sent" ||
+                  requestStatus[
+                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                  ] === "sending"
                 }
                 sx={
-                  requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sent"
+                  requestStatus[
+                    String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                  ] === "sent"
                     ? { bgcolor: "#4caf50", color: "white", "&:hover": { bgcolor: "#43a047" } }
                     : {}
                 }
               >
-                {requestStatus[entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy] === "sent"
+                {requestStatus[
+                  String(entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy)
+                ] === "sent"
                   ? "Request sent"
                   : "Request"}
               </Button>

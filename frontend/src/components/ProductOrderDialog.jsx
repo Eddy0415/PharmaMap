@@ -47,7 +47,7 @@ const ProductOrderDialog = ({
 
   if (!product || !pharmacy) return null;
 
-  const maxQuantity = product.quantity || 0;
+  const maxQuantity = Number(product.quantity ?? 0);
   const price = product.price || 0;
   const total = price * quantity;
   const isOutOfStock =

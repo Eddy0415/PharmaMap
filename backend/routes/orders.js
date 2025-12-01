@@ -208,6 +208,7 @@ router.get("/pharmacy/:pharmacyId/most-ordered", async (req, res) => {
 // @desc    Create new order
 // @access  Private
 router.post("/", async (req, res) => {
+  console.log("ORDER BODY DEBUG:", JSON.stringify(req.body, null, 2));
   try {
     const { customer, pharmacy, items, customerNotes } = req.body;
 
@@ -219,6 +220,14 @@ router.post("/", async (req, res) => {
     const orderItems = [];
 
     for (const orderItem of items) {
+      const quantity = Number(orderItem.quantity);
+      if (!quantity || quantity <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid quantity for item",
+        });
+      }
+
       // Get inventory entry for this item at this pharmacy
       const inventory = await Inventory.findOne({
         pharmacy: pharmacy,
@@ -232,7 +241,7 @@ router.post("/", async (req, res) => {
         });
       }
 
-      if (inventory.quantity < orderItem.quantity) {
+      if (inventory.quantity < quantity) {
         return res.status(400).json({
           success: false,
           message: `Insufficient stock for item`,
@@ -247,10 +256,10 @@ router.post("/", async (req, res) => {
         });
       }
 
-      const subtotal = inventory.price * orderItem.quantity;
+      const subtotal = inventory.price * quantity;
       orderItems.push({
         item: item._id,
-        quantity: orderItem.quantity,
+        quantity,
         priceAtOrder: inventory.price,
         subtotal: subtotal,
       });
@@ -258,10 +267,12 @@ router.post("/", async (req, res) => {
       totalAmount += subtotal;
 
       // Update inventory stock
-      inventory.quantity -= orderItem.quantity;
+      inventory.quantity -= quantity;
       inventory.totalOrders += 1;
       await inventory.save();
     }
+
+    console.log("ORDER DEBUG", JSON.stringify(orderItems, null, 2));
 
     // Create order
     const order = new Order({

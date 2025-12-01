@@ -228,7 +228,7 @@ const PharmacyDetail = () => {
     setDetailsDialogOpen(true);
   };
 
-  const handleRequestPharmacy = async (entry) => {
+  const handleRequestPharmacy = async (entry, qty) => {
     const userId = user?.id || user?._id;
     if (!userId) {
       navigate("/login");
@@ -242,9 +242,12 @@ const PharmacyDetail = () => {
         items: [
           {
             item: detailsProduct?.item?._id || detailsProduct?.item,
-            quantity: 1,
+            quantity: qty,
+            priceAtOrder: entry.price,
+            subtotal: entry.price * qty,
           },
         ],
+        totalAmount: entry.price * qty,
         customerNotes: "Medication request",
       });
       setRequestStatus((prev) => ({
@@ -607,7 +610,7 @@ const PharmacyDetail = () => {
                       <Box sx={{ mt: "auto", display: "flex", alignItems: "center", gap: 1 }}>
                         <Chip
                           size="small"
-                          label={`Stock: ${inv.quantity || 0}`}
+                          label={`Stock: ${Number(inv.quantity ?? 0)}`}
                           sx={{ ...getStockStatusColor(inv.stockStatus), fontWeight: 600 }}
                         />
                         <Typography variant="body2" color="text.secondary">
@@ -750,7 +753,7 @@ const PharmacyDetail = () => {
         onSelectPharmacy={(pharmacy) =>
           navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)
         }
-        onRequestPharmacy={handleRequestPharmacy}
+        onRequestPharmacy={(entry, qty) => handleRequestPharmacy(entry, qty)}
       />
 
       <ReviewDialog

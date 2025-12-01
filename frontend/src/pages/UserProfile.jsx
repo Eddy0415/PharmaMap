@@ -348,7 +348,7 @@ const handleAvatarChange = (e) => {
         items:
           order.items?.map((item) => ({
             item: item.item?._id || item.item?.id || item.item,
-            quantity: item.quantity || 1,
+            quantity: Number(item.quantity),
           })) || [],
         customerNotes: order.customerNotes,
       };
@@ -605,9 +605,7 @@ const handleAvatarChange = (e) => {
                             ? order.items
                                 .map(
                                   (item) =>
-                                    `${item.item?.name || "Unknown"} (x${
-                                      item.quantity || 0
-                                    })`
+                                    `${item.item?.name || "Unknown"} (x${Number(item.quantity)})`
                                 )
                                 .join(", ")
                             : "No items"}
@@ -619,9 +617,9 @@ const handleAvatarChange = (e) => {
                         >
                           Total:{" "}
                           {order.items?.reduce(
-                            (sum, item) => sum + (item.quantity || 0),
+                            (sum, item) => sum + Number(item.quantity),
                             0
-                          ) || 0}{" "}
+                          )}{" "}
                           unit(s)
                           {order.items?.length > 1 &&
                             ` (${order.items.length} items)`}

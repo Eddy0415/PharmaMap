@@ -800,7 +800,7 @@ const PharmacyDashboard = () => {
                                 <TableCell>
                                   ${inv.price?.toFixed(2) || "0.00"}
                                 </TableCell>
-                                <TableCell>{inv.quantity || 0} units</TableCell>
+                                <TableCell>{Number(inv.quantity ?? 0)} units</TableCell>
                                 <TableCell>
                                   <Chip
                                     label={
@@ -970,9 +970,9 @@ const PharmacyDashboard = () => {
                                 </TableCell>
                                 <TableCell>
                                   {order.items?.reduce(
-                                    (sum, item) => sum + (item.quantity || 0),
+                                    (sum, item) => sum + Number(item.quantity),
                                     0
-                                  ) || 0}{" "}
+                                  )}{" "}
                                   unit(s)
                                   {order.items?.length > 1 &&
                                     ` (${order.items.length} items)`}
@@ -1210,7 +1210,7 @@ const PharmacyDashboard = () => {
                             {item.item?.name || "Unknown Item"}
                           </TableCell>
                           <TableCell align="right">
-                            {item.quantity || 0}
+                            {Number(item.quantity)}
                           </TableCell>
                           <TableCell align="right">
                             ${item.priceAtOrder?.toFixed(2) || "0.00"}
