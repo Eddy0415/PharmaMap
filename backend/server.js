@@ -30,6 +30,7 @@ const medicationRoutes = require("./routes/medications");
 const orderRoutes = require("./routes/orders");
 const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
+const reviewRoutes = require("./routes/reviews");
 const firebaseAuth = require("./middleware/firebaseAuth");
 
 // API Routes
@@ -39,6 +40,7 @@ app.use("/api/medications", medicationRoutes);
 app.use("/api/orders", firebaseAuth, orderRoutes);
 app.use("/api/users", firebaseAuth, userRoutes);
 app.use("/api/inventory", firebaseAuth, inventoryRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // Root route
 app.get("/", (req, res) => {

@@ -26,7 +26,14 @@ import Star from "@mui/icons-material/Star";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ProductDetailsDialog from "../components/ProductDetailsDialog";
-import { medicationAPI, pharmacyAPI, userAPI, orderAPI } from "../services/api";
+import ReviewDialog from "../components/ReviewDialog";
+import {
+  medicationAPI,
+  pharmacyAPI,
+  userAPI,
+  orderAPI,
+  reviewAPI,
+} from "../services/api";
 
 const PharmacyDetail = () => {
   const { id } = useParams();
@@ -44,6 +51,9 @@ const PharmacyDetail = () => {
   const [productPharmacies, setProductPharmacies] = useState([]);
   const [requestStatus, setRequestStatus] = useState({});
   const [page, setPage] = useState(1);
+  const [writeReviewDialogOpen, setWriteReviewDialogOpen] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
   const pageSize = 12;
 
   const normalizeUser = (u) => {
@@ -128,6 +138,27 @@ const PharmacyDetail = () => {
     }
   };
 
+  const handleSubmitReview = async (reviewRating, reviewComment) => {
+    if (!user?.id) {
+      navigate("/login");
+      return;
+    }
+    try {
+      await reviewAPI.create({
+        user: user.id,
+        pharmacy: id,
+        rating: reviewRating,
+        comment: reviewComment,
+      });
+      setWriteReviewDialogOpen(false);
+      setRating(0);
+      setComment("");
+      fetchPharmacyDetails();
+    } catch (error) {
+      console.error("Error submitting review:", error);
+    }
+  };
+
   const filteredInventory = inventory.filter((inv) =>
     (inv.item?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -136,6 +167,7 @@ const PharmacyDetail = () => {
     (page - 1) * pageSize,
     page * pageSize
   );
+  const hasReviewed = reviews.some((r) => r.user?._id === user?.id);
 
   const handlePageChange = (direction) => {
     setPage((prev) => {
@@ -627,6 +659,16 @@ const PharmacyDetail = () => {
               <Typography variant="h5" fontWeight={700}>
                 Reviews & Ratings
               </Typography>
+              {!hasReviewed && user && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  sx={{ ml: "auto" }}
+                  onClick={() => setWriteReviewDialogOpen(true)}
+                >
+                  Write a Review
+                </Button>
+              )}
             </Box>
 
             <Box
@@ -709,6 +751,20 @@ const PharmacyDetail = () => {
           navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`)
         }
         onRequestPharmacy={handleRequestPharmacy}
+      />
+
+      <ReviewDialog
+        open={writeReviewDialogOpen}
+        onClose={() => {
+          setWriteReviewDialogOpen(false);
+          setRating(0);
+          setComment("");
+        }}
+        rating={rating}
+        comment={comment}
+        onRatingChange={(value) => setRating(value)}
+        onCommentChange={(value) => setComment(value)}
+        onSubmit={(rating, comment) => handleSubmitReview(rating, comment)}
       />
 
       <Footer />
