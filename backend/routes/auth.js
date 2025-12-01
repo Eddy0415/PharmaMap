@@ -15,11 +15,16 @@ router.post("/register", async (req, res) => {
       lastName,
       email,
       phone,
-      password,
       userType,
       pharmacyName,
+      pharmacyStreet,
+      pharmacyCity,
       pharmacyAddress,
       city,
+      pharmacyEmail,
+      pharmacyPhone,
+      pharmacyCoordinates,
+      pharmacyWorkingHours,
       license,
     } = req.body;
 
@@ -38,51 +43,55 @@ router.post("/register", async (req, res) => {
       lastName,
       email,
       phone,
-      password, // still stored (hashed by model)
       userType,
     });
 
     await user.save();
 
-    // If pharmacist, create pharmacy too
     // If pharmacist, automatically create their pharmacy in MongoDB
-if (userType === "pharmacist") {
+    if (userType === "pharmacist") {
+      const coordinates =
+        Array.isArray(pharmacyCoordinates) &&
+        pharmacyCoordinates.length === 2 &&
+        pharmacyCoordinates.every((c) => typeof c === "number")
+          ? pharmacyCoordinates
+          : [0, 0];
 
-  const newPharmacy = await Pharmacy.create({
-    name: pharmacyName || `${firstName} ${lastName}'s Pharmacy`,
+      const workingHours =
+        Array.isArray(pharmacyWorkingHours) && pharmacyWorkingHours.length > 0
+          ? pharmacyWorkingHours
+          : [
+              { day: "Monday", openTime: "", closeTime: "", isClosed: false },
+              { day: "Tuesday", openTime: "", closeTime: "", isClosed: false },
+              { day: "Wednesday", openTime: "", closeTime: "", isClosed: false },
+              { day: "Thursday", openTime: "", closeTime: "", isClosed: false },
+              { day: "Friday", openTime: "", closeTime: "", isClosed: false },
+              { day: "Saturday", openTime: "", closeTime: "", isClosed: false },
+              { day: "Sunday", openTime: "", closeTime: "", isClosed: true },
+            ];
 
-    // BASIC CONTACT INFO
-    phone: pharmacyPhone || "",
-    email: pharmacyEmail || "",
+      const newPharmacy = await Pharmacy.create({
+        name: pharmacyName || `${firstName} ${lastName}'s Pharmacy`,
+        phone: pharmacyPhone || phone || "",
+        email: pharmacyEmail || email || "",
+        address: {
+          street: pharmacyStreet || pharmacyAddress || "",
+          city: pharmacyCity || city || "",
+          coordinates: {
+            type: "Point",
+            coordinates,
+          },
+        },
+        workingHours,
+        owner: user._id,
+        user: user._id,
+        licenseNumber: license || `LIC-${Date.now()}`,
+      });
 
-    // ADDRESS (empty until pharmacist fills dashboard)
-    address: {
-      street: pharmacyStreet || "",
-      city: pharmacyCity || "",
-      coordinates: {
-        type: "Point",
-        coordinates: pharmacyCoordinates || [0, 0],
-      },
-    },
-
-    // WORKING HOURS
-    workingHours: pharmacyWorkingHours || [
-      { day: "Monday", openTime: "", closeTime: "", isClosed: false },
-      { day: "Tuesday", openTime: "", closeTime: "", isClosed: false },
-      { day: "Wednesday", openTime: "", closeTime: "", isClosed: false },
-      { day: "Thursday", openTime: "", closeTime: "", isClosed: false },
-      { day: "Friday", openTime: "", closeTime: "", isClosed: false },
-      { day: "Saturday", openTime: "", closeTime: "", isClosed: false },
-      { day: "Sunday", openTime: "", closeTime: "", isClosed: true },
-    ],
-
-    user: newUser._id, // pharmacy owner reference
-  });
-
-  // Link pharmacy ID back to user
-  newUser.pharmacy = newPharmacy._id;
-  await newUser.save();
-}
+      // Link pharmacy ID back to user
+      user.pharmacy = newPharmacy._id;
+      await user.save();
+    }
 
 
     res.status(201).json({
@@ -142,12 +151,12 @@ router.get("/me", firebaseAuth, async (req, res) => {
 // =======================
 router.put("/password", firebaseAuth, async (req, res) => {
   try {
-    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const { newPassword, confirmPassword } = req.body;
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (!newPassword || !confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "All password fields are required",
+        message: "New password and confirmation are required",
       });
     }
 
@@ -165,33 +174,14 @@ router.put("/password", firebaseAuth, async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Current password is incorrect",
-      });
-    }
-
-    const userRecord = await admin.auth().getUserByEmail(user.email);
+    const userRecord = await admin.auth().getUserByEmail(req.user.email);
     await admin.auth().updateUser(userRecord.uid, {
       password: newPassword,
     });
 
-    user.password = newPassword;
-    await user.save();
-
     res.json({
       success: true,
-      message: "Password updated successfully",
+      message: "Password updated in Firebase",
     });
   } catch (error) {
     console.error("Update password error:", error);
@@ -219,7 +209,9 @@ router.delete("/account", firebaseAuth, async (req, res) => {
     }
 
     if (user.userType === "pharmacist") {
-      await Pharmacy.deleteOne({ owner: user._id });
+      await Pharmacy.deleteOne({
+        $or: [{ owner: user._id }, { user: user._id }],
+      });
     }
 
     try {

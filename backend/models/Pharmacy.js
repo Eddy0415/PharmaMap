@@ -10,6 +10,11 @@ const pharmacySchema = new Schema({
     ref: "User",
     required: true,
   },
+  // Alternate pointer used by some flows
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
 
   // Location
   address: {

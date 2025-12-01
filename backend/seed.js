@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-const bcrypt = require("bcryptjs");
 
 // Load environment variables
 dotenv.config({ path: "../.env" });
@@ -312,7 +311,6 @@ const seedDatabase = async () => {
         firstName,
         lastName,
         email: `customer${i + 1}@example.com`,
-        password: "password123", // Will be hashed by pre-save hook
         phone: `03${randomInt(100000, 999999)}`,
         userType: "customer",
         dateOfBirth: randomDate(new Date(1970, 0, 1), new Date(2005, 11, 31)),
@@ -333,7 +331,6 @@ const seedDatabase = async () => {
         firstName,
         lastName,
         email: `pharmacist${i + 1}@example.com`,
-        password: "password123", // Will be hashed by pre-save hook
         phone: `03${randomInt(100000, 999999)}`,
         userType: "pharmacist",
         isActive: true,
@@ -389,6 +386,7 @@ const seedDatabase = async () => {
       const pharmacy = new Pharmacy({
         name: randomElement(pharmacyNames),
         owner: pharmacist._id,
+        user: pharmacist._id,
         address: {
           street: randomElement(streets),
           city: randomElement(cities),
@@ -583,9 +581,8 @@ const seedDatabase = async () => {
     console.log(`   - Inventory entries: ${inventoryCount}`);
     console.log(`   - Orders: ${orders.length}`);
     console.log(`   - Reviews: ${reviewCount}`);
-    console.log("\n🔑 Test Credentials:");
-    console.log("   Customer: customer1@example.com / password123");
-    console.log("   Pharmacist: pharmacist1@example.com / password123");
+    console.log("\n🔑 Auth:");
+    console.log("   Seeded users are profile records only; manage passwords via Firebase.");
 
     process.exit(0);
   } catch (error) {

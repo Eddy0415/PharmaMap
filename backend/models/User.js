@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
@@ -13,7 +12,6 @@ const userSchema = new Schema({
     lowercase: true,
     trim: true,
   },
-  password: { type: String, required: true }, // Hash with bcrypt
   phone: { type: String, required: true },
 
   // User Type
@@ -66,26 +64,6 @@ const userSchema = new Schema({
 // Index for faster queries
 // Note: email index is automatically created by unique: true
 userSchema.index({ userType: 1 });
-
-// Hash password before saving
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    return next();
-  }
-
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Method to compare passwords
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
 
 // Virtual for full name
 userSchema.virtual("fullName").get(function () {

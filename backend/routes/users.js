@@ -33,7 +33,7 @@ router.put("/:id", firebaseAuth, async (req, res) => {
         updatedAt: Date.now(),
       },
       { new: true, runValidators: true }
-    ).select("-password");
+    );
 
     if (!user) {
       return res.status(404).json({

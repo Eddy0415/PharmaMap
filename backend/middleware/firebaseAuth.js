@@ -51,7 +51,6 @@ const firebaseAuth = async (req, res, next) => {
         lastName: decoded.name?.split(" ").slice(1).join(" ") || "",
         email,
         phone: decoded.phone_number || "",
-        password: Math.random().toString(36).slice(-12), // never used; hashed by model
         userType: "customer",
       });
       await user.save();
