@@ -32,6 +32,8 @@ import {
   FormControl,
   InputLabel,
   Alert,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import Dashboard from "@mui/icons-material/Dashboard";
 import Inventory from "@mui/icons-material/Inventory";
@@ -79,6 +81,15 @@ const PharmacyDashboard = () => {
     lowStockThreshold: 10,
     isAvailable: true,
   });
+  const [pharmacyForm, setPharmacyForm] = useState({
+    name: "",
+    motto: "",
+    city: "",
+    street: "",
+    workingHours: [],
+  });
+  const [pharmacySaveStatus, setPharmacySaveStatus] = useState("idle");
+  const [pharmacySaveError, setPharmacySaveError] = useState("");
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -102,6 +113,36 @@ const PharmacyDashboard = () => {
     });
     setFilteredInventory(filtered);
   }, [searchQuery, inventoryItems]);
+
+  const defaultWorkingHours = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ].map((day) => ({
+    day,
+    openTime: "",
+    closeTime: "",
+    isClosed: day === "Sunday",
+  }));
+
+  useEffect(() => {
+    if (pharmacy) {
+      setPharmacyForm({
+        name: pharmacy.name || "",
+        motto: pharmacy.motto || pharmacy.tagline || pharmacy.description || "",
+        city: pharmacy.address?.city || "",
+        street: pharmacy.address?.street || "",
+        workingHours:
+          pharmacy.workingHours && pharmacy.workingHours.length > 0
+            ? pharmacy.workingHours
+            : defaultWorkingHours,
+      });
+    }
+  }, [pharmacy]);
 
   useEffect(() => {
     let filtered = orders;
@@ -268,6 +309,46 @@ const PharmacyDashboard = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const handlePharmacyInputChange = (field, value) => {
+    setPharmacyForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleWorkingHourChange = (index, field, value) => {
+    setPharmacyForm((prev) => {
+      const updated = [...prev.workingHours];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, workingHours: updated };
+    });
+  };
+
+  const handleSavePharmacy = async () => {
+    if (!pharmacy?._id) return;
+    setPharmacySaveStatus("saving");
+    setPharmacySaveError("");
+    try {
+      const payload = {
+        name: pharmacyForm.name,
+        motto: pharmacyForm.motto,
+        tagline: pharmacyForm.motto,
+        description: pharmacyForm.motto,
+        address: {
+          ...pharmacy.address,
+          city: pharmacyForm.city,
+          street: pharmacyForm.street || pharmacy.address?.street || "",
+        },
+        workingHours: pharmacyForm.workingHours,
+      };
+      await pharmacyAPI.update(pharmacy._id, payload);
+      const refreshed = await pharmacyAPI.getById(pharmacy._id);
+      setPharmacy(refreshed.data.pharmacy || pharmacy);
+      setPharmacySaveStatus("saved");
+      setTimeout(() => setPharmacySaveStatus("idle"), 2000);
+    } catch (error) {
+      setPharmacySaveError(error?.response?.data?.message || "Failed to save pharmacy info");
+      setPharmacySaveStatus("idle");
+    }
   };
 
   const handleOpenDialog = (inventoryItem = null) => {
@@ -484,11 +565,25 @@ const PharmacyDashboard = () => {
                     </ListItemIcon>
                     <ListItemText primary="Analytics" />
                   </ListItem>
-                  <ListItem button sx={{ borderRadius: 2, mb: 1 }}>
+                  <ListItem
+                    button
+                    selected={activeSection === "pharmacySettings"}
+                    onClick={() => setActiveSection("pharmacySettings")}
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                      "&.Mui-selected": {
+                        background:
+                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                        color: "white",
+                        "& .MuiListItemIcon-root": { color: "white" },
+                      },
+                    }}
+                  >
                     <ListItemIcon>
                       <Settings />
                     </ListItemIcon>
-                    <ListItemText primary="Settings" />
+                    <ListItemText primary="Pharmacy Info" />
                   </ListItem>
                   <ListItem
                     button
@@ -1017,6 +1112,135 @@ const PharmacyDashboard = () => {
                   </CardContent>
                 </Card>
               </>
+            )}
+
+            {activeSection === "pharmacySettings" && (
+              <Card sx={{ mb: 4 }}>
+                <CardContent>
+                  <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
+                    Pharmacy Settings
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={3}>
+                    Update your pharmacy details and working hours.
+                  </Typography>
+
+                  {pharmacySaveError && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      {pharmacySaveError}
+                    </Alert>
+                  )}
+                  {pharmacySaveStatus === "saved" && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                      Saved successfully
+                    </Alert>
+                  )}
+
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Pharmacy Name"
+                        value={pharmacyForm.name}
+                        onChange={(e) => handlePharmacyInputChange("name", e.target.value)}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Motto / Description"
+                        value={pharmacyForm.motto}
+                        onChange={(e) => handlePharmacyInputChange("motto", e.target.value)}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="City"
+                        value={pharmacyForm.city}
+                        onChange={(e) => handlePharmacyInputChange("city", e.target.value)}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Street"
+                        value={pharmacyForm.street}
+                        onChange={(e) => handlePharmacyInputChange("street", e.target.value)}
+                      />
+                    </Grid>
+                  </Grid>
+
+                  <Typography variant="h6" fontWeight={700} color="secondary" mb={2}>
+                    Opening Hours
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {pharmacyForm.workingHours.map((wh, idx) => (
+                      <Grid item xs={12} md={6} key={wh.day || idx}>
+                        <Card variant="outlined">
+                          <CardContent>
+                            <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                              {wh.day}
+                            </Typography>
+                            <FormControlLabel
+                              control={
+                                <Switch
+                                  checked={!wh.isClosed}
+                                  onChange={(e) =>
+                                    handleWorkingHourChange(idx, "isClosed", !e.target.checked)
+                                  }
+                                />
+                              }
+                              label={wh.isClosed ? "Closed all day" : "Open"}
+                              sx={{ mb: 1 }}
+                            />
+                            {!wh.isClosed && (
+                              <Box sx={{ display: "flex", gap: 1 }}>
+                                <TextField
+                                  label="Open"
+                                  type="time"
+                                  value={wh.openTime || ""}
+                                  onChange={(e) =>
+                                    handleWorkingHourChange(idx, "openTime", e.target.value)
+                                  }
+                                  InputLabelProps={{ shrink: true }}
+                                  fullWidth
+                                />
+                                <TextField
+                                  label="Close"
+                                  type="time"
+                                  value={wh.closeTime || ""}
+                                  onChange={(e) =>
+                                    handleWorkingHourChange(idx, "closeTime", e.target.value)
+                                  }
+                                  InputLabelProps={{ shrink: true }}
+                                  fullWidth
+                                />
+                              </Box>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+
+                  <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, gap: 2 }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleSavePharmacy}
+                      disabled={pharmacySaveStatus === "saving"}
+                      sx={{
+                        background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                      }}
+                    >
+                      {pharmacySaveStatus === "saving"
+                        ? "Saving..."
+                        : pharmacySaveStatus === "saved"
+                        ? "Saved ✓"
+                        : "Save Changes"}
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
             )}
           </Grid>
         </Grid>

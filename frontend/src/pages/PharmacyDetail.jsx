@@ -396,6 +396,15 @@ const PharmacyDetail = () => {
                       {pharmacy.totalReviews || 0} reviews)
                     </Typography>
                   </Box>
+                  {(pharmacy.motto || pharmacy.description) && (
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontStyle: "italic", mt: 0.5 }}
+                    >
+                      {pharmacy.motto || pharmacy.description}
+                    </Typography>
+                  )}
                 </Grid>
               </Grid>
             </Grid>

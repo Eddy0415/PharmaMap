@@ -2,7 +2,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
-  Button,
   Card,
   CardContent,
   Chip,
@@ -10,11 +9,11 @@ import {
   MenuItem,
   TextField,
   Typography,
-} 
-from "@mui/material";
+} from "@mui/material";
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
 import TrendingUp from "@mui/icons-material/TrendingUp";
 import Room from "@mui/icons-material/Room";
+import Star from "@mui/icons-material/Star";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ProductDetailsDialog from "../components/ProductDetailsDialog";
@@ -43,11 +42,11 @@ const Search = () => {
       return list.sort((a, b) => (b.item?.name || "").localeCompare(a.item?.name || ""));
     }
     if (sortMode === "price") {
-      return list.sort(
-        (a, b) =>
-          (a.pharmacies?.[0]?.price ?? Number.POSITIVE_INFINITY) -
-          (b.pharmacies?.[0]?.price ?? Number.POSITIVE_INFINITY)
-      );
+      return list.sort((a, b) => {
+        const priceA = a.pharmacies?.[0]?.price ?? Infinity;
+        const priceB = b.pharmacies?.[0]?.price ?? Infinity;
+        return priceA - priceB;
+      });
     }
     return list;
   }, [productResults, sortMode]);
@@ -61,10 +60,11 @@ const Search = () => {
       return list.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
     }
     if (sortMode === "proximity") {
-      return list.sort(
-        (a, b) =>
-          (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY)
-      );
+      return list.sort((a, b) => {
+        const distA = a.distance ?? Infinity;
+        const distB = b.distance ?? Infinity;
+        return distA - distB;
+      });
     }
     return list;
   }, [pharmacyResults, sortMode]);
@@ -114,11 +114,15 @@ const Search = () => {
 
       setProductResults(normalizeProducts(medsRes.data.results || []));
 
-      const pharmacies =
-        pharmRes.data?.pharmacies ||
-        pharmRes.data?.results ||
-        (Array.isArray(pharmRes.data) ? pharmRes.data : []);
-      setPharmacyResults(pharmacies || []);
+      const raw = pharmRes.data;
+      const pharmacies = Array.isArray(raw?.pharmacies)
+        ? raw.pharmacies
+        : Array.isArray(raw?.results)
+        ? raw.results
+        : Array.isArray(raw)
+        ? raw
+        : [];
+      setPharmacyResults(pharmacies);
     } catch (error) {
       console.error("Search error:", error);
       setProductResults([]);
@@ -178,7 +182,7 @@ const Search = () => {
                 {category ? `Category: ${category}` : `Search Results for "${searchQuery}"`}
               </Typography>
               <Typography component="p" variant="body2" color="text.secondary">
-                {productResults.length} product{productResults.length === 1 ? "" : "s"} ·{" "}
+                {productResults.length} product{productResults.length === 1 ? "" : "s"} -{" "}
                 {pharmacyResults.length} pharmacies
               </Typography>
             </Box>
@@ -197,10 +201,10 @@ const Search = () => {
                 sx={{ minWidth: 180 }}
               >
                 <MenuItem value="none">None</MenuItem>
-                <MenuItem value="az">Alphabetical (A ? Z)</MenuItem>
-                <MenuItem value="za">Alphabetical (Z ? A)</MenuItem>
+                <MenuItem value="az">Alphabetical (A -> Z)</MenuItem>
+                <MenuItem value="za">Alphabetical (Z -> A)</MenuItem>
                 <MenuItem value="proximity">Proximity (nearest first)</MenuItem>
-                <MenuItem value="price">Price (low ? high)</MenuItem>
+                <MenuItem value="price">Price (low -> high)</MenuItem>
               </TextField>
               <TextField
                 select
@@ -235,19 +239,21 @@ const Search = () => {
                   </Typography>
                   <Box
                     sx={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                      gap: 3,
-                      alignItems: "stretch",
-                      gridAutoRows: 320,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 2.5,
+                      "& > *": {
+                        flex: "0 0 calc(20% - 20px)",
+                        maxWidth: "calc(20% - 20px)",
+                        minWidth: "150px",
+                      },
                     }}
                   >
-                    {sortedProducts.map((product) => (
+                    {sortedProducts.map((product, index) => (
                       <Card
-                        key={product.item?._id || product.item?.name}
+                        key={product.item?._id || product.item?.id || product.item?.name || index}
                         sx={{
-                          width: "100%",
-                          height: "100%",
+                          height: 280,
                           cursor: "pointer",
                           transition: "all 0.3s",
                           border: "2px solid transparent",
@@ -263,7 +269,7 @@ const Search = () => {
                       >
                         <Box
                           sx={{
-                            height: 170,
+                            height: 150,
                             background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
                             display: "flex",
                             alignItems: "center",
@@ -327,19 +333,21 @@ const Search = () => {
                   </Typography>
                   <Box
                     sx={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(660px, 1fr))",
-                      gap: 3,
-                      alignItems: "stretch",
-                      gridAutoRows: 400,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 2.5,
+                      "& > *": {
+                        flex: "0 0 calc(20% - 20px)",
+                        maxWidth: "calc(20% - 20px)",
+                        minWidth: "150px",
+                      },
                     }}
                   >
-                    {sortedPharmacies.map((pharmacy) => (
+                    {sortedPharmacies.map((pharmacy, index) => (
                       <Card
-                        key={pharmacy._id || pharmacy.id || pharmacy.name}
+                        key={pharmacy._id || pharmacy.id || pharmacy.name || index}
                         sx={{
-                          width: "100%",
-                          height: "100%",
+                          height: 320,
                           cursor: "pointer",
                           transition: "all 0.3s",
                           border: "2px solid transparent",
@@ -357,7 +365,7 @@ const Search = () => {
                       >
                         <Box
                           sx={{
-                            height: 200,
+                            height: 150,
                             background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
                             display: "flex",
                             alignItems: "center",
@@ -374,14 +382,19 @@ const Search = () => {
                             display: "flex",
                             flexDirection: "column",
                             justifyContent: "space-between",
-                            pb: 4,
-                            pt: 3,
-                            px: 3,
-                            overflow: "hidden",
+                            pb: 3,
+                            pt: 2,
+                            px: 2.5,
                           }}
                         >
                           <Box>
-                            <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
+                            <Typography
+                              variant="h6"
+                              fontWeight={600}
+                              color="secondary"
+                              mb={1}
+                              sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                            >
                               {pharmacy.name}
                             </Typography>
                             {pharmacy.motto && (
@@ -394,10 +407,42 @@ const Search = () => {
                                 {pharmacy.motto}
                               </Typography>
                             )}
-                            <Typography variant="body2" color="text.secondary" mb={2}>
-                              <Room fontSize="small" sx={{ mr: 0.5, color: "primary.main" }} />
-                              {pharmacy.address?.city || "Lebanon"}
-                            </Typography>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                flexWrap: "wrap",
+                                mb: 1,
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                              >
+                                <Room fontSize="small" sx={{ mr: 0.2, color: "primary.main" }} />
+                                {pharmacy.address?.city || pharmacy.city || "Lebanon"}
+                              </Typography>
+                              {(() => {
+                                const rawRating = pharmacy.averageRating ?? pharmacy.rating;
+                                const numericRating =
+                                  rawRating !== undefined && rawRating !== null
+                                    ? Number(rawRating)
+                                    : null;
+                                if (numericRating === null || !Number.isFinite(numericRating)) return null;
+                                return (
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ display: "flex", alignItems: "center", gap: 0.25 }}
+                                  >
+                                    <Star sx={{ fontSize: 18, color: "primary.main" }} />
+                                    {numericRating.toFixed(1)}
+                                  </Typography>
+                                );
+                              })()}
+                            </Box>
                           </Box>
                           <Chip
                             label={pharmacy.isOpen !== false ? "Open Now" : "Closed"}
