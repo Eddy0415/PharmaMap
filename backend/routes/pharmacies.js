@@ -195,7 +195,20 @@ router.put("/:id", async (req, res) => {
 
     const updateData = { updatedAt: Date.now() };
     if (name !== undefined) updateData.name = name;
-    if (address !== undefined) updateData.address = address;
+    if (address !== undefined) {
+      // Ensure coordinates are properly formatted if provided
+      if (address.coordinates) {
+        updateData.address = {
+          ...address,
+          coordinates: {
+            type: address.coordinates.type || "Point",
+            coordinates: address.coordinates.coordinates || [0, 0],
+          },
+        };
+      } else {
+        updateData.address = address;
+      }
+    }
     if (phone !== undefined) updateData.phone = phone;
     if (email !== undefined) updateData.email = email;
     if (isOpen !== undefined) updateData.isOpen = isOpen;

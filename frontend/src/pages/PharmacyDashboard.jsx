@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Container,
@@ -35,6 +35,9 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import Dashboard from "@mui/icons-material/Dashboard";
 import Inventory from "@mui/icons-material/Inventory";
 import ShoppingCart from "@mui/icons-material/ShoppingCart";
@@ -56,6 +59,39 @@ import {
   inventoryAPI,
   orderAPI,
 } from "../services/api";
+
+// Fix Leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
+
+// Component to handle map clicks
+function MapClickHandler({ onMapClick }) {
+  useMapEvents({
+    click: (e) => {
+      onMapClick(e.latlng);
+    },
+  });
+  return null;
+}
+
+// Component to update map center when coordinates change
+function MapCenterUpdater({ center }) {
+  const map = useMap();
+  const prevCenterRef = useRef(center);
+  
+  useEffect(() => {
+    if (prevCenterRef.current[0] !== center[0] || prevCenterRef.current[1] !== center[1]) {
+      map.setView(center, map.getZoom());
+      prevCenterRef.current = center;
+    }
+  }, [center, map]);
+  
+  return null;
+}
 
 const PharmacyDashboard = () => {
   const navigate = useNavigate();
@@ -91,6 +127,7 @@ const PharmacyDashboard = () => {
   const [pharmacySaveError, setPharmacySaveError] = useState("");
   const [alwaysOpen, setAlwaysOpen] = useState(false);
   const [hours, setHours] = useState({});
+  const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -171,6 +208,15 @@ const PharmacyDashboard = () => {
       
       setHours(hoursObj);
       setAlwaysOpen(pharmacy.is24Hours || false);
+      
+      // Set coordinates from pharmacy address
+      if (pharmacy.address?.coordinates?.coordinates) {
+        const [lng, lat] = pharmacy.address.coordinates.coordinates;
+        setCoordinates({ lat, lng });
+      } else {
+        // Default to Beirut coordinates if not set
+        setCoordinates({ lat: 33.8938, lng: 35.5018 });
+      }
     }
   }, [pharmacy]);
 
@@ -415,6 +461,10 @@ const PharmacyDashboard = () => {
             ...pharmacy.address,
             city: pharmacyForm.city,
             street: pharmacyForm.street || pharmacy.address?.street || "",
+            coordinates: {
+              type: "Point",
+              coordinates: [coordinates.lng, coordinates.lat], // GeoJSON format: [longitude, latitude]
+            },
           },
           workingHours,
           is24Hours: alwaysOpen,
@@ -1240,6 +1290,166 @@ const PharmacyDashboard = () => {
                       />
                     </Grid>
                   </Grid>
+
+                  {/* Location Section */}
+                  <Box sx={{ mb: 4, mt: 4 }}>
+                    <Typography variant="h6" fontWeight={600} color="secondary" mb={2}>
+                      Pharmacy Location
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" mb={3}>
+                      Update your pharmacy location on the map. Click on the map or enter coordinates manually.
+                    </Typography>
+                    
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Latitude"
+                          type="number"
+                          value={coordinates.lat}
+                          onChange={(e) => {
+                            const lat = parseFloat(e.target.value) || 0;
+                            setCoordinates({ ...coordinates, lat });
+                          }}
+                          inputProps={{ step: "0.000001" }}
+                          helperText="Enter latitude (e.g., 33.8938 for Beirut)"
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Longitude"
+                          type="number"
+                          value={coordinates.lng}
+                          onChange={(e) => {
+                            const lng = parseFloat(e.target.value) || 0;
+                            setCoordinates({ ...coordinates, lng });
+                          }}
+                          inputProps={{ step: "0.000001" }}
+                          helperText="Enter longitude (e.g., 35.5018 for Beirut)"
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Box
+                          sx={{
+                            width: "100%",
+                            height: 400,
+                            borderRadius: 2,
+                            overflow: "hidden",
+                            border: "2px solid",
+                            borderColor: "divider",
+                            position: "relative",
+                            zIndex: 0,
+                            "& .leaflet-container": {
+                              height: "100%",
+                              width: "100%",
+                              borderRadius: "8px",
+                            },
+                          }}
+                        >
+                          <MapContainer
+                            center={[coordinates.lat, coordinates.lng]}
+                            zoom={15}
+                            style={{ height: "100%", width: "100%" }}
+                            scrollWheelZoom={true}
+                          >
+                            <TileLayer
+                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            <MapCenterUpdater center={[coordinates.lat, coordinates.lng]} />
+                            <Marker
+                              position={[coordinates.lat, coordinates.lng]}
+                              draggable={true}
+                              eventHandlers={{
+                                dragend: (e) => {
+                                  const marker = e.target;
+                                  const position = marker.getLatLng();
+                                  setCoordinates({
+                                    lat: parseFloat(position.lat.toFixed(6)),
+                                    lng: parseFloat(position.lng.toFixed(6)),
+                                  });
+                                },
+                              }}
+                            />
+                            <MapClickHandler
+                              onMapClick={(latlng) => {
+                                setCoordinates({
+                                  lat: parseFloat(latlng.lat.toFixed(6)),
+                                  lng: parseFloat(latlng.lng.toFixed(6)),
+                                });
+                              }}
+                            />
+                          </MapContainer>
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              bottom: 10,
+                              left: 10,
+                              bgcolor: "rgba(255, 255, 255, 0.95)",
+                              px: 2,
+                              py: 1,
+                              borderRadius: 1,
+                              fontSize: "0.875rem",
+                              fontWeight: 600,
+                              color: "text.primary",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                              zIndex: 1000,
+                            }}
+                          >
+                            Drag the marker or click on the map to set location
+                          </Box>
+                        </Box>
+                        <Box sx={{ mt: 2, display: "flex", gap: 2, flexWrap: "wrap" }}>
+                          <Button
+                            variant="outlined"
+                            onClick={() => {
+                              if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                  (position) => {
+                                    setCoordinates({
+                                      lat: position.coords.latitude,
+                                      lng: position.coords.longitude,
+                                    });
+                                  },
+                                  (error) => {
+                                    alert("Unable to get your location. Please enter coordinates manually or click on the map.");
+                                  }
+                                );
+                              } else {
+                                alert("Geolocation is not supported by your browser.");
+                              }
+                            }}
+                          >
+                            Use My Current Location
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            onClick={() => {
+                              window.open(
+                                `https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}`,
+                                "_blank"
+                              );
+                            }}
+                          >
+                            Open in Google Maps
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            onClick={() => {
+                              // Reset to Beirut default
+                              setCoordinates({ lat: 33.8938, lng: 35.5018 });
+                            }}
+                          >
+                            Reset to Default (Beirut)
+                          </Button>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                          Tip: Click anywhere on the map to set your pharmacy location, or enter coordinates manually in the fields above.
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
 
                   <Card sx={{ p: 3, borderRadius: 3, maxWidth: 1000, mx: "auto" }}>
                     {/* HEADER */}

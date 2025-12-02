@@ -201,10 +201,10 @@ const Search = () => {
                 sx={{ minWidth: 180 }}
               >
                 <MenuItem value="none">None</MenuItem>
-                <MenuItem value="az">Alphabetical (A -> Z)</MenuItem>
-                <MenuItem value="za">Alphabetical (Z -> A)</MenuItem>
+                <MenuItem value="az">Alphabetical (A -{'>'} Z)</MenuItem>
+                <MenuItem value="za">Alphabetical (Z -{'>'} A)</MenuItem>
                 <MenuItem value="proximity">Proximity (nearest first)</MenuItem>
-                <MenuItem value="price">Price (low -> high)</MenuItem>
+                <MenuItem value="price">Price (low -{'>'} high)</MenuItem>
               </TextField>
               <TextField
                 select
@@ -242,23 +242,20 @@ const Search = () => {
                       display: "flex",
                       flexWrap: "wrap",
                       gap: 2.5,
-                      "& > *": {
-                        flex: "0 0 calc(20% - 20px)",
-                        maxWidth: "calc(20% - 20px)",
-                        minWidth: "150px",
-                      },
                     }}
                   >
                     {sortedProducts.map((product, index) => (
                       <Card
                         key={product.item?._id || product.item?.id || product.item?.name || index}
                         sx={{
-                          height: 280,
+                          height: 320,
+                          width: 250,
                           cursor: "pointer",
                           transition: "all 0.3s",
                           border: "2px solid transparent",
                           display: "flex",
                           flexDirection: "column",
+                          flexShrink: 0,
                           "&:hover": {
                             transform: "translateY(-5px)",
                             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
@@ -269,7 +266,8 @@ const Search = () => {
                       >
                         <Box
                           sx={{
-                            height: 150,
+                            height: 160,
+                            width: "100%",
                             background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
                             display: "flex",
                             alignItems: "center",
@@ -286,43 +284,63 @@ const Search = () => {
                             display: "flex",
                             flexDirection: "column",
                             justifyContent: "space-between",
-                            pb: 3,
-                            px: 2.5,
+                            pb: 2,
+                            px: 2,
+                            pt: 2,
                             overflow: "hidden",
                           }}
                         >
-                          <Typography variant="h6" fontWeight={600} color="secondary" mb={1}>
-                            {product.item?.name}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            mb={1}
-                            display="flex"
-                            alignItems="center"
-                            gap={0.5}
-                          >
-                            <LocalPharmacy fontSize="small" sx={{ color: "primary.main" }} />
-                            {product.item?.category || "General"}
-                          </Typography>
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 1 }}>
+                          <Box>
+                            <Typography 
+                              variant="h6" 
+                              fontWeight={600} 
+                              color="secondary" 
+                              mb={1}
+                              sx={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              {product.item?.name}
+                            </Typography>
                             <Typography
                               variant="body2"
-                              color="primary.main"
+                              color="text.secondary"
+                              mb={1.5}
+                              display="flex"
+                              alignItems="center"
+                              gap={0.5}
+                            >
+                              <LocalPharmacy fontSize="small" sx={{ color: "primary.main" }} />
+                              {product.item?.category || "General"}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                            <Typography
+                              variant="body2"
+                              color="secondary.main"
                               fontWeight={600}
                               display="flex"
                               alignItems="center"
                               gap={0.5}
                             >
-                              <TrendingUp fontSize="small" />
+                              <Room fontSize="small" />
                               {product.pharmacies?.length || 0} pharmacies nearby
                             </Typography>
                             {product.item?.currentMonthSearchCount !== undefined && (
                               <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ fontSize: "0.7rem" }}
+                                variant="body2"
+                                color="primary.main"
+                                fontWeight={600}
+                                display="flex"
+                                alignItems="center"
+                                gap={0.5}
                               >
+                                <TrendingUp fontSize="small" />
                                 {product.item.currentMonthSearchCount || 0} searches this month
                               </Typography>
                             )}
@@ -486,4 +504,5 @@ const Search = () => {
 };
 
 export default Search;
+
 
