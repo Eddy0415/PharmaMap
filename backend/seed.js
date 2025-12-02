@@ -12,26 +12,81 @@ const Inventory = require("./models/Inventory");
 const Order = require("./models/Order");
 const Review = require("./models/Review");
 
-// Dummy data arrays
+// Lebanese cities with actual coordinates [longitude, latitude]
 const cities = [
-  "Beirut",
-  "Tripoli",
-  "Sidon",
-  "Tyre",
-  "Byblos",
-  "Zahle",
-  "Baalbek",
+  { name: "Beirut", coords: [35.5018, 33.8938] },
+  { name: "Tripoli", coords: [35.8497, 34.4367] },
+  { name: "Sidon", coords: [35.3706, 33.5631] },
+  { name: "Tyre", coords: [35.1969, 33.2733] },
+  { name: "Byblos", coords: [35.6511, 34.1211] },
+  { name: "Zahle", coords: [35.9047, 33.8497] },
+  { name: "Baalbek", coords: [36.2181, 34.0058] },
 ];
-const streets = [
-  "Hamra Street",
-  "Corniche El Mazraa",
-  "Achrafieh Main Road",
-  "Badaro Street",
-  "Mar Mikhael",
-  "Gemmayze",
-  "Downtown Beirut",
-  "Ras Beirut",
-];
+
+// Streets mapped to cities for realism
+const cityStreets = {
+  Beirut: [
+    "Hamra Street",
+    "Corniche El Mazraa",
+    "Achrafieh Main Road",
+    "Badaro Street",
+    "Mar Mikhael",
+    "Gemmayze",
+    "Downtown Beirut",
+    "Ras Beirut",
+    "Verdun Street",
+    "Monot Street",
+    "Spears Street",
+    "Bliss Street",
+  ],
+  Tripoli: [
+    "Al Mina Street",
+    "Azmi Street",
+    "Tall Square",
+    "Al Nour Square",
+    "Al Qobbeh Street",
+    "Al Mina Road",
+    "Port Street",
+    "Al Mina Corniche",
+  ],
+  Sidon: [
+    "Saida Main Road",
+    "Riad El Solh Street",
+    "Al Qalaa Street",
+    "Corniche Saida",
+    "Old Souk Street",
+    "Sea Castle Road",
+  ],
+  Tyre: [
+    "Sour Main Street",
+    "Al Bass Street",
+    "Hippodrome Road",
+    "Corniche Tyre",
+    "Old City Street",
+    "Port Road",
+  ],
+  Byblos: [
+    "Jbeil Main Street",
+    "Old Souk Byblos",
+    "Harbour Road",
+    "Crusader Castle Street",
+    "Byblos Corniche",
+  ],
+  Zahle: [
+    "Maalaka Street",
+    "Bardouni Street",
+    "Zahle Main Road",
+    "Berdawni Valley",
+    "Al Wadi Street",
+  ],
+  Baalbek: [
+    "Baalbek Main Street",
+    "Temple Road",
+    "Ras El Ain Street",
+    "Al Qalaa Street",
+    "Roman Ruins Road",
+  ],
+};
 
 const firstNames = [
   "Ahmad",
@@ -78,6 +133,21 @@ const pharmacyNames = [
   "Care Pharmacy",
   "Life Pharmacy",
   "Prime Health Pharmacy",
+  "Green Cross Pharmacy",
+  "MediCare Plus",
+  "Family Pharmacy",
+  "Community Health Pharmacy",
+  "Elite Medical Pharmacy",
+  "Central Pharmacy",
+  "Sunrise Pharmacy",
+  "Golden Pharmacy",
+  "Royal Medical Center",
+  "Star Pharmacy",
+  "Noble Health Pharmacy",
+  "Premium Care Pharmacy",
+  "Trust Pharmacy",
+  "Reliable Medical",
+  "QuickCare Pharmacy",
 ];
 
 const medications = [
@@ -303,8 +373,61 @@ const seedDatabase = async () => {
     const customers = [];
     const pharmacists = [];
 
-    // Create 15 customers
-    for (let i = 0; i < 15; i++) {
+    // Create specific users first
+    const user1 = new User({
+      firstName: "John",
+      lastName: "Doe",
+      email: "user1@gmail.com",
+      phone: "03123456",
+      userType: "customer",
+      dateOfBirth: new Date(1990, 5, 15),
+      gender: "male",
+      isActive: true,
+      isVerified: true,
+    });
+    await user1.save();
+    customers.push(user1);
+
+    const user2 = new User({
+      firstName: "Jane",
+      lastName: "Smith",
+      email: "user2@gmail.com",
+      phone: "03765432",
+      userType: "customer",
+      dateOfBirth: new Date(1992, 8, 20),
+      gender: "female",
+      isActive: true,
+      isVerified: true,
+    });
+    await user2.save();
+    customers.push(user2);
+
+    const pharmacist1 = new User({
+      firstName: "Ahmad",
+      lastName: "Khoury",
+      email: "pharmacy1@gmail.com",
+      phone: "01123456",
+      userType: "pharmacist",
+      isActive: true,
+      isVerified: true,
+    });
+    await pharmacist1.save();
+    pharmacists.push(pharmacist1);
+
+    const pharmacist2 = new User({
+      firstName: "Mariam",
+      lastName: "Saad",
+      email: "pharmacy2@gmail.com",
+      phone: "01765432",
+      userType: "pharmacist",
+      isActive: true,
+      isVerified: true,
+    });
+    await pharmacist2.save();
+    pharmacists.push(pharmacist2);
+
+    // Create additional customers
+    for (let i = 0; i < 5; i++) {
       const firstName = randomElement(firstNames);
       const lastName = randomElement(lastNames);
       const customer = new User({
@@ -321,10 +444,12 @@ const seedDatabase = async () => {
       await customer.save();
       customers.push(customer);
     }
-    console.log(`✅ Created ${customers.length} customers`);
+    console.log(
+      `✅ Created ${customers.length} customers (including user1@gmail.com, user2@gmail.com)`
+    );
 
-    // Create 10 pharmacists
-    for (let i = 0; i < 10; i++) {
+    // Create additional pharmacists
+    for (let i = 0; i < 8; i++) {
       const firstName = randomElement(firstNames);
       const lastName = randomElement(lastNames);
       const pharmacist = new User({
@@ -339,12 +464,49 @@ const seedDatabase = async () => {
       await pharmacist.save();
       pharmacists.push(pharmacist);
     }
-    console.log(`✅ Created ${pharmacists.length} pharmacists\n`);
+    console.log(
+      `✅ Created ${pharmacists.length} pharmacists (including pharmacy1@gmail.com, pharmacy2@gmail.com)\n`
+    );
 
     // 2. Create Items
     console.log("💊 Creating items...");
     const items = [];
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1
+    ).padStart(2, "0")}`;
+    const lastMonthKey =
+      now.getMonth() === 0
+        ? `${now.getFullYear() - 1}-12`
+        : `${now.getFullYear()}-${String(now.getMonth()).padStart(2, "0")}`;
+
+    // Generate last 3 months keys for more realistic data
+    const monthKeys = [currentMonthKey, lastMonthKey];
+    if (now.getMonth() >= 2) {
+      const twoMonthsAgo = `${now.getFullYear()}-${String(
+        now.getMonth() - 1
+      ).padStart(2, "0")}`;
+      monthKeys.push(twoMonthsAgo);
+    } else if (now.getMonth() === 1) {
+      monthKeys.push(`${now.getFullYear() - 1}-12`);
+    } else {
+      monthKeys.push(`${now.getFullYear() - 1}-11`);
+    }
+
     for (const med of medications) {
+      const searchCount = randomInt(50, 500);
+      const currentMonthCount = randomInt(10, 100);
+      const lastMonthCount = randomInt(5, 80);
+      const twoMonthsAgoCount = randomInt(3, 60);
+
+      // Create monthly search counts map
+      const monthlySearchCounts = new Map();
+      monthlySearchCounts.set(monthKeys[0], currentMonthCount);
+      monthlySearchCounts.set(monthKeys[1], lastMonthCount);
+      if (monthKeys[2]) {
+        monthlySearchCounts.set(monthKeys[2], twoMonthsAgoCount);
+      }
+
       const item = new Item({
         ...med,
         description: `${med.name} - High quality medication`,
@@ -352,13 +514,16 @@ const seedDatabase = async () => {
         imageUrl: `https://via.placeholder.com/300x300?text=${encodeURIComponent(
           med.name
         )}`,
-        searchCount: randomInt(0, 500),
+        searchCount,
         popularityScore: randomInt(0, 100),
+        monthlySearchCounts,
       });
       await item.save();
       items.push(item);
     }
-    console.log(`✅ Created ${items.length} items\n`);
+    console.log(
+      `✅ Created ${items.length} items with monthly search counts\n`
+    );
 
     // 3. Create Pharmacies
     console.log("🏥 Creating pharmacies...");
@@ -373,6 +538,12 @@ const seedDatabase = async () => {
       "Sunday",
     ];
 
+    // Shuffle pharmacy names to ensure unique assignment
+    const availablePharmacyNames = [...pharmacyNames].sort(
+      () => Math.random() - 0.5
+    );
+    let nameIndex = 0;
+
     for (let i = 0; i < pharmacists.length; i++) {
       const pharmacist = pharmacists[i];
       const workingHours = days.map((day) => ({
@@ -383,19 +554,45 @@ const seedDatabase = async () => {
         isClosed: false,
       }));
 
+      // Select city with actual coordinates
+      const selectedCity = randomElement(cities);
+      // Add small random offset for variety within the city
+      const coordOffset = () => (Math.random() - 0.5) * 0.03; // ~3km offset
+
+      // Get realistic street for the selected city
+      const streetsForCity =
+        cityStreets[selectedCity.name] || cityStreets.Beirut;
+      const selectedStreet = randomElement(streetsForCity);
+
+      // Assign unique pharmacy names
+      let pharmacyName;
+      if (i === 0) {
+        pharmacyName = "Al-Shifa Pharmacy";
+      } else if (i === 1) {
+        pharmacyName = "Beirut Medical Center";
+      } else {
+        // Get next unique name from shuffled array
+        pharmacyName = availablePharmacyNames[nameIndex];
+        nameIndex++;
+        // If we run out of names, generate a unique one
+        if (!pharmacyName) {
+          pharmacyName = `Pharmacy ${i + 1} - ${selectedCity.name}`;
+        }
+      }
+
       const pharmacy = new Pharmacy({
-        name: randomElement(pharmacyNames),
+        name: pharmacyName,
         owner: pharmacist._id,
         user: pharmacist._id,
         address: {
-          street: randomElement(streets),
-          city: randomElement(cities),
+          street: selectedStreet,
+          city: selectedCity.name,
           coordinates: {
             type: "Point",
-            // GeoJSON format: [longitude, latitude]
+            // GeoJSON format: [longitude, latitude] with small offset
             coordinates: [
-              35.4 + Math.random() * 0.8, // Lebanon longitude range
-              33.8 + Math.random() * 0.5, // Lebanon latitude range
+              selectedCity.coords[0] + coordOffset(),
+              selectedCity.coords[1] + coordOffset(),
             ],
           },
         },
@@ -410,7 +607,7 @@ const seedDatabase = async () => {
         totalOrders: 0,
         isVerified: Math.random() > 0.3, // 70% verified
         isActive: true,
-        featured: Math.random() > 0.7, // 30% featured
+        featured: i < 2 || Math.random() > 0.7, // First 2 and 30% featured
       });
       await pharmacy.save();
       pharmacies.push(pharmacy);
@@ -419,7 +616,9 @@ const seedDatabase = async () => {
       pharmacist.pharmacy = pharmacy._id;
       await pharmacist.save();
     }
-    console.log(`✅ Created ${pharmacies.length} pharmacies\n`);
+    console.log(
+      `✅ Created ${pharmacies.length} pharmacies with correct coordinates\n`
+    );
 
     // 4. Create Inventory (link items to pharmacies)
     console.log("📦 Creating inventory...");
@@ -535,7 +734,7 @@ const seedDatabase = async () => {
           rating,
           comment:
             rating >= 4
-              ? "Great service and fast delivery!"
+              ? "Great service !"
               : "Good pharmacy, could improve service.",
           order: randomElement(
             orders.filter(
@@ -582,7 +781,9 @@ const seedDatabase = async () => {
     console.log(`   - Orders: ${orders.length}`);
     console.log(`   - Reviews: ${reviewCount}`);
     console.log("\n🔑 Auth:");
-    console.log("   Seeded users are profile records only; manage passwords via Firebase.");
+    console.log(
+      "   Seeded users are profile records only; manage passwords via Firebase."
+    );
 
     process.exit(0);
   } catch (error) {

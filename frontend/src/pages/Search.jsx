@@ -305,18 +305,28 @@ const Search = () => {
                             <LocalPharmacy fontSize="small" sx={{ color: "primary.main" }} />
                             {product.item?.category || "General"}
                           </Typography>
-                          <Typography
-                            variant="body2"
-                            color="primary.main"
-                            fontWeight={600}
-                            display="flex"
-                            alignItems="center"
-                            gap={0.5}
-                            sx={{ mt: 1 }}
-                          >
-                            <TrendingUp fontSize="small" />
-                            {product.pharmacies?.length || 0} pharmacies nearby
-                          </Typography>
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 1 }}>
+                            <Typography
+                              variant="body2"
+                              color="primary.main"
+                              fontWeight={600}
+                              display="flex"
+                              alignItems="center"
+                              gap={0.5}
+                            >
+                              <TrendingUp fontSize="small" />
+                              {product.pharmacies?.length || 0} pharmacies nearby
+                            </Typography>
+                            {product.item?.currentMonthSearchCount !== undefined && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ fontSize: "0.7rem" }}
+                              >
+                                {product.item.currentMonthSearchCount || 0} searches this month
+                              </Typography>
+                            )}
+                          </Box>
                         </CardContent>
                       </Card>
                     ))}

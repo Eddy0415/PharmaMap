@@ -373,131 +373,118 @@ const handleAvatarChange = (e) => {
       </Box>
 
       <form onSubmit={handleProfileUpdate}>
-        <Grid container spacing={2}>
-          {/* ROW 1: First + Last name */}
-          <Grid container item spacing={2}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="First Name"
-                value={profileData.firstName}
-                onChange={(e) =>
-                  setProfileData({
-                    ...profileData,
-                    firstName: e.target.value,
-                  })
-                }
-                required
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Last Name"
-                value={profileData.lastName}
-                onChange={(e) =>
-                  setProfileData({
-                    ...profileData,
-                    lastName: e.target.value,
-                  })
-                }
-                required
-              />
-            </Grid>
-          </Grid>
+      <Grid container spacing={3}>
 
-          {/* ROW 2: Phone (narrow) + Email (wide, read-only) */}
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 2,
-              width: "50%",
-            }}
-          >
-            <TextField
-              fullWidth
-              label="Phone Number"
-              value={profileData.phone}
-              onChange={(e) =>
-                setProfileData({
-                  ...profileData,
-                  phone: e.target.value,
-                })
-              }
-              required
-              sx={{ flex: 1 }}
-            />
-            <TextField
-              fullWidth
-              label="Email Address"
-              type="email"
-              value={profileData.email}
-              InputProps={{ readOnly: true }}
-              disabled
-              sx={{ flex: 2 }}
-            />
-          </Box>
-
-          {/* ROW 3: Date of birth + Gender */}
-          <Grid container item spacing={2}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Date of Birth"
-                type="date"
-                value={profileData.dateOfBirth}
-                onChange={(e) =>
-                  setProfileData({
-                    ...profileData,
-                    dateOfBirth: e.target.value,
-                  })
-                }
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                select
-                label="Gender"
-                value={profileData.gender}
-                onChange={(e) =>
-                  setProfileData({
-                    ...profileData,
-                    gender: e.target.value,
-                  })
-                }
-                SelectProps={{ native: true }}
-              >
-                <option value=""></option>
-                <option value="female">Female</option>
-                <option value="male">Male</option>
-                <option value="other">Other</option>
-                <option value="prefer-not">Prefer not to say</option>
-              </TextField>
-            </Grid>
-          </Grid>
+        {/* FIRST + LAST NAME */}
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="First Name"
+            value={profileData.firstName}
+            onChange={(e) =>
+              setProfileData({ ...profileData, firstName: e.target.value })
+            }
+            required
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Last Name"
+            value={profileData.lastName}
+            onChange={(e) =>
+              setProfileData({ ...profileData, lastName: e.target.value })
+            }
+            required
+          />
         </Grid>
 
-        <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            sx={{
-              background:
-                saveStatus === "saved"
-                  ? "linear-gradient(135deg, #4caf50 0%, #388e3c 100%)"
-                  : "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-            }}
+        <Divider flexItem sx={{ my: 2 }} />
+
+        {/* PHONE + EMAIL */}
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Phone Number"
+            value={profileData.phone}
+            onChange={(e) =>
+              setProfileData({ ...profileData, phone: e.target.value })
+            }
+            required
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Email Address"
+            type="email"
+            value={profileData.email}
+            InputProps={{ readOnly: true }}
+            disabled
+          />
+        </Grid>
+
+        <Divider flexItem sx={{ my: 2 }} />
+
+        {/* DOB + GENDER */}
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Date of Birth"
+            type="date"
+            value={profileData.dateOfBirth}
+            onChange={(e) =>
+              setProfileData({ ...profileData, dateOfBirth: e.target.value })
+            }
+            InputLabelProps={{ shrink: true }}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            select
+            label="Gender"
+            value={profileData.gender}
+            onChange={(e) =>
+              setProfileData({ ...profileData, gender: e.target.value })
+            }
+            SelectProps={{ native: true }}
           >
-            {saveStatus === "saving"
-              ? "Saving..."
-              : saveStatus === "saved"
-              ? "Saved"
-              : "Save Changes"}
-          </Button>
-        </Box>
+            <option value=""></option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="other">Other</option>
+            <option value="prefer-not">Prefer not to say</option>
+          </TextField>
+        </Grid>
+
+      </Grid>
+
+      {/* BUTTONS */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
+        <Button
+          type="submit"
+          variant="contained"
+          sx={{
+            px: 4,
+            py: 1.2,
+            borderRadius: 2,
+            textTransform: "none",
+            fontSize: "1rem",
+            background:
+              saveStatus === "saved"
+                ? "linear-gradient(135deg, #4caf50, #388e3c)"
+                : "linear-gradient(135deg, #4ecdc4, #44a9a3)",
+          }}
+        >
+          {saveStatus === "saving"
+            ? "Saving..."
+            : saveStatus === "saved"
+            ? "Saved"
+            : "Save Changes"}
+        </Button>
+      </Box>
       </form>
     </CardContent>
   </Card>

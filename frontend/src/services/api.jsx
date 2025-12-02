@@ -55,6 +55,7 @@ export const medicationAPI = {
   getTopSearched: () => api.get("/medications/top-searched"),
   getByCategory: (category, params) =>
     api.get(`/medications/category/${category}`, { params }),
+  getMonthlyStats: (id) => api.get(`/medications/${id}/monthly-stats`),
   create: (data) => api.post("/medications", data),
   update: (id, data) => api.put(`/medications/${id}`, data),
   delete: (id) => api.delete(`/medications/${id}`),

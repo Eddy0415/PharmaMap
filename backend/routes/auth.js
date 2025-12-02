@@ -63,7 +63,12 @@ router.post("/register", async (req, res) => {
           : [
               { day: "Monday", openTime: "", closeTime: "", isClosed: false },
               { day: "Tuesday", openTime: "", closeTime: "", isClosed: false },
-              { day: "Wednesday", openTime: "", closeTime: "", isClosed: false },
+              {
+                day: "Wednesday",
+                openTime: "",
+                closeTime: "",
+                isClosed: false,
+              },
               { day: "Thursday", openTime: "", closeTime: "", isClosed: false },
               { day: "Friday", openTime: "", closeTime: "", isClosed: false },
               { day: "Saturday", openTime: "", closeTime: "", isClosed: false },
@@ -92,7 +97,6 @@ router.post("/register", async (req, res) => {
       user.pharmacy = newPharmacy._id;
       await user.save();
     }
-
 
     res.status(201).json({
       success: true,
@@ -193,11 +197,13 @@ router.put("/password", firebaseAuth, async (req, res) => {
   }
 });
 
-
 // =======================
 // DELETE ACCOUNT (Firebase + Mongo + Pharmacy)
 // =======================
 router.delete("/account", firebaseAuth, async (req, res) => {
+  let firebaseDeleted = false;
+  let mongoDeleted = false;
+
   try {
     const user = await User.findById(req.user._id);
 
@@ -208,20 +214,31 @@ router.delete("/account", firebaseAuth, async (req, res) => {
       });
     }
 
+    // Delete pharmacy first (if pharmacist)
     if (user.userType === "pharmacist") {
       await Pharmacy.deleteOne({
         $or: [{ owner: user._id }, { user: user._id }],
       });
     }
 
+    // Delete Firebase user first (critical operation)
     try {
       const userRecord = await admin.auth().getUserByEmail(user.email);
       await admin.auth().deleteUser(userRecord.uid);
+      firebaseDeleted = true;
     } catch (err) {
-      console.warn("Firebase deleteUser skipped:", err.message);
+      console.error("Firebase deleteUser error:", err.message);
+      // If Firebase deletion fails, don't proceed with MongoDB deletion
+      return res.status(500).json({
+        success: false,
+        message: "Failed to delete Firebase account",
+        error: err.message,
+      });
     }
 
+    // Only delete MongoDB user if Firebase deletion succeeded
     await User.deleteOne({ _id: user._id });
+    mongoDeleted = true;
 
     res.json({
       success: true,
@@ -229,6 +246,12 @@ router.delete("/account", firebaseAuth, async (req, res) => {
     });
   } catch (error) {
     console.error("Delete account error:", error);
+
+    // If MongoDB deletion failed but Firebase succeeded, try to clean up
+    if (firebaseDeleted && !mongoDeleted) {
+      console.warn("MongoDB deletion failed after Firebase deletion");
+    }
+
     res.status(500).json({
       success: false,
       message: "Error deleting account",

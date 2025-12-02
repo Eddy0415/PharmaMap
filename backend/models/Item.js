@@ -56,15 +56,46 @@ const itemSchema = new Schema({
   // Search & Stats
   searchCount: { type: Number, default: 0 },
   popularityScore: { type: Number, default: 0 },
+  // Monthly search counts: { "YYYY-MM": count }
+  monthlySearchCounts: {
+    type: Map,
+    of: Number,
+    default: {},
+  },
 
   // Timestamps
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
 
+// Virtual to calculate total search count from monthly counts (backup method)
+itemSchema.virtual("calculatedSearchCount").get(function () {
+  if (!this.monthlySearchCounts || this.monthlySearchCounts.size === 0) {
+    return this.searchCount || 0;
+  }
+  let total = 0;
+  this.monthlySearchCounts.forEach((count) => {
+    total += count;
+  });
+  return total;
+});
+
+// Method to sync searchCount from monthlySearchCounts (useful for data integrity)
+itemSchema.methods.syncSearchCount = function () {
+  if (this.monthlySearchCounts && this.monthlySearchCounts.size > 0) {
+    let total = 0;
+    this.monthlySearchCounts.forEach((count) => {
+      total += count;
+    });
+    this.searchCount = total;
+  }
+  return this;
+};
+
 // Indexes
 itemSchema.index({ name: "text" });
 itemSchema.index({ category: 1 });
 itemSchema.index({ popularityScore: -1 });
+itemSchema.index({ searchCount: -1 }); // Add index for searchCount sorting
 
 module.exports = mongoose.model("Item", itemSchema);

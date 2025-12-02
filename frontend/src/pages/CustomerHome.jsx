@@ -775,10 +775,13 @@ const CustomerHome = () => {
           }}
         >
           {popularProducts.slice(0, 5).map((product) => {
-            const searchCount = product.searchCount || 0;
-            const formattedCount = searchCount >= 1000 
-              ? `+${(searchCount / 1000).toFixed(searchCount % 1000 === 0 ? 0 : 1)}k` 
-              : `+${searchCount}`;
+            // Use current month search count if available, otherwise fallback to total searchCount
+            const monthlyCount = product.currentMonthSearchCount !== undefined 
+              ? product.currentMonthSearchCount 
+              : (product.searchCount || 0);
+            const formattedCount = monthlyCount >= 1000 
+              ? `+${(monthlyCount / 1000).toFixed(monthlyCount % 1000 === 0 ? 0 : 1)}k` 
+              : `+${monthlyCount}`;
             
             return (
               <Card

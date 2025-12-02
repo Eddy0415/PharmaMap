@@ -27,9 +27,16 @@ router.get("/", async (req, res) => {
       name: 1,
     });
 
+    // Get current month key for monthly stats
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
     // Get inventory for each item if city or inStock filter is applied
     const results = [];
     for (const item of items) {
+      // Add current month search count to item
+      const itemObj = item.toObject();
+      itemObj.currentMonthSearchCount = item.monthlySearchCounts?.get(monthKey) || 0;
       let inventoryQuery = {
         item: item._id,
         isAvailable: true,
@@ -52,14 +59,14 @@ router.get("/", async (req, res) => {
       if (city || inStock === "true") {
         if (inventory.length > 0) {
           results.push({
-            item,
+            item: itemObj,
             inventory,
           });
         }
       } else {
         // No filters, return all items
         results.push({
-          item,
+          item: itemObj,
           inventory: [],
         });
       }
@@ -81,25 +88,91 @@ router.get("/", async (req, res) => {
 });
 
 // @route   GET /api/medications/top-searched
-// @desc    Get top 5 most searched items
+// @desc    Get top 5 most searched items (based on current month)
 // @access  Public
 router.get("/top-searched", async (req, res) => {
   try {
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
     const items = await Item.find()
-      .sort({ searchCount: -1 })
-      .limit(5)
-      .select("name category imageUrl searchCount popularityScore");
+      .select("name category imageUrl searchCount popularityScore monthlySearchCounts");
+    
+    // Sort by current month's search count
+    const itemsWithMonthlyCount = items.map(item => {
+      const monthlyCount = item.monthlySearchCounts?.get(monthKey) || 0;
+      return {
+        ...item.toObject(),
+        currentMonthSearchCount: monthlyCount,
+      };
+    });
+    
+    itemsWithMonthlyCount.sort((a, b) => {
+      // First sort by current month count, then by total search count
+      if (b.currentMonthSearchCount !== a.currentMonthSearchCount) {
+        return b.currentMonthSearchCount - a.currentMonthSearchCount;
+      }
+      return b.searchCount - a.searchCount;
+    });
+    
+    const topItems = itemsWithMonthlyCount.slice(0, 5).map(item => ({
+      _id: item._id,
+      name: item.name,
+      category: item.category,
+      imageUrl: item.imageUrl,
+      searchCount: item.searchCount,
+      popularityScore: item.popularityScore,
+      currentMonthSearchCount: item.currentMonthSearchCount,
+    }));
 
     res.json({
       success: true,
-      count: items.length,
-      items,
+      count: topItems.length,
+      items: topItems,
     });
   } catch (error) {
     console.error("Get top searched items error:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching top searched items",
+      error: error.message,
+    });
+  }
+});
+
+// @route   GET /api/medications/:id/monthly-stats
+// @desc    Get monthly search counts for a specific item
+// @access  Public
+router.get("/:id/monthly-stats", async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id)
+      .select("name monthlySearchCounts");
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Item not found",
+      });
+    }
+
+    // Convert Map to object for JSON response
+    const monthlyStats = {};
+    if (item.monthlySearchCounts) {
+      item.monthlySearchCounts.forEach((count, monthKey) => {
+        monthlyStats[monthKey] = count;
+      });
+    }
+
+    res.json({
+      success: true,
+      itemName: item.name,
+      monthlySearchCounts: monthlyStats,
+    });
+  } catch (error) {
+    console.error("Get monthly stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching monthly stats",
       error: error.message,
     });
   }
@@ -120,9 +193,16 @@ router.get("/category/:category", async (req, res) => {
       name: 1,
     });
 
+    // Get current month key for monthly stats
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
     // Get inventory for each item
     const results = [];
     for (const item of items) {
+      // Add current month search count to item
+      const itemObj = item.toObject();
+      itemObj.currentMonthSearchCount = item.monthlySearchCounts?.get(monthKey) || 0;
       let inventoryQuery = {
         item: item._id,
         isAvailable: true,
@@ -144,13 +224,13 @@ router.get("/category/:category", async (req, res) => {
       if (city || inStock === "true") {
         if (inventory.length > 0) {
           results.push({
-            item,
+            item: itemObj,
             inventory,
           });
         }
       } else {
         results.push({
-          item,
+          item: itemObj,
           inventory,
         });
       }
@@ -188,6 +268,16 @@ router.get("/:id", async (req, res) => {
 
     // Increment search count
     item.searchCount += 1;
+    
+    // Track monthly search count
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    if (!item.monthlySearchCounts) {
+      item.monthlySearchCounts = new Map();
+    }
+    const currentMonthCount = item.monthlySearchCounts.get(monthKey) || 0;
+    item.monthlySearchCounts.set(monthKey, currentMonthCount + 1);
+    
     await item.save();
 
     // Get inventory for this item across all pharmacies

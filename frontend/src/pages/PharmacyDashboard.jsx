@@ -89,6 +89,8 @@ const PharmacyDashboard = () => {
   });
   const [pharmacySaveStatus, setPharmacySaveStatus] = useState("idle");
   const [pharmacySaveError, setPharmacySaveError] = useState("");
+  const [alwaysOpen, setAlwaysOpen] = useState(false);
+  const [hours, setHours] = useState({});
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -139,6 +141,27 @@ const PharmacyDashboard = () => {
             ? pharmacy.workingHours
             : defaultWorkingHours,
       });
+
+      // Convert workingHours to hours format
+      const workingHours = pharmacy.workingHours && pharmacy.workingHours.length > 0
+        ? pharmacy.workingHours
+        : defaultWorkingHours;
+      
+      const hoursObj = {};
+      const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+      
+      days.forEach((day) => {
+        const wh = workingHours.find((h) => h.day?.toLowerCase() === day);
+        hoursObj[day] = {
+          open: wh ? !wh.isClosed : day !== "sunday",
+          openTime: wh?.openTime || "09:00",
+          closeTime: wh?.closeTime || "18:00",
+          allDay: false,
+        };
+      });
+      
+      setHours(hoursObj);
+      setAlwaysOpen(pharmacy.is24Hours || false);
     }
   }, [pharmacy]);
 
@@ -321,11 +344,41 @@ const PharmacyDashboard = () => {
     });
   };
 
+  const updateDay = (day, updates) => {
+    setHours((prev) => ({
+      ...prev,
+      [day]: { ...prev[day], ...updates },
+    }));
+  };
+
   const handleSavePharmacy = async () => {
     if (!pharmacy?._id) return;
     setPharmacySaveStatus("saving");
     setPharmacySaveError("");
       try {
+        // Convert hours format back to workingHours array format
+        const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+        const workingHours = days.map((day) => {
+          const dayHours = hours[day] || { open: false, openTime: "09:00", closeTime: "18:00", allDay: false };
+          const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+          
+          if (alwaysOpen || dayHours.allDay) {
+            return {
+              day: dayName,
+              openTime: "00:00",
+              closeTime: "23:59",
+              isClosed: false,
+            };
+          }
+          
+          return {
+            day: dayName,
+            openTime: dayHours.open ? dayHours.openTime : "",
+            closeTime: dayHours.open ? dayHours.closeTime : "",
+            isClosed: !dayHours.open,
+          };
+        });
+
         const payload = {
           name: pharmacyForm.name,
           address: {
@@ -333,7 +386,8 @@ const PharmacyDashboard = () => {
             city: pharmacyForm.city,
             street: pharmacyForm.street || pharmacy.address?.street || "",
           },
-          workingHours: pharmacyForm.workingHours,
+          workingHours,
+          is24Hours: alwaysOpen,
         };
       await pharmacyAPI.update(pharmacy._id, payload);
       const refreshed = await pharmacyAPI.getById(pharmacy._id);
@@ -1157,75 +1211,199 @@ const PharmacyDashboard = () => {
                     </Grid>
                   </Grid>
 
-                  <Typography variant="h6" fontWeight={700} color="secondary" mb={2}>
-                    Opening Hours
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {pharmacyForm.workingHours.map((wh, idx) => (
-                      <Grid item xs={12} md={6} key={wh.day || idx}>
-                        <Card variant="outlined">
-                          <CardContent>
-                            <Typography variant="subtitle1" fontWeight={600} mb={1}>
-                              {wh.day}
-                            </Typography>
-                            <FormControlLabel
-                              control={
-                                <Switch
-                                  checked={!wh.isClosed}
-                                  onChange={(e) =>
-                                    handleWorkingHourChange(idx, "isClosed", !e.target.checked)
-                                  }
-                                />
-                              }
-                              label={wh.isClosed ? "Closed all day" : "Open"}
-                              sx={{ mb: 1 }}
-                            />
-                            {!wh.isClosed && (
-                              <Box sx={{ display: "flex", gap: 1 }}>
-                                <TextField
-                                  label="Open"
-                                  type="time"
-                                  value={wh.openTime || ""}
-                                  onChange={(e) =>
-                                    handleWorkingHourChange(idx, "openTime", e.target.value)
-                                  }
-                                  InputLabelProps={{ shrink: true }}
-                                  fullWidth
-                                />
-                                <TextField
-                                  label="Close"
-                                  type="time"
-                                  value={wh.closeTime || ""}
-                                  onChange={(e) =>
-                                    handleWorkingHourChange(idx, "closeTime", e.target.value)
-                                  }
-                                  InputLabelProps={{ shrink: true }}
-                                  fullWidth
-                                />
-                              </Box>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
+                  <Card sx={{ p: 3, borderRadius: 3, maxWidth: 1000, mx: "auto" }}>
+                    {/* HEADER */}
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                      <Typography variant="h6" fontWeight={600}>Opening Hours</Typography>
+                      {/* 24/7 SWITCH */}
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={alwaysOpen}
+                            onChange={(e) => setAlwaysOpen(e.target.checked)}
+                          />
+                        }
+                        label="Open 24/7"
+                      />
+                    </Box>
 
-                  <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, gap: 2 }}>
-                    <Button
-                      variant="contained"
-                      onClick={handleSavePharmacy}
-                      disabled={pharmacySaveStatus === "saving"}
-                      sx={{
-                        background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                      }}
-                    >
-                      {pharmacySaveStatus === "saving"
-                        ? "Saving..."
-                        : pharmacySaveStatus === "saved"
-                        ? "Saved ✓"
-                        : "Save Changes"}
-                    </Button>
-                  </Box>
+                    {/* COLUMN HEADERS */}
+                    <Grid container spacing={2} sx={{ mb: 2, pb: 1, borderBottom: "2px solid", borderColor: "divider" }}>
+                      <Grid item xs={12} sm={2.5}>
+                        <Box sx={{ maxWidth: 150, mx: "auto", textAlign: "center" }}>
+                          <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
+                            Day
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={2}>
+                        <Box sx={{ maxWidth: 120, mx: "auto", textAlign: "center" }}>
+                          <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
+                            Status
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Box sx={{ maxWidth: 400, mx: "auto", textAlign: "center" }}>
+                          <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
+                            Opening Hours
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={2}>
+                        <Box sx={{ maxWidth: 120, mx: "auto", textAlign: "center" }}>
+                          <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
+                            All Day
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+
+                    {/* DAYS - Column Style Layout */}
+                    {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => {
+                      const d = hours[day] || { open: false, openTime: "09:00", closeTime: "18:00", allDay: false };
+                      const label = day.charAt(0).toUpperCase() + day.slice(1);
+
+                      return (
+                        <Grid
+                          container
+                          spacing={2}
+                          key={day}
+                          alignItems="center"
+                          sx={{ 
+                            mb: 2, 
+                            pb: 2,
+                            borderBottom: "1px solid",
+                            borderColor: "divider",
+                            opacity: alwaysOpen ? 0.4 : 1 
+                          }}
+                        >
+                          {/* DAY NAME COLUMN */}
+                          <Grid item xs={12} sm={2.5}>
+                            <Box sx={{ maxWidth: 150, mx: "auto", textAlign: "center" }}>
+                              <Typography fontWeight={500}>{label}</Typography>
+                            </Box>
+                          </Grid>
+
+                          {/* OPEN/CLOSED SWITCH COLUMN */}
+                          <Grid item xs={12} sm={2}>
+                            <Box sx={{ maxWidth: 120, mx: "auto", display: "flex", justifyContent: "center" }}>
+                              <FormControlLabel
+                                control={
+                                  <Switch
+                                    checked={d.open}
+                                    disabled={alwaysOpen}
+                                    onChange={(e) =>
+                                      updateDay(day, { open: e.target.checked })
+                                    }
+                                  />
+                                }
+                                label={d.open ? "Open" : "Closed"}
+                              />
+                            </Box>
+                          </Grid>
+
+                          {/* TIME PICKERS COLUMN */}
+                          <Grid item xs={12} sm={4}>
+                            <Box sx={{ maxWidth: 400, mx: "auto" }}>
+                              {d.open && !d.allDay && !alwaysOpen && (
+                                <Box display="flex" gap={2} alignItems="center" justifyContent="center">
+                                  <TextField
+                                    type="time"
+                                    label="Open"
+                                    value={d.openTime}
+                                    onChange={(e) =>
+                                      updateDay(day, { openTime: e.target.value })
+                                    }
+                                    size="small"
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{ flex: 1, maxWidth: 150 }}
+                                  />
+                                  <Typography color="text.secondary">to</Typography>
+                                  <TextField
+                                    type="time"
+                                    label="Close"
+                                    value={d.closeTime}
+                                    onChange={(e) =>
+                                      updateDay(day, { closeTime: e.target.value })
+                                    }
+                                    size="small"
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{ flex: 1, maxWidth: 150 }}
+                                  />
+                                </Box>
+                              )}
+
+                              {/* If closed or all day */}
+                              {(!d.open || d.allDay || alwaysOpen) && !alwaysOpen && (
+                                <Typography 
+                                  color="text.secondary" 
+                                  sx={{ fontStyle: "italic", textAlign: "center" }}
+                                >
+                                  {d.allDay ? "All Day" : "Closed"}
+                                </Typography>
+                              )}
+
+                              {alwaysOpen && (
+                                <Typography 
+                                  color="text.secondary" 
+                                  sx={{ fontStyle: "italic", textAlign: "center" }}
+                                >
+                                  24/7
+                                </Typography>
+                              )}
+                            </Box>
+                          </Grid>
+
+                          {/* ALL DAY SWITCH COLUMN */}
+                          <Grid item xs={12} sm={2}>
+                            <Box sx={{ maxWidth: 120, mx: "auto", display: "flex", justifyContent: "center" }}>
+                              {d.open && !alwaysOpen && (
+                                <FormControlLabel
+                                  control={
+                                    <Switch
+                                      checked={d.allDay}
+                                      onChange={(e) =>
+                                        updateDay(day, { allDay: e.target.checked })
+                                      }
+                                    />
+                                  }
+                                  label="All Day"
+                                />
+                              )}
+                              {(!d.open || alwaysOpen) && (
+                                <Typography color="text.secondary" variant="body2" sx={{ textAlign: "center" }}>
+                                  -
+                                </Typography>
+                              )}
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      );
+                    })}
+
+                    {/* SAVE BUTTON */}
+                    <Box textAlign="center" mt={4}>
+                      <Button 
+                        variant="contained" 
+                        sx={{ 
+                          px: 4,
+                          py: 1.5,
+                          background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                          fontSize: "1rem",
+                          fontWeight: 600,
+                        }} 
+                        onClick={handleSavePharmacy}
+                        disabled={pharmacySaveStatus === "saving"}
+                      >
+                        {pharmacySaveStatus === "saving"
+                          ? "Saving..."
+                          : pharmacySaveStatus === "saved"
+                          ? "Saved ✓"
+                          : "Save Changes"}
+                      </Button>
+                    </Box>
+                  </Card>
                 </CardContent>
               </Card>
             )}
