@@ -489,27 +489,78 @@ const PharmacyDetail = () => {
                 }}
               >
                 {pharmacy.workingHours && pharmacy.workingHours.length > 0 ? (
-                  pharmacy.workingHours.map((wh) => (
-                    <Box
-                      key={wh.day}
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        p: 1.5,
-                        bgcolor: "#f8f9fa",
-                        borderRadius: 2,
-                      }}
-                    >
-                      <Typography variant="body2" fontWeight={700}>
-                        {wh.day}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {wh.isClosed
-                          ? "Closed"
-                          : `${wh.openTime || "N/A"} - ${wh.closeTime || "N/A"}`}
-                      </Typography>
-                    </Box>
-                  ))
+                  pharmacy.workingHours.map((wh) => {
+                    // Check if pharmacy is 24/7
+                    if (pharmacy.is24Hours) {
+                      return (
+                        <Box
+                          key={wh.day}
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            p: 1.5,
+                            bgcolor: "#f8f9fa",
+                            borderRadius: 2,
+                          }}
+                        >
+                          <Typography variant="body2" fontWeight={700}>
+                            {wh.day}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            24/7
+                          </Typography>
+                        </Box>
+                      );
+                    }
+                    
+                    // Check if closed
+                    if (wh.isClosed) {
+                      return (
+                        <Box
+                          key={wh.day}
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            p: 1.5,
+                            bgcolor: "#f8f9fa",
+                            borderRadius: 2,
+                          }}
+                        >
+                          <Typography variant="body2" fontWeight={700}>
+                            {wh.day}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Closed
+                          </Typography>
+                        </Box>
+                      );
+                    }
+                    
+                    // Check if all day (00:00 to 23:59)
+                    const isAllDay = wh.openTime === "00:00" && wh.closeTime === "23:59";
+                    
+                    return (
+                      <Box
+                        key={wh.day}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          p: 1.5,
+                          bgcolor: "#f8f9fa",
+                          borderRadius: 2,
+                        }}
+                      >
+                        <Typography variant="body2" fontWeight={700}>
+                          {wh.day}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {isAllDay
+                            ? "All Day"
+                            : `${wh.openTime || "N/A"} - ${wh.closeTime || "N/A"}`}
+                        </Typography>
+                      </Box>
+                    );
+                  })
                 ) : (
                   <Typography variant="body2" color="text.secondary">
                     Working hours not available

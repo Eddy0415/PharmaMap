@@ -152,11 +152,20 @@ const PharmacyDashboard = () => {
       
       days.forEach((day) => {
         const wh = workingHours.find((h) => h.day?.toLowerCase() === day);
+        const openTime = wh?.openTime || "09:00";
+        const closeTime = wh?.closeTime || "18:00";
+        const isOpen = wh ? !wh.isClosed : day !== "sunday";
+        // Check if times are 00:00 to 23:59 to set allDay automatically
+        const isAllDay = isOpen && openTime === "00:00" && closeTime === "23:59";
+        
         hoursObj[day] = {
-          open: wh ? !wh.isClosed : day !== "sunday",
-          openTime: wh?.openTime || "09:00",
-          closeTime: wh?.closeTime || "18:00",
-          allDay: false,
+          open: isOpen,
+          openTime,
+          closeTime,
+          allDay: isAllDay,
+          // Store previous hours for restoring when All Day is toggled off
+          previousOpenTime: isAllDay ? "09:00" : openTime,
+          previousCloseTime: isAllDay ? "18:00" : closeTime,
         };
       });
       
@@ -345,10 +354,31 @@ const PharmacyDashboard = () => {
   };
 
   const updateDay = (day, updates) => {
-    setHours((prev) => ({
-      ...prev,
-      [day]: { ...prev[day], ...updates },
-    }));
+    setHours((prev) => {
+      const currentDay = prev[day] || { open: false, openTime: "09:00", closeTime: "18:00", allDay: false, previousOpenTime: "09:00", previousCloseTime: "18:00" };
+      const updatedDay = { ...currentDay, ...updates };
+      
+      // When enabling All Day, store current times as previous (if not already 00:00-23:59)
+      if (updatedDay.allDay && !currentDay.allDay) {
+        if (currentDay.openTime !== "00:00" || currentDay.closeTime !== "23:59") {
+          updatedDay.previousOpenTime = currentDay.openTime;
+          updatedDay.previousCloseTime = currentDay.closeTime;
+        }
+        updatedDay.openTime = "00:00";
+        updatedDay.closeTime = "23:59";
+      }
+      
+      // When disabling All Day, restore previous times
+      if (!updatedDay.allDay && currentDay.allDay) {
+        updatedDay.openTime = currentDay.previousOpenTime || "09:00";
+        updatedDay.closeTime = currentDay.previousCloseTime || "18:00";
+      }
+      
+      return {
+        ...prev,
+        [day]: updatedDay,
+      };
+    });
   };
 
   const handleSavePharmacy = async () => {
@@ -1214,7 +1244,7 @@ const PharmacyDashboard = () => {
                   <Card sx={{ p: 3, borderRadius: 3, maxWidth: 1000, mx: "auto" }}>
                     {/* HEADER */}
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                      <Typography variant="h6" fontWeight={600}>Opening Hours</Typography>
+                      <Typography variant="h6" fontWeight={600}>Working Hours</Typography>
                       {/* 24/7 SWITCH */}
                       <FormControlLabel
                         control={
@@ -1247,7 +1277,7 @@ const PharmacyDashboard = () => {
                               Status
                             </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 600 }}>
-                              Opening Hours
+                              Working Hours
                             </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 600 }}>
                               All Day

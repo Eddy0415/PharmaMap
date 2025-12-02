@@ -190,6 +190,7 @@ router.put("/:id", async (req, res) => {
       is24Hours,
       logoUrl,
       featured,
+      workingHours,
     } = req.body;
 
     const updateData = { updatedAt: Date.now() };
@@ -201,6 +202,7 @@ router.put("/:id", async (req, res) => {
     if (is24Hours !== undefined) updateData.is24Hours = is24Hours;
     if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
     if (featured !== undefined) updateData.featured = featured;
+    if (workingHours !== undefined) updateData.workingHours = workingHours;
 
     const pharmacy = await Pharmacy.findByIdAndUpdate(
       req.params.id,
