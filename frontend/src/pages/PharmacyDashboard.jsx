@@ -1227,160 +1227,144 @@ const PharmacyDashboard = () => {
                       />
                     </Box>
 
-                    {/* COLUMN HEADERS */}
-                    <Grid container spacing={2} sx={{ mb: 2, pb: 1, borderBottom: "2px solid", borderColor: "divider" }}>
-                      <Grid item xs={12} sm={2.5}>
-                        <Box sx={{ maxWidth: 150, mx: "auto", textAlign: "center" }}>
-                          <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
-                            Day
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={2}>
-                        <Box sx={{ maxWidth: 120, mx: "auto", textAlign: "center" }}>
-                          <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
-                            Status
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ maxWidth: 400, mx: "auto", textAlign: "center" }}>
-                          <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
-                            Opening Hours
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} sm={2}>
-                        <Box sx={{ maxWidth: 120, mx: "auto", textAlign: "center" }}>
-                          <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
-                            All Day
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
+                    {/* TABLE LAYOUT */}
+                    <TableContainer
+                      component={Paper}
+                      sx={{
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        border: "1px solid",
+                        borderColor: "divider",
+                      }}
+                    >
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: "#f8f9fa" }}>
+                            <TableCell align="center" sx={{ fontWeight: 600 }}>
+                              Day
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 600 }}>
+                              Status
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 600 }}>
+                              Opening Hours
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 600 }}>
+                              All Day
+                            </TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day, index) => {
+                            const d = hours[day] || { open: false, openTime: "09:00", closeTime: "18:00", allDay: false };
+                            const label = day.charAt(0).toUpperCase() + day.slice(1);
+                            const isLast = index === 6;
 
-                    {/* DAYS - Column Style Layout */}
-                    {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => {
-                      const d = hours[day] || { open: false, openTime: "09:00", closeTime: "18:00", allDay: false };
-                      const label = day.charAt(0).toUpperCase() + day.slice(1);
+                            return (
+                              <TableRow
+                                key={day}
+                                sx={{
+                                  opacity: alwaysOpen ? 0.4 : 1,
+                                  "&:hover": { bgcolor: "#f8f9fa" },
+                                  "&:last-child td": {
+                                    borderBottom: "none",
+                                  },
+                                }}
+                              >
+                                {/* DAY NAME */}
+                                <TableCell align="center">
+                                  <Typography fontWeight={500}>{label}</Typography>
+                                </TableCell>
 
-                      return (
-                        <Grid
-                          container
-                          spacing={2}
-                          key={day}
-                          alignItems="center"
-                          sx={{ 
-                            mb: 2, 
-                            pb: 2,
-                            borderBottom: "1px solid",
-                            borderColor: "divider",
-                            opacity: alwaysOpen ? 0.4 : 1 
-                          }}
-                        >
-                          {/* DAY NAME COLUMN */}
-                          <Grid item xs={12} sm={2.5}>
-                            <Box sx={{ maxWidth: 150, mx: "auto", textAlign: "center" }}>
-                              <Typography fontWeight={500}>{label}</Typography>
-                            </Box>
-                          </Grid>
-
-                          {/* OPEN/CLOSED SWITCH COLUMN */}
-                          <Grid item xs={12} sm={2}>
-                            <Box sx={{ maxWidth: 120, mx: "auto", display: "flex", justifyContent: "center" }}>
-                              <FormControlLabel
-                                control={
-                                  <Switch
-                                    checked={d.open}
-                                    disabled={alwaysOpen}
-                                    onChange={(e) =>
-                                      updateDay(day, { open: e.target.checked })
+                                {/* OPEN/CLOSED SWITCH */}
+                                <TableCell align="center">
+                                  <FormControlLabel
+                                    control={
+                                      <Switch
+                                        checked={d.open}
+                                        disabled={alwaysOpen}
+                                        onChange={(e) =>
+                                          updateDay(day, { open: e.target.checked })
+                                        }
+                                      />
                                     }
+                                    label={d.open ? "Open" : "Closed"}
                                   />
-                                }
-                                label={d.open ? "Open" : "Closed"}
-                              />
-                            </Box>
-                          </Grid>
+                                </TableCell>
 
-                          {/* TIME PICKERS COLUMN */}
-                          <Grid item xs={12} sm={4}>
-                            <Box sx={{ maxWidth: 400, mx: "auto" }}>
-                              {d.open && !d.allDay && !alwaysOpen && (
-                                <Box display="flex" gap={2} alignItems="center" justifyContent="center">
-                                  <TextField
-                                    type="time"
-                                    label="Open"
-                                    value={d.openTime}
-                                    onChange={(e) =>
-                                      updateDay(day, { openTime: e.target.value })
-                                    }
-                                    size="small"
-                                    InputLabelProps={{ shrink: true }}
-                                    sx={{ flex: 1, maxWidth: 150 }}
-                                  />
-                                  <Typography color="text.secondary">to</Typography>
-                                  <TextField
-                                    type="time"
-                                    label="Close"
-                                    value={d.closeTime}
-                                    onChange={(e) =>
-                                      updateDay(day, { closeTime: e.target.value })
-                                    }
-                                    size="small"
-                                    InputLabelProps={{ shrink: true }}
-                                    sx={{ flex: 1, maxWidth: 150 }}
-                                  />
-                                </Box>
-                              )}
+                                {/* TIME PICKERS */}
+                                <TableCell align="center">
+                                  {d.open && !d.allDay && !alwaysOpen && (
+                                    <Box display="flex" gap={1} alignItems="center" justifyContent="center">
+                                      <TextField
+                                        type="time"
+                                        label="Open"
+                                        value={d.openTime}
+                                        onChange={(e) =>
+                                          updateDay(day, { openTime: e.target.value })
+                                        }
+                                        size="small"
+                                        InputLabelProps={{ shrink: true }}
+                                        sx={{ width: 130 }}
+                                      />
+                                      <Typography color="text.secondary" sx={{ mx: 0.5 }}>
+                                        to
+                                      </Typography>
+                                      <TextField
+                                        type="time"
+                                        label="Close"
+                                        value={d.closeTime}
+                                        onChange={(e) =>
+                                          updateDay(day, { closeTime: e.target.value })
+                                        }
+                                        size="small"
+                                        InputLabelProps={{ shrink: true }}
+                                        sx={{ width: 130 }}
+                                      />
+                                    </Box>
+                                  )}
 
-                              {/* If closed or all day */}
-                              {(!d.open || d.allDay || alwaysOpen) && !alwaysOpen && (
-                                <Typography 
-                                  color="text.secondary" 
-                                  sx={{ fontStyle: "italic", textAlign: "center" }}
-                                >
-                                  {d.allDay ? "All Day" : "Closed"}
-                                </Typography>
-                              )}
+                                  {/* If closed or all day */}
+                                  {(!d.open || d.allDay || alwaysOpen) && !alwaysOpen && (
+                                    <Typography color="text.secondary" sx={{ fontStyle: "italic" }}>
+                                      {d.allDay ? "All Day" : "Closed"}
+                                    </Typography>
+                                  )}
 
-                              {alwaysOpen && (
-                                <Typography 
-                                  color="text.secondary" 
-                                  sx={{ fontStyle: "italic", textAlign: "center" }}
-                                >
-                                  24/7
-                                </Typography>
-                              )}
-                            </Box>
-                          </Grid>
+                                  {alwaysOpen && (
+                                    <Typography color="text.secondary" sx={{ fontStyle: "italic" }}>
+                                      24/7
+                                    </Typography>
+                                  )}
+                                </TableCell>
 
-                          {/* ALL DAY SWITCH COLUMN */}
-                          <Grid item xs={12} sm={2}>
-                            <Box sx={{ maxWidth: 120, mx: "auto", display: "flex", justifyContent: "center" }}>
-                              {d.open && !alwaysOpen && (
-                                <FormControlLabel
-                                  control={
-                                    <Switch
-                                      checked={d.allDay}
-                                      onChange={(e) =>
-                                        updateDay(day, { allDay: e.target.checked })
+                                {/* ALL DAY SWITCH */}
+                                <TableCell align="center">
+                                  {d.open && !alwaysOpen && (
+                                    <FormControlLabel
+                                      control={
+                                        <Switch
+                                          checked={d.allDay}
+                                          onChange={(e) =>
+                                            updateDay(day, { allDay: e.target.checked })
+                                          }
+                                        />
                                       }
+                                      label="All Day"
                                     />
-                                  }
-                                  label="All Day"
-                                />
-                              )}
-                              {(!d.open || alwaysOpen) && (
-                                <Typography color="text.secondary" variant="body2" sx={{ textAlign: "center" }}>
-                                  -
-                                </Typography>
-                              )}
-                            </Box>
-                          </Grid>
-                        </Grid>
-                      );
-                    })}
+                                  )}
+                                  {(!d.open || alwaysOpen) && (
+                                    <Typography color="text.secondary" variant="body2">
+                                      -
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
 
                     {/* SAVE BUTTON */}
                     <Box textAlign="center" mt={4}>
