@@ -401,28 +401,37 @@ const handleAvatarChange = (e) => {
 
         <Divider flexItem sx={{ my: 2 }} />
 
-        {/* PHONE + EMAIL */}
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Phone Number"
-            value={profileData.phone}
-            onChange={(e) =>
-              setProfileData({ ...profileData, phone: e.target.value })
-            }
-            required
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Email Address"
-            type="email"
-            value={profileData.email}
-            InputProps={{ readOnly: true }}
-            disabled
-          />
-        </Grid>
+        <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 2,
+              width: "50%",
+            }}
+          >
+            <TextField
+              fullWidth
+              label="Phone Number"
+              value={profileData.phone}
+              onChange={(e) =>
+                setProfileData({
+                  ...profileData,
+                  phone: e.target.value,
+                })
+              }
+              required
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              fullWidth
+              label="Email Address"
+              type="email"
+              value={profileData.email}
+              InputProps={{ readOnly: true }}
+              disabled
+              sx={{ flex: 2 }}
+            />
+          </Box>
 
         <Divider flexItem sx={{ my: 2 }} />
 

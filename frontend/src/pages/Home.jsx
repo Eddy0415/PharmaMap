@@ -9,26 +9,22 @@ import {
   Chip,
   Button,
 } from "@mui/material";
-import ArrowBackIos from "@mui/icons-material/ArrowBackIos";
-import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
-import Spa from "@mui/icons-material/Spa";
-import Favorite from "@mui/icons-material/Favorite";
+
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
-import PanTool from "@mui/icons-material/PanTool";
-import Bloodtype from "@mui/icons-material/Bloodtype";
-import Masks from "@mui/icons-material/Masks";
-import AcUnit from "@mui/icons-material/AcUnit";
-import HealthAndSafety from "@mui/icons-material/HealthAndSafety";
-import Elderly from "@mui/icons-material/Elderly";
-import ShieldMoon from "@mui/icons-material/ShieldMoon";
+
+
+
 import TrendingUp from "@mui/icons-material/TrendingUp";
 import Room from "@mui/icons-material/Room";
 import Star from "@mui/icons-material/Star";
 
+
+
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { pharmacyAPI, medicationAPI, orderAPI } from "../services/api";
 import ProductDetailsDialog from "../components/ProductDetailsDialog";
+import { pharmacyAPI, medicationAPI, orderAPI } from "../services/api";
+
 
 /* -------------------------------------------------------------------------- */
 /*                           HERO CAROUSEL SLIDES                             */
@@ -36,38 +32,26 @@ import ProductDetailsDialog from "../components/ProductDetailsDialog";
 
 const carouselSlides = [
   {
-    image:
-      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=450&fit=crop",
     title: "Find Your Medication Instantly",
     description: "Check availability across multiple pharmacies in Lebanon",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=1200&h=450&fit=crop",
     title: "Trusted Pharmacy Network",
     description: "Connected with hundreds of verified pharmacies",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=1200&h=450&fit=crop",
     title: "Save Time & Money",
     description: "Compare prices and find the nearest available pharmacy",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&h=450&fit=crop",
     title: "24/7 Availability",
     description: "Find pharmacies open around the clock near you",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=1200&h=450&fit=crop",
     title: "Premium Quality Guaranteed",
     description: "All pharmacies verified for quality and authenticity",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=1200&h=450&fit=crop",
     title: "Reserve & pick up",
     description: "Ready for you when you arrive",
   },
@@ -78,17 +62,119 @@ const carouselSlides = [
 /* -------------------------------------------------------------------------- */
 
 const categories = [
-  { name: "Derma Products", icon: Spa },
-  { name: "Cardiac Care", icon: Favorite },
-  { name: "Stomach Care", icon: LocalPharmacy },
-  { name: "Pain Relief", icon: PanTool },
-  { name: "Liver Care", icon: Bloodtype },
-  { name: "Oral Care", icon: Masks },
-  { name: "Respiratory", icon: AcUnit },
-  { name: "Sexual Health", icon: HealthAndSafety },
-  { name: "Elderly Care", icon: Elderly },
-  { name: "Cold & Immunity", icon: ShieldMoon },
+  {
+    name: "Derma Products",
+    icon: () => (
+      <img
+        src="/icons/derma.svg"
+        alt="Derma"
+        width={48}
+        height={48}
+      />
+    ),
+  },
+  {
+    name: "Cardiac Care",
+    icon: () => (
+      <img
+        src="/icons/cardiac.svg"
+        alt="Cardiac"
+        width={48}
+        height={48}
+      />
+    ),
+  },
+  {
+    name: "Stomach Care",
+    icon: () => (
+      <img
+        src="/icons/stomach.svg"
+        alt="Stomach"
+        width={48}
+        height={48}
+      />
+    ),
+  },
+  {
+    name: "Pain Relief",
+    icon: () => (
+      <img
+        src="/icons/pain.svg"
+        alt="Pain Relief"
+        width={48}
+        height={48}
+      />
+    ),
+  },
+  {
+    name: "Liver Care",
+    icon: () => (
+      <img
+        src="/icons/liver.svg"
+        alt="Liver"
+        width={48}
+        height={48}
+      />
+    ),
+  },
+  {
+    name: "Oral Care",
+    icon: () => (
+      <img
+        src="/icons/oral.svg"
+        alt="Oral Care"
+        width={48}
+        height={48}
+      />
+    ),
+  },
+  {
+    name: "Respiratory",
+    icon: () => (
+      <img
+        src="/icons/respiratory.svg"
+        alt="Respiratory"
+        width={48}
+        height={48}
+      />
+    ),
+  },
+  {
+    name: "Sexual Health",
+    icon: () => (
+      <img
+        src="/icons/sexual.svg"
+        alt="Sexual Health"
+        width={48}
+        height={48}
+      />
+    ),
+  },
+  {
+    name: "Elderly Care",
+    icon: () => (
+      <img
+        src="/icons/elderly.svg"
+        alt="Elderly Care"
+        width={48}
+        height={48}
+      />
+    ),
+  },
+  {
+    name: "Cold & Immunity",
+    icon: () => (
+      <img
+        src="/icons/cold.svg"
+        alt="Cold & Immunity"
+        width={48}
+        height={48}
+      />
+    ),
+  },
 ];
+
+
 
 /* -------------------------------------------------------------------------- */
 /*                                HOME START                                  */
@@ -428,7 +514,8 @@ const Home = () => {
           overflow: "hidden",
         }}
       >
-        {carouselSlides.map((slide, index) => (
+        {/* Background Slides */}
+        {[1, 2, 3, 4, 5, 6].map((num, index) => (
           <Box
             key={index}
             sx={{
@@ -437,7 +524,7 @@ const Home = () => {
               opacity: currentSlide === index ? 1 : 0,
               transition: "opacity 0.6s ease, transform 12s ease",
               transform: currentSlide === index ? "scale(1.03)" : "scale(1)",
-              backgroundImage: `url(${slide.image})`,
+              backgroundImage: `url(/images/carousel_${num}.jpg)`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               filter: "brightness(0.9)",
@@ -454,6 +541,37 @@ const Home = () => {
             zIndex: 1,
           }}
         />
+        {/* Floating Info Card */}
+        <Card
+          sx={{
+            position: "absolute",
+            bottom: { xs: 16, sm: 28, md: 42 },
+            right: { xs: 16, sm: 28, md: 64 },
+            width: { xs: "82%", sm: 360, md: 400 },
+            zIndex: 3,
+            backdropFilter: "blur(10px)",
+            backgroundColor: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            color: "white",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+          }}
+          elevation={0}
+        >
+          <CardContent sx={{ pb: 3 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ textTransform: "uppercase", letterSpacing: 1.1, mb: 1 }}
+            >
+              Featured highlight
+            </Typography>
+            <Typography variant="h6" fontWeight={800} mb={1}>
+              {carouselSlides[currentSlide].title}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.85 }}>
+              {carouselSlides[currentSlide].description}
+            </Typography>
+          </CardContent>
+        </Card>
 
         <Box
           sx={{
