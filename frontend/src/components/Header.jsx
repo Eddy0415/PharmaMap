@@ -180,7 +180,7 @@ const Header = ({
             </Box>
           </Box>
 
-          {/* Search Bar - Centered */}
+          {/* Search Bar - Centered with Overlap */}
           <Box
             component="form"
             onSubmit={handleSearch}
@@ -192,17 +192,16 @@ const Header = ({
               transform: "translateX(-50%)",
               width: {
                 xs: "calc(100% - 160px)",
-                sm: "250px",
-                md: "290px",
-                lg: "350px",
-                xl: "410px",
+                sm: "280px",
+                md: "320px",
+                lg: "380px",
+                xl: "450px",
               },
               maxWidth: { xs: "calc(100vw - 180px)", sm: "90%" },
               display: { xs: "none", sm: "block" },
-              zIndex: 1,
+              zIndex: 10,
               px: { xs: 0.5, sm: 0 },
-              transition:
-                "width 0.3s ease-in-out, max-width 0.3s ease-in-out, padding 0.3s ease-in-out",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
             <TextField
@@ -211,10 +210,18 @@ const Header = ({
               placeholder="Search for medications, pharmacies..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={(e) => {
+                e.currentTarget.parentElement.parentElement.style.zIndex = "20";
+                e.currentTarget.parentElement.parentElement.style.transform = "translateX(-50%) scale(1.02)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.parentElement.parentElement.style.zIndex = "10";
+                e.currentTarget.parentElement.parentElement.style.transform = "translateX(-50%) scale(1)";
+              }}
               inputProps={{
                 "aria-label": "Search",
                 sx: {
-                  fontSize: { xs: "0.875rem", sm: "1rem" },
+                  fontSize: { xs: "0.875rem", sm: "0.95rem", md: "1rem" },
                   py: { xs: 0.75, sm: 1 },
                 },
               }}
@@ -233,8 +240,13 @@ const Header = ({
                   bgcolor: "white",
                   borderRadius: { xs: "20px", sm: "25px" },
                   "& fieldset": { border: "none" },
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   "&:hover": {
                     boxShadow: "0 4px 16px rgba(78, 205, 196, 0.3)",
+                  },
+                  "&:focus-within": {
+                    boxShadow: "0 6px 20px rgba(78, 205, 196, 0.4)",
                   },
                 },
               }}
@@ -248,8 +260,9 @@ const Header = ({
               display: "flex",
               alignItems: "center",
               gap: { xs: 0.75, sm: 1.25, md: 1.5 },
-              zIndex: 1,
+              zIndex: 5,
               flexShrink: 0,
+              position: "relative",
             }}
           >
             {/* Mobile Search Icon */}
@@ -265,51 +278,76 @@ const Header = ({
             >
               <SearchIcon sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }} />
             </IconButton>
-            <Button
-              variant="text"
-              onClick={handleCategoriesClick}
-              sx={{
-                color: "white",
-                px: { xs: 1, sm: 1.5 },
-                py: { xs: 0.5, sm: 0.75 },
-                fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                textTransform: "none",
-                borderRadius: { xs: "18px", sm: "22px" },
-                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-              }}
-            >
-              Categories
-            </Button>
-            <Button
-              variant="text"
-              onClick={handleProductsClick}
-              sx={{
-                color: "white",
-                px: { xs: 1, sm: 1.5 },
-                py: { xs: 0.5, sm: 0.75 },
-                fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                textTransform: "none",
-                borderRadius: { xs: "18px", sm: "22px" },
-                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-              }}
-            >
-              Popular
-            </Button>
-            <Button
-              variant="text"
-              onClick={() => navigate("/about")}
-              sx={{
-                color: "white",
-                px: { xs: 1, sm: 1.5 },
-                py: { xs: 0.5, sm: 0.75 },
-                fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                textTransform: "none",
-                borderRadius: { xs: "18px", sm: "22px" },
-                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-              }}
-            >
-              About Us
-            </Button>
+             <Button
+               variant="text"
+               onClick={handleCategoriesClick}
+               sx={{
+                 color: "white",
+                 px: { xs: 1, sm: 1.5 },
+                 py: { xs: 0.5, sm: 0.75 },
+                 fontSize: { xs: "0.85rem", sm: "0.9rem", md: "0.95rem" },
+                 textTransform: "none",
+                 borderRadius: { xs: "18px", sm: "22px" },
+                 position: "relative",
+                 zIndex: 1,
+                 transition: "all 0.2s ease",
+                 "&:hover": { 
+                   bgcolor: "rgba(255,255,255,0.1)",
+                   transform: "translateY(-1px)",
+                 },
+                 // Hide on smaller screens when search bar overlaps
+                 display: { xs: "none", sm: "inline-flex" },
+                 opacity: { sm: 0.9, md: 1 },
+               }}
+             >
+               Categories
+             </Button>
+             <Button
+               variant="text"
+               onClick={handleProductsClick}
+               sx={{
+                 color: "white",
+                 px: { xs: 1, sm: 1.5 },
+                 py: { xs: 0.5, sm: 0.75 },
+                 fontSize: { xs: "0.85rem", sm: "0.9rem", md: "0.95rem" },
+                 textTransform: "none",
+                 borderRadius: { xs: "18px", sm: "22px" },
+                 position: "relative",
+                 zIndex: 1,
+                 transition: "all 0.2s ease",
+                 "&:hover": { 
+                   bgcolor: "rgba(255,255,255,0.1)",
+                   transform: "translateY(-1px)",
+                 },
+                 display: { xs: "none", sm: "inline-flex" },
+                 opacity: { sm: 0.9, md: 1 },
+               }}
+             >
+               Popular
+             </Button>
+             <Button
+               variant="text"
+               onClick={() => navigate("/about")}
+               sx={{
+                 color: "white",
+                 px: { xs: 1, sm: 1.5 },
+                 py: { xs: 0.5, sm: 0.75 },
+                 fontSize: { xs: "0.85rem", sm: "0.9rem", md: "0.95rem" },
+                 textTransform: "none",
+                 borderRadius: { xs: "18px", sm: "22px" },
+                 position: "relative",
+                 zIndex: 1,
+                 transition: "all 0.2s ease",
+                 "&:hover": { 
+                   bgcolor: "rgba(255,255,255,0.1)",
+                   transform: "translateY(-1px)",
+                 },
+                 display: { xs: "none", md: "inline-flex" },
+                 opacity: { md: 0.95, lg: 1 },
+               }}
+             >
+               About Us
+             </Button>
             {displayUser ? (
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <IconButton

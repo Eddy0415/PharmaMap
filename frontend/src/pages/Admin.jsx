@@ -290,10 +290,25 @@ const Admin = () => {
           Welcome back! Here's an overview of your system statistics.
         </Typography>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+              lg: "repeat(5, 1fr)",
+            },
+            gap: 3,
+          }}
+        >
+          <Box>
             <Card
               sx={{
+                height: "100%",
+                minHeight: 180,
+                display: "flex",
+                flexDirection: "column",
                 transition: "all 0.3s",
                 "&:hover": {
                   transform: "translateY(-5px)",
@@ -301,7 +316,14 @@ const Admin = () => {
                 },
               }}
             >
-              <CardContent>
+              <CardContent
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  flex: 1,
+                }}
+              >
                 <Box
                   sx={{
                     width: 50,
@@ -314,6 +336,7 @@ const Admin = () => {
                     justifyContent: "center",
                     color: "#1976d2",
                     mb: 2,
+                    flexShrink: 0,
                   }}
                 >
                   <People sx={{ fontSize: 28 }} />
@@ -331,11 +354,15 @@ const Admin = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Box>
             <Card
               sx={{
+                height: "100%",
+                minHeight: 180,
+                display: "flex",
+                flexDirection: "column",
                 transition: "all 0.3s",
                 "&:hover": {
                   transform: "translateY(-5px)",
@@ -343,7 +370,14 @@ const Admin = () => {
                 },
               }}
             >
-              <CardContent>
+              <CardContent
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  flex: 1,
+                }}
+              >
                 <Box
                   sx={{
                     width: 50,
@@ -356,6 +390,7 @@ const Admin = () => {
                     justifyContent: "center",
                     color: "#388e3c",
                     mb: 2,
+                    flexShrink: 0,
                   }}
                 >
                   <LocalPharmacy sx={{ fontSize: 28 }} />
@@ -373,11 +408,15 @@ const Admin = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Box>
             <Card
               sx={{
+                height: "100%",
+                minHeight: 180,
+                display: "flex",
+                flexDirection: "column",
                 transition: "all 0.3s",
                 "&:hover": {
                   transform: "translateY(-5px)",
@@ -385,7 +424,14 @@ const Admin = () => {
                 },
               }}
             >
-              <CardContent>
+              <CardContent
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  flex: 1,
+                }}
+              >
                 <Box
                   sx={{
                     width: 50,
@@ -398,6 +444,7 @@ const Admin = () => {
                     justifyContent: "center",
                     color: "#f57c00",
                     mb: 2,
+                    flexShrink: 0,
                   }}
                 >
                   <Medication sx={{ fontSize: 28 }} />
@@ -415,11 +462,15 @@ const Admin = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Box>
             <Card
               sx={{
+                height: "100%",
+                minHeight: 180,
+                display: "flex",
+                flexDirection: "column",
                 transition: "all 0.3s",
                 "&:hover": {
                   transform: "translateY(-5px)",
@@ -427,7 +478,14 @@ const Admin = () => {
                 },
               }}
             >
-              <CardContent>
+              <CardContent
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  flex: 1,
+                }}
+              >
                 <Box
                   sx={{
                     width: 50,
@@ -440,6 +498,7 @@ const Admin = () => {
                     justifyContent: "center",
                     color: "#d32f2f",
                     mb: 2,
+                    flexShrink: 0,
                   }}
                 >
                   <ShoppingCart sx={{ fontSize: 28 }} />
@@ -457,11 +516,15 @@ const Admin = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Box>
             <Card
               sx={{
+                height: "100%",
+                minHeight: 180,
+                display: "flex",
+                flexDirection: "column",
                 transition: "all 0.3s",
                 "&:hover": {
                   transform: "translateY(-5px)",
@@ -469,7 +532,14 @@ const Admin = () => {
                 },
               }}
             >
-              <CardContent>
+              <CardContent
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  flex: 1,
+                }}
+              >
                 <Box
                   sx={{
                     width: 50,
@@ -482,6 +552,7 @@ const Admin = () => {
                     justifyContent: "center",
                     color: "#7b1fa2",
                     mb: 2,
+                    flexShrink: 0,
                   }}
                 >
                   <Reviews sx={{ fontSize: 28 }} />
@@ -499,8 +570,8 @@ const Admin = () => {
                 </Typography>
               </CardContent>
             </Card>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </CardContent>
     </Card>
   );
