@@ -120,6 +120,7 @@ const Home = () => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
+    console.log("storedUser", storedUser);
     if (storedUser) setUser(JSON.parse(storedUser));
 
     fetchPopularProducts();
@@ -370,23 +371,28 @@ const Home = () => {
     }
   };
 
-  const handleRequestPharmacy = async (entry) => {
+  const handleRequestPharmacy = async (entry, quantity = 1, message = "") => {
     if (!user?.id) {
       navigate("/login");
       return false;
     }
     try {
       setRequesting(true);
+      const price = entry.price || 0;
+      const qty = quantity || 1;
       await orderAPI.create({
         customer: user.id,
         pharmacy: entry.pharmacy?._id || entry.pharmacy,
         items: [
           {
             item: selectedProduct.item._id || selectedProduct.item.id,
-            quantity: 1,
+            quantity: qty,
+            priceAtOrder: price,
+            subtotal: price * qty,
           },
         ],
-        customerNotes: "Product request",
+        totalAmount: price * qty,
+        customerNotes: message || "Product request",
       });
       return true;
     } catch (e) {

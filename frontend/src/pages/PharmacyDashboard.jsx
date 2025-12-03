@@ -51,6 +51,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import Warning from "@mui/icons-material/Warning";
 import Cancel from "@mui/icons-material/Cancel";
 import Notifications from "@mui/icons-material/Notifications";
+import Room from "@mui/icons-material/Room";
+import Directions from "@mui/icons-material/Directions";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import {
@@ -108,6 +110,9 @@ const PharmacyDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [openDialog, setOpenDialog] = useState(false);
   const [openOrderDialog, setOpenOrderDialog] = useState(false);
+  const [openStatusConfirmDialog, setOpenStatusConfirmDialog] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState(null);
+  const [displayedOrderStatus, setDisplayedOrderStatus] = useState(null);
   const [selectedInventory, setSelectedInventory] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [formData, setFormData] = useState({
@@ -333,29 +338,33 @@ const PharmacyDashboard = () => {
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
       await orderAPI.update(orderId, { status: newStatus });
-      alert(`Order status updated to ${newStatus} successfully!`);
-      // Refresh orders
+      // Update the selected order state
+      setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+      setDisplayedOrderStatus(newStatus);
+      // Refresh orders list in background
       if (pharmacy?._id) {
-        await fetchOrders(pharmacy._id);
+        fetchOrders(pharmacy._id);
       }
-      setOpenOrderDialog(false);
-      setSelectedOrder(null);
     } catch (error) {
       console.error("Error updating order status:", error);
       const errorMsg =
         error.response?.data?.message || "Failed to update order status";
       alert(errorMsg);
+      // Revert displayed status on error
+      setDisplayedOrderStatus(selectedOrder?.status || "pending");
     }
   };
 
   const handleOpenOrderDialog = (order) => {
     setSelectedOrder(order);
+    setDisplayedOrderStatus(order.status || "pending");
     setOpenOrderDialog(true);
   };
 
   const handleCloseOrderDialog = () => {
     setOpenOrderDialog(false);
     setSelectedOrder(null);
+    setDisplayedOrderStatus(null);
   };
 
   const getOrderStatusColor = (status) => {
@@ -404,8 +413,13 @@ const PharmacyDashboard = () => {
       const currentDay = prev[day] || { open: false, openTime: "09:00", closeTime: "18:00", allDay: false, previousOpenTime: "09:00", previousCloseTime: "18:00" };
       const updatedDay = { ...currentDay, ...updates };
       
+      // When closing a day, reset allDay to false
+      if (updatedDay.open === false && currentDay.open) {
+        updatedDay.allDay = false;
+      }
+      
       // When enabling All Day, store current times as previous (if not already 00:00-23:59)
-      if (updatedDay.allDay && !currentDay.allDay) {
+      if (updatedDay.allDay && !currentDay.allDay && updatedDay.open) {
         if (currentDay.openTime !== "00:00" || currentDay.closeTime !== "23:59") {
           updatedDay.previousOpenTime = currentDay.openTime;
           updatedDay.previousCloseTime = currentDay.closeTime;
@@ -415,7 +429,7 @@ const PharmacyDashboard = () => {
       }
       
       // When disabling All Day, restore previous times
-      if (!updatedDay.allDay && currentDay.allDay) {
+      if (!updatedDay.allDay && currentDay.allDay && updatedDay.open) {
         updatedDay.openTime = currentDay.previousOpenTime || "09:00";
         updatedDay.closeTime = currentDay.previousCloseTime || "18:00";
       }
@@ -630,16 +644,23 @@ const PharmacyDashboard = () => {
                 <List>
                   <ListItem
                     button
-                    selected={activeSection === "dashboard"}
                     onClick={() => setActiveSection("dashboard")}
                     sx={{
                       borderRadius: 2,
                       mb: 1,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        color: "white",
-                        "& .MuiListItemIcon-root": { color: "white" },
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      bgcolor: activeSection === "dashboard" ? "#4ecdc4" : "transparent",
+                      color: activeSection === "dashboard" ? "white" : "inherit",
+                      "& .MuiListItemIcon-root": {
+                        color: activeSection === "dashboard" ? "white" : "inherit",
+                      },
+                      "& .MuiListItemText-primary": {
+                        color: activeSection === "dashboard" ? "white" : "inherit",
+                      },
+                      "&:hover": {
+                        bgcolor: activeSection === "dashboard" ? "#44a9a3" : "rgba(78, 205, 196, 0.1)",
+                        transform: "translateX(4px)",
                       },
                     }}
                   >
@@ -650,16 +671,23 @@ const PharmacyDashboard = () => {
                   </ListItem>
                   <ListItem
                     button
-                    selected={activeSection === "inventory"}
                     onClick={() => setActiveSection("inventory")}
                     sx={{
                       borderRadius: 2,
                       mb: 1,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        color: "white",
-                        "& .MuiListItemIcon-root": { color: "white" },
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      bgcolor: activeSection === "inventory" ? "#4ecdc4" : "transparent",
+                      color: activeSection === "inventory" ? "white" : "inherit",
+                      "& .MuiListItemIcon-root": {
+                        color: activeSection === "inventory" ? "white" : "inherit",
+                      },
+                      "& .MuiListItemText-primary": {
+                        color: activeSection === "inventory" ? "white" : "inherit",
+                      },
+                      "&:hover": {
+                        bgcolor: activeSection === "inventory" ? "#44a9a3" : "rgba(78, 205, 196, 0.1)",
+                        transform: "translateX(4px)",
                       },
                     }}
                   >
@@ -670,16 +698,23 @@ const PharmacyDashboard = () => {
                   </ListItem>
                   <ListItem
                     button
-                    selected={activeSection === "orders"}
                     onClick={() => setActiveSection("orders")}
                     sx={{
                       borderRadius: 2,
                       mb: 1,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        color: "white",
-                        "& .MuiListItemIcon-root": { color: "white" },
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      bgcolor: activeSection === "orders" ? "#4ecdc4" : "transparent",
+                      color: activeSection === "orders" ? "white" : "inherit",
+                      "& .MuiListItemIcon-root": {
+                        color: activeSection === "orders" ? "white" : "inherit",
+                      },
+                      "& .MuiListItemText-primary": {
+                        color: activeSection === "orders" ? "white" : "inherit",
+                      },
+                      "&:hover": {
+                        bgcolor: activeSection === "orders" ? "#44a9a3" : "rgba(78, 205, 196, 0.1)",
+                        transform: "translateX(4px)",
                       },
                     }}
                   >
@@ -688,7 +723,19 @@ const PharmacyDashboard = () => {
                     </ListItemIcon>
                     <ListItemText primary="Orders" />
                   </ListItem>
-                  <ListItem button sx={{ borderRadius: 2, mb: 1 }}>
+                  <ListItem
+                    button
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        bgcolor: "rgba(78, 205, 196, 0.1)",
+                        transform: "translateX(4px)",
+                      },
+                    }}
+                  >
                     <ListItemIcon>
                       <TrendingUp />
                     </ListItemIcon>
@@ -696,16 +743,23 @@ const PharmacyDashboard = () => {
                   </ListItem>
                   <ListItem
                     button
-                    selected={activeSection === "pharmacySettings"}
                     onClick={() => setActiveSection("pharmacySettings")}
                     sx={{
                       borderRadius: 2,
                       mb: 1,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                        color: "white",
-                        "& .MuiListItemIcon-root": { color: "white" },
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      bgcolor: activeSection === "pharmacySettings" ? "#4ecdc4" : "transparent",
+                      color: activeSection === "pharmacySettings" ? "white" : "inherit",
+                      "& .MuiListItemIcon-root": {
+                        color: activeSection === "pharmacySettings" ? "white" : "inherit",
+                      },
+                      "& .MuiListItemText-primary": {
+                        color: activeSection === "pharmacySettings" ? "white" : "inherit",
+                      },
+                      "&:hover": {
+                        bgcolor: activeSection === "pharmacySettings" ? "#44a9a3" : "rgba(78, 205, 196, 0.1)",
+                        transform: "translateX(4px)",
                       },
                     }}
                   >
@@ -716,11 +770,19 @@ const PharmacyDashboard = () => {
                   </ListItem>
                   <ListItem
                     button
-                    sx={{ borderRadius: 2 }}
                     onClick={() => {
                       localStorage.removeItem("token");
                       localStorage.removeItem("user");
                       navigate("/");
+                    }}
+                    sx={{
+                      borderRadius: 2,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        bgcolor: "rgba(244, 67, 54, 0.1)",
+                        transform: "translateX(4px)",
+                      },
                     }}
                   >
                     <ListItemIcon>
@@ -735,23 +797,17 @@ const PharmacyDashboard = () => {
 
           <Grid item xs={12} md={9.5}>
             {activeSection === "dashboard" && (
-              <>
-                <Box sx={{ mb: 4 }}>
-                  <Typography
-                    variant="h4"
-                    fontWeight={700}
-                    color="secondary"
-                    mb={0.5}
-                  >
+              <Card sx={{ mb: 4 }}>
+                <CardContent>
+                  <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
                     Dashboard Overview
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" mb={3}>
                     Welcome back! Here's what's happening with your pharmacy
                     today.
                   </Typography>
-                </Box>
 
-                <Grid container spacing={3} mb={4}>
+                  <Grid container spacing={3}>
                   <Grid item xs={12} sm={6} md={3}>
                     <Card
                       sx={{
@@ -920,27 +976,19 @@ const PharmacyDashboard = () => {
                     </Card>
                   </Grid>
                 </Grid>
-              </>
+                </CardContent>
+              </Card>
             )}
 
             {activeSection === "inventory" && (
-              <>
-                <Box sx={{ mb: 4 }}>
-                  <Typography
-                    variant="h4"
-                    fontWeight={700}
-                    color="secondary"
-                    mb={0.5}
-                  >
+              <Card sx={{ mb: 4 }}>
+                <CardContent>
+                  <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
                     Inventory Management
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" mb={3}>
                     Manage your pharmacy inventory items.
                   </Typography>
-                </Box>
-
-                <Card>
-                  <CardContent>
                     <Box
                       sx={{
                         display: "flex",
@@ -1070,29 +1118,19 @@ const PharmacyDashboard = () => {
                         </Table>
                       </TableContainer>
                     )}
-                  </CardContent>
-                </Card>
-              </>
+                </CardContent>
+              </Card>
             )}
 
             {activeSection === "orders" && (
-              <>
-                <Box sx={{ mb: 4 }}>
-                  <Typography
-                    variant="h4"
-                    fontWeight={700}
-                    color="secondary"
-                    mb={0.5}
-                  >
+              <Card sx={{ mb: 4 }}>
+                <CardContent>
+                  <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
                     Orders Management
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" mb={3}>
                     View and manage customer orders.
                   </Typography>
-                </Box>
-
-                <Card>
-                  <CardContent>
                     <Box
                       sx={{
                         display: "flex",
@@ -1238,9 +1276,8 @@ const PharmacyDashboard = () => {
                         </Table>
                       </TableContainer>
                     )}
-                  </CardContent>
-                </Card>
-              </>
+                </CardContent>
+              </Card>
             )}
 
             {activeSection === "pharmacySettings" && (
@@ -1297,158 +1334,138 @@ const PharmacyDashboard = () => {
                       Pharmacy Location
                     </Typography>
                     <Typography variant="body2" color="text.secondary" mb={3}>
-                      Update your pharmacy location on the map. Click on the map or enter coordinates manually.
+                      Drag the marker or click on the map to set your pharmacy location
                     </Typography>
                     
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Latitude"
-                          type="number"
-                          value={coordinates.lat}
-                          onChange={(e) => {
-                            const lat = parseFloat(e.target.value) || 0;
-                            setCoordinates({ ...coordinates, lat });
-                          }}
-                          inputProps={{ step: "0.000001" }}
-                          helperText="Enter latitude (e.g., 33.8938 for Beirut)"
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: { xs: 350, md: 450 },
+                        borderRadius: 3,
+                        overflow: "hidden",
+                        border: "2px solid",
+                        borderColor: "divider",
+                        position: "relative",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                        "& .leaflet-container": {
+                          height: "100%",
+                          width: "100%",
+                          borderRadius: "12px",
+                        },
+                      }}
+                    >
+                      <MapContainer
+                        center={[coordinates.lat, coordinates.lng]}
+                        zoom={15}
+                        style={{ height: "100%", width: "100%" }}
+                        scrollWheelZoom={true}
+                      >
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Longitude"
-                          type="number"
-                          value={coordinates.lng}
-                          onChange={(e) => {
-                            const lng = parseFloat(e.target.value) || 0;
-                            setCoordinates({ ...coordinates, lng });
-                          }}
-                          inputProps={{ step: "0.000001" }}
-                          helperText="Enter longitude (e.g., 35.5018 for Beirut)"
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Box
-                          sx={{
-                            width: "100%",
-                            height: 400,
-                            borderRadius: 2,
-                            overflow: "hidden",
-                            border: "2px solid",
-                            borderColor: "divider",
-                            position: "relative",
-                            zIndex: 0,
-                            "& .leaflet-container": {
-                              height: "100%",
-                              width: "100%",
-                              borderRadius: "8px",
+                        <MapCenterUpdater center={[coordinates.lat, coordinates.lng]} />
+                        <Marker
+                          position={[coordinates.lat, coordinates.lng]}
+                          draggable={true}
+                          eventHandlers={{
+                            dragend: (e) => {
+                              const marker = e.target;
+                              const position = marker.getLatLng();
+                              setCoordinates({
+                                lat: parseFloat(position.lat.toFixed(6)),
+                                lng: parseFloat(position.lng.toFixed(6)),
+                              });
                             },
                           }}
-                        >
-                          <MapContainer
-                            center={[coordinates.lat, coordinates.lng]}
-                            zoom={15}
-                            style={{ height: "100%", width: "100%" }}
-                            scrollWheelZoom={true}
-                          >
-                            <TileLayer
-                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
-                            <MapCenterUpdater center={[coordinates.lat, coordinates.lng]} />
-                            <Marker
-                              position={[coordinates.lat, coordinates.lng]}
-                              draggable={true}
-                              eventHandlers={{
-                                dragend: (e) => {
-                                  const marker = e.target;
-                                  const position = marker.getLatLng();
-                                  setCoordinates({
-                                    lat: parseFloat(position.lat.toFixed(6)),
-                                    lng: parseFloat(position.lng.toFixed(6)),
-                                  });
-                                },
-                              }}
-                            />
-                            <MapClickHandler
-                              onMapClick={(latlng) => {
+                        />
+                        <MapClickHandler
+                          onMapClick={(latlng) => {
+                            setCoordinates({
+                              lat: parseFloat(latlng.lat.toFixed(6)),
+                              lng: parseFloat(latlng.lng.toFixed(6)),
+                            });
+                          }}
+                        />
+                      </MapContainer>
+                    </Box>
+                    
+                    <Box
+                      sx={{
+                        mt: 3,
+                        display: "flex",
+                        gap: 2,
+                        flexWrap: "wrap",
+                        justifyContent: { xs: "center", md: "flex-start" },
+                      }}
+                    >
+                      <Button
+                        variant="contained"
+                        startIcon={<Room />}
+                        onClick={() => {
+                          if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                              (position) => {
                                 setCoordinates({
-                                  lat: parseFloat(latlng.lat.toFixed(6)),
-                                  lng: parseFloat(latlng.lng.toFixed(6)),
+                                  lat: position.coords.latitude,
+                                  lng: position.coords.longitude,
                                 });
-                              }}
-                            />
-                          </MapContainer>
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              bottom: 10,
-                              left: 10,
-                              bgcolor: "rgba(255, 255, 255, 0.95)",
-                              px: 2,
-                              py: 1,
-                              borderRadius: 1,
-                              fontSize: "0.875rem",
-                              fontWeight: 600,
-                              color: "text.primary",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                              zIndex: 1000,
-                            }}
-                          >
-                            Drag the marker or click on the map to set location
-                          </Box>
-                        </Box>
-                        <Box sx={{ mt: 2, display: "flex", gap: 2, flexWrap: "wrap" }}>
-                          <Button
-                            variant="outlined"
-                            onClick={() => {
-                              if (navigator.geolocation) {
-                                navigator.geolocation.getCurrentPosition(
-                                  (position) => {
-                                    setCoordinates({
-                                      lat: position.coords.latitude,
-                                      lng: position.coords.longitude,
-                                    });
-                                  },
-                                  (error) => {
-                                    alert("Unable to get your location. Please enter coordinates manually or click on the map.");
-                                  }
-                                );
-                              } else {
-                                alert("Geolocation is not supported by your browser.");
+                              },
+                              (error) => {
+                                alert("Unable to get your location. Please click on the map to set your location.");
                               }
-                            }}
-                          >
-                            Use My Current Location
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            onClick={() => {
-                              window.open(
-                                `https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}`,
-                                "_blank"
-                              );
-                            }}
-                          >
-                            Open in Google Maps
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            onClick={() => {
-                              // Reset to Beirut default
-                              setCoordinates({ lat: 33.8938, lng: 35.5018 });
-                            }}
-                          >
-                            Reset to Default (Beirut)
-                          </Button>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                          Tip: Click anywhere on the map to set your pharmacy location, or enter coordinates manually in the fields above.
-                        </Typography>
-                      </Grid>
-                    </Grid>
+                            );
+                          } else {
+                            alert("Geolocation is not supported by your browser.");
+                          }
+                        }}
+                        sx={{
+                          background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                          px: 3,
+                          py: 1.2,
+                          borderRadius: 2,
+                          textTransform: "none",
+                          fontWeight: 600,
+                          "&:hover": {
+                            background: "linear-gradient(135deg, #44a9a3 0%, #3d9993 100%)",
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 4px 12px rgba(78, 205, 196, 0.4)",
+                          },
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        Use My Current Location
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Directions />}
+                        onClick={() => {
+                          window.open(
+                            `https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}`,
+                            "_blank"
+                          );
+                        }}
+                        sx={{
+                          borderColor: "primary.main",
+                          color: "primary.main",
+                          px: 3,
+                          py: 1.2,
+                          borderRadius: 2,
+                          textTransform: "none",
+                          fontWeight: 600,
+                          "&:hover": {
+                            borderColor: "primary.dark",
+                            bgcolor: "primary.light",
+                            color: "primary.dark",
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                          },
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        Open in Google Maps
+                      </Button>
+                    </Box>
                   </Box>
 
                   <Card sx={{ p: 3, borderRadius: 3, maxWidth: 1000, mx: "auto" }}>
@@ -1565,10 +1582,19 @@ const PharmacyDashboard = () => {
                                   )}
 
                                   {/* If closed or all day */}
-                                  {(!d.open || d.allDay || alwaysOpen) && !alwaysOpen && (
-                                    <Typography color="text.secondary" sx={{ fontStyle: "italic" }}>
-                                      {d.allDay ? "All Day" : "Closed"}
-                                    </Typography>
+                                  {!alwaysOpen && (
+                                    <>
+                                      {!d.open && (
+                                        <Typography color="text.secondary" sx={{ fontStyle: "italic" }}>
+                                          Closed
+                                        </Typography>
+                                      )}
+                                      {d.open && d.allDay && (
+                                        <Typography color="text.secondary" sx={{ fontStyle: "italic" }}>
+                                          All Day
+                                        </Typography>
+                                      )}
+                                    </>
                                   )}
 
                                   {alwaysOpen && (
@@ -1760,34 +1786,68 @@ const PharmacyDashboard = () => {
           {selectedOrder && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="text.secondary">
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  sx={{ mb: 2, fontWeight: 600 }}
+                >
                   Customer Information
                 </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  {selectedOrder.customer
-                    ? `${selectedOrder.customer.firstName || ""} ${
-                        selectedOrder.customer.lastName || ""
-                      }`.trim() || "Unknown"
-                    : "Unknown"}
-                </Typography>
-                {selectedOrder.customer?.email && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 2 }}
-                  >
-                    Email: {selectedOrder.customer.email}
-                  </Typography>
-                )}
-                {selectedOrder.customer?.phone && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 2 }}
-                  >
-                    Phone: {selectedOrder.customer.phone}
-                  </Typography>
-                )}
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: "#f8f9fa",
+                    borderRadius: 2,
+                    mb: 3,
+                  }}
+                >
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", mb: 0.5 }}
+                      >
+                        Name
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {selectedOrder.customer
+                          ? `${selectedOrder.customer.firstName || ""} ${
+                              selectedOrder.customer.lastName || ""
+                            }`.trim() || "Unknown"
+                          : "Unknown"}
+                      </Typography>
+                    </Grid>
+                    {selectedOrder.customer?.email && (
+                      <Grid item xs={12} sm={6}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block", mb: 0.5 }}
+                        >
+                          Email
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {selectedOrder.customer.email}
+                        </Typography>
+                      </Grid>
+                    )}
+                    {selectedOrder.customer?.phone && (
+                      <Grid item xs={12} sm={6}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block", mb: 0.5 }}
+                        >
+                          Phone
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {selectedOrder.customer.phone}
+                        </Typography>
+                      </Grid>
+                    )}
+                  </Grid>
+                </Box>
               </Grid>
 
               <Grid item xs={12}>
@@ -1861,16 +1921,12 @@ const PharmacyDashboard = () => {
                 <FormControl fullWidth>
                   <InputLabel>Status</InputLabel>
                   <Select
-                    value={selectedOrder.status || "pending"}
+                    value={displayedOrderStatus || selectedOrder.status || "pending"}
                     onChange={(e) => {
                       const newStatus = e.target.value;
-                      if (
-                        window.confirm(
-                          `Are you sure you want to change the order status to ${newStatus}?`
-                        )
-                      ) {
-                        handleUpdateOrderStatus(selectedOrder._id, newStatus);
-                      }
+                      setPendingStatusChange(newStatus);
+                      setDisplayedOrderStatus(newStatus);
+                      setOpenStatusConfirmDialog(true);
                     }}
                     label="Status"
                   >
@@ -1913,36 +1969,74 @@ const PharmacyDashboard = () => {
                   </Typography>
                 </Grid>
               )}
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Pharmacy Notes"
-                  multiline
-                  rows={3}
-                  placeholder="Add notes about this order..."
-                  value={selectedOrder.pharmacyNotes || ""}
-                  onChange={async (e) => {
-                    try {
-                      await orderAPI.update(selectedOrder._id, {
-                        pharmacyNotes: e.target.value,
-                      });
-                      // Update local state
-                      setSelectedOrder({
-                        ...selectedOrder,
-                        pharmacyNotes: e.target.value,
-                      });
-                    } catch (error) {
-                      console.error("Error updating pharmacy notes:", error);
-                    }
-                  }}
-                />
-              </Grid>
             </Grid>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseOrderDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openStatusConfirmDialog}
+        onClose={() => {
+          setOpenStatusConfirmDialog(false);
+          setPendingStatusChange(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography variant="h6" fontWeight={600}>
+            Confirm Status Change
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            Are you sure you want to change the order status to{" "}
+            <strong>{pendingStatusChange}</strong>?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            This action will update the order status and notify the customer.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
+          <Button
+            onClick={() => {
+              // Revert to original status
+              setDisplayedOrderStatus(selectedOrder?.status || "pending");
+              setOpenStatusConfirmDialog(false);
+              setPendingStatusChange(null);
+            }}
+            sx={{
+              textTransform: "none",
+              color: "text.secondary",
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              if (pendingStatusChange && selectedOrder?._id) {
+                handleUpdateOrderStatus(selectedOrder._id, pendingStatusChange);
+                setOpenStatusConfirmDialog(false);
+                setPendingStatusChange(null);
+                // Keep displayedOrderStatus as the new status since it's confirmed
+              }
+            }}
+            variant="contained"
+            sx={{
+              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+              textTransform: "none",
+              fontWeight: 600,
+              px: 3,
+              "&:hover": {
+                background: "linear-gradient(135deg, #44a9a3 0%, #3d9993 100%)",
+              },
+            }}
+          >
+            Confirm
+          </Button>
         </DialogActions>
       </Dialog>
 

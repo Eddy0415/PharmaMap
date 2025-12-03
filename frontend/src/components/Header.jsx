@@ -16,6 +16,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import Person from "@mui/icons-material/Person";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import AdminPanelSettings from "@mui/icons-material/AdminPanelSettings";
 import Logout from "@mui/icons-material/Logout";
 
 const Header = ({
@@ -361,6 +362,16 @@ const Header = ({
                       }}
                     >
                       <DashboardIcon sx={{ mr: 1 }} /> Dashboard
+                    </MenuItem>
+                  )}
+                  {displayUser.userType === "admin" && (
+                    <MenuItem
+                      onClick={() => {
+                        handleMenuClose();
+                        navigate("/admin");
+                      }}
+                    >
+                      <AdminPanelSettings sx={{ mr: 1 }} /> Admin
                     </MenuItem>
                   )}
                   <MenuItem onClick={handleLogout}>
