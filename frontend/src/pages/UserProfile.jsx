@@ -1189,11 +1189,12 @@ const handleAvatarChange = (e) => {
                         }
                         edge="end"
                       >
-                        {showPasswords.current ? <VisibilityOff /> : <Visibility />}
+                        {showPasswords.current ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
+
               />
             </Grid>
             <Grid item xs={12} md={4}>
@@ -1223,7 +1224,7 @@ const handleAvatarChange = (e) => {
                         }
                         edge="end"
                       >
-                        {showPasswords.next ? <VisibilityOff /> : <Visibility />}
+                        {showPasswords.next ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -1256,7 +1257,7 @@ const handleAvatarChange = (e) => {
                         }
                         edge="end"
                       >
-                        {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
+                        {showPasswords.confirm ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),

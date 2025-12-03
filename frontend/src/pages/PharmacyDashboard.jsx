@@ -1011,8 +1011,16 @@ const PharmacyDashboard = () => {
                         startIcon={<Add />}
                         onClick={() => handleOpenDialog()}
                         sx={{
-                          background:
-                            "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                          px: 4,
+                          py: 1.2,
+                          borderRadius: 2,
+                          textTransform: "none",
+                          fontSize: "1rem",
+                          color: "#ffffff",
+                          backgroundColor: "#4ecdc4",
+                          "&:hover": {
+                            backgroundColor: "#3bb5ac",
+                          },
                         }}
                       >
                         Add Inventory Item
@@ -1426,14 +1434,15 @@ const PharmacyDashboard = () => {
                           }
                         }}
                         sx={{
-                          background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-                          px: 3,
+                          px: 4,
                           py: 1.2,
                           borderRadius: 2,
                           textTransform: "none",
-                          fontWeight: 600,
+                          fontSize: "1rem",
+                          color: "#ffffff",
+                          backgroundColor: "#4ecdc4",
                           "&:hover": {
-                            background: "linear-gradient(135deg, #44a9a3 0%, #3d9993 100%)",
+                            backgroundColor: "#3bb5ac",
                             transform: "translateY(-2px)",
                             boxShadow: "0 4px 12px rgba(78, 205, 196, 0.4)",
                           },
@@ -1644,8 +1653,14 @@ const PharmacyDashboard = () => {
                         variant="contained" 
                         sx={{ 
                           px: 4,
-                          py: 1.5,
-                          background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                          py: 1.2,
+                          borderRadius: 2,
+                          textTransform: "none",
+                          color: "#ffffff",
+                          backgroundColor: "#4ecdc4",
+                          "&:hover": {
+                            backgroundColor: "#3bb5ac",
+                          },
                           fontSize: "1rem",
                           fontWeight: 600,
                         }} 
