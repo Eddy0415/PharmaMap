@@ -1304,10 +1304,25 @@ const handleAvatarChange = (e) => {
     >
       <Header user={user} onLogout={handleLogout} />
 
-      <Container component="section" maxWidth="xl" sx={{ py: 5, display: "flex", flexDirection: "column", minHeight: "calc(100vh - 200px)" }}>
-        <Grid container spacing={4} sx={{ flex: 1 }}>
-          <Grid item xs={12} md={2.5}>
-            <Card sx={{ position: "sticky", top: 90 }}>
+      <Container component="section" maxWidth="xl" sx={{ py: 5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 4,
+            alignItems: "flex-start",
+          }}
+        >
+          {/* Sidebar Panel */}
+          <Box
+            sx={{
+              width: { xs: "100%", md: "280px" },
+              flexShrink: 0,
+              position: { md: "sticky" },
+              top: { md: 90 },
+            }}
+          >
+            <Card>
               <CardContent>
                 <Box
                   sx={{
@@ -1473,16 +1488,24 @@ const handleAvatarChange = (e) => {
                 </List>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={9.5} sx={{ display: "flex", flexDirection: "column" }}>
+          {/* Main Content */}
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             {activeSection === "profile" && renderProfileSection()}
             {activeSection === "orders" && renderOrdersSection()}
             {activeSection === "addresses" && renderAddressesSection()}
             {activeSection === "favorites" && renderFavoritesSection()}
             {activeSection === "security" && renderSecuritySection()}
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Container>
 
       <ProductDetailsDialog

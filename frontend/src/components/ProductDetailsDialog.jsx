@@ -528,14 +528,43 @@ const ProductDetailsDialog = ({
                   width: 96,
                   height: 96,
                   borderRadius: 2,
-                  bgcolor: "#e0f7fa",
+                  bgcolor: product.item?.imageUrl ? "transparent" : "#e0f7fa",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
+                  overflow: "hidden",
+                  position: "relative",
                 }}
               >
-                <LocalPharmacy sx={{ fontSize: 48, color: "primary.main" }} />
+                {product.item?.imageUrl ? (
+                  <img
+                    src={product.item.imageUrl}
+                    alt={product.item?.name}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      borderRadius: "8px",
+                    }}
+                    onError={(e) => {
+                      // Fallback to icon if image fails to load
+                      e.target.style.display = "none";
+                      e.target.nextSibling.style.display = "flex";
+                    }}
+                  />
+                ) : null}
+                <Box
+                  sx={{
+                    display: product.item?.imageUrl ? "none" : "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                >
+                  <LocalPharmacy sx={{ fontSize: 48, color: "primary.main" }} />
+                </Box>
               </Box>
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

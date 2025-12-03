@@ -31,6 +31,7 @@ const CardItem = ({
 
   const itemName = item?.name || item?.item?.name || "Unknown";
   const itemCategory = item?.category || item?.item?.category || "General";
+  const itemImageUrl = item?.imageUrl || item?.item?.imageUrl;
   
   // Get search count (prioritize currentMonthSearchCount, then searchCount)
   const monthlyCount = item?.currentMonthSearchCount !== undefined 
@@ -93,13 +94,43 @@ const CardItem = ({
       <Box
         sx={{
           height: 150,
-          background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+          background: itemImageUrl
+            ? "transparent"
+            : "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          overflow: "hidden",
+          position: "relative",
         }}
       >
-        <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+        {itemImageUrl ? (
+          <img
+            src={itemImageUrl}
+            alt={itemName}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+            onError={(e) => {
+              // Fallback to icon if image fails to load
+              e.target.style.display = "none";
+              e.target.nextSibling.style.display = "flex";
+            }}
+          />
+        ) : null}
+        <Box
+          sx={{
+            display: itemImageUrl ? "none" : "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+        </Box>
       </Box>
 
       <CardContent sx={{ display: "flex", flexDirection: "column" }}>

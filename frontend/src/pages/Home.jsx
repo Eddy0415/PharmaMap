@@ -956,16 +956,58 @@ const Home = () => {
                 <Box
                   sx={{
                     height: 150,
-                    background:
-                      "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                    background: pharmacy.logoUrl
+                      ? "transparent"
+                      : "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
                     overflow: "hidden",
+                    position: "relative",
                   }}
                 >
-                  <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+                  {pharmacy.logoUrl ? (
+                    <img
+                      src={pharmacy.logoUrl}
+                      alt={pharmacy.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                      onError={(e) => {
+                        // Fallback to default logo if image fails to load
+                        e.target.src = "/images/pharmacy_logo.png";
+                      }}
+                    />
+                  ) : (
+                    <img
+                      src="/images/pharmacy_logo.png"
+                      alt={pharmacy.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                      onError={(e) => {
+                        // Final fallback to icon if default logo fails
+                        e.target.style.display = "none";
+                        e.target.nextSibling.style.display = "flex";
+                      }}
+                    />
+                  )}
+                  <Box
+                    sx={{
+                      display: "none",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+                  </Box>
                 </Box>
 
                 <CardContent
