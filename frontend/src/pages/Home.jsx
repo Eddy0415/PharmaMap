@@ -8,12 +8,12 @@ import {
   CardContent,
   Chip,
   Button,
+  IconButton,
 } from "@mui/material";
 
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
-
-
-
+import Favorite from "@mui/icons-material/Favorite";
+import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import TrendingUp from "@mui/icons-material/TrendingUp";
 import Room from "@mui/icons-material/Room";
 import Star from "@mui/icons-material/Star";
@@ -201,6 +201,7 @@ const Home = () => {
   const [loadingProduct, setLoadingProduct] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [favoriteItems, setFavoriteItems] = useState([]);
+  const [favoritePharmacies, setFavoritePharmacies] = useState([]);
 
   /* -------------------------------------------------------------------------- */
   /*                             LOAD INITIAL DATA                              */
@@ -213,6 +214,11 @@ const Home = () => {
       const userData = JSON.parse(storedUser);
       setUser(userData);
       setFavoriteItems(userData.favoriteItems || []);
+      // Extract favorite pharmacy IDs from user data
+      const favPharmIds = (userData.favoritePharmacies || []).map(
+        (p) => p._id || p.id || p
+      );
+      setFavoritePharmacies(favPharmIds);
     }
 
     fetchPopularProducts();
@@ -230,6 +236,11 @@ const Home = () => {
       if (current) {
         const parsed = JSON.parse(current);
         setFavoriteItems(parsed.favoriteItems || []);
+        // Sync favorite pharmacies
+        const favPharmIds = (parsed.favoritePharmacies || []).map(
+          (p) => p._id || p.id || p
+        );
+        setFavoritePharmacies(favPharmIds);
       }
     };
     window.addEventListener("userUpdated", syncFavorites);
@@ -474,6 +485,52 @@ const Home = () => {
       setDetailsDialogOpen(true);
     } finally {
       setLoadingProduct(false);
+    }
+  };
+
+  const handleFavoritePharmacyToggle = async (pharmacy, isFavorite) => {
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+    const pharmacyId = pharmacy._id || pharmacy.id || pharmacy;
+    if (!pharmacyId) return;
+
+    try {
+      if (isFavorite) {
+        await userAPI.addFavoritePharmacy(userId, pharmacyId);
+        setFavoritePharmacies((prev) => [...prev, pharmacyId]);
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const favs = parsed.favoritePharmacies || [];
+          // Check if pharmacy is already in favorites
+          const exists = favs.some(
+            (p) => (p._id || p.id || p) === pharmacyId
+          );
+          if (!exists) {
+            favs.push(pharmacy);
+            parsed.favoritePharmacies = favs;
+            localStorage.setItem("user", JSON.stringify(parsed));
+            window.dispatchEvent(new Event("userUpdated"));
+          }
+        }
+      } else {
+        await userAPI.removeFavoritePharmacy(userId, pharmacyId);
+        setFavoritePharmacies((prev) => prev.filter((id) => id !== pharmacyId));
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          parsed.favoritePharmacies = (parsed.favoritePharmacies || []).filter(
+            (p) => (p._id || p.id || p) !== pharmacyId
+          );
+          localStorage.setItem("user", JSON.stringify(parsed));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite pharmacy:", err);
     }
   };
 
@@ -909,6 +966,11 @@ const Home = () => {
                 ? Number(pharmacy.rating)
                 : null;
 
+            const pharmacyId = pharmacy._id || pharmacy.id || pharmacy;
+            const isFavorite = pharmacyId
+              ? favoritePharmacies.includes(pharmacyId)
+              : false;
+
             return (
               <Card
                 key={pharmacy._id || pharmacy.id || pharmacy.name || index}
@@ -919,6 +981,7 @@ const Home = () => {
                   border: "2px solid transparent",
                   display: "flex",
                   flexDirection: "column",
+                  position: "relative",
                   "&:hover": {
                     transform: "translateY(-5px)",
                     boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
@@ -935,6 +998,34 @@ const Home = () => {
                   )
                 }
               >
+                {user && (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFavoritePharmacyToggle(pharmacy, !isFavorite);
+                    }}
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      zIndex: 1,
+                      bgcolor: "rgba(255, 255, 255, 0.9)",
+                      color: isFavorite ? "error.main" : "text.secondary",
+                      "&:hover": {
+                        bgcolor: isFavorite ? "error.main" : "rgba(244, 67, 54, 0.1)",
+                        color: isFavorite ? "white" : "error.main",
+                      },
+                      transition: "all 0.3s",
+                    }}
+                  >
+                    {isFavorite ? (
+                      <Favorite fontSize="small" />
+                    ) : (
+                      <FavoriteBorder fontSize="small" />
+                    )}
+                  </IconButton>
+                )}
                 <Box
                   sx={{
                     height: 150,

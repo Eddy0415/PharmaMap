@@ -6,6 +6,7 @@ import {
   CardContent,
   Chip,
   Container,
+  IconButton,
   MenuItem,
   TextField,
   Typography,
@@ -14,6 +15,8 @@ import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
 import TrendingUp from "@mui/icons-material/TrendingUp";
 import Room from "@mui/icons-material/Room";
 import Star from "@mui/icons-material/Star";
+import Favorite from "@mui/icons-material/Favorite";
+import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ProductDetailsDialog from "../components/ProductDetailsDialog";
@@ -35,6 +38,7 @@ const Search = () => {
   const [filterMode, setFilterMode] = useState("all"); // all, products, pharmacies
   const [sortMode, setSortMode] = useState("none"); // none, az, za, proximity, price
   const [favoriteItems, setFavoriteItems] = useState([]);
+  const [favoritePharmacies, setFavoritePharmacies] = useState([]);
   const sortedProducts = useMemo(() => {
     const list = [...productResults];
     if (sortMode === "az") {
@@ -77,6 +81,11 @@ const Search = () => {
       const userData = JSON.parse(storedUser);
       setUser(userData);
       setFavoriteItems(userData.favoriteItems || []);
+      // Extract favorite pharmacy IDs from user data
+      const favPharmIds = (userData.favoritePharmacies || []).map(
+        (p) => p._id || p.id || p
+      );
+      setFavoritePharmacies(favPharmIds);
     }
 
     const query = searchParams.get("q");
@@ -98,6 +107,11 @@ const Search = () => {
       if (current) {
         const parsed = JSON.parse(current);
         setFavoriteItems(parsed.favoriteItems || []);
+        // Sync favorite pharmacies
+        const favPharmIds = (parsed.favoritePharmacies || []).map(
+          (p) => p._id || p.id || p
+        );
+        setFavoritePharmacies(favPharmIds);
       }
     };
     window.addEventListener("userUpdated", syncFavorites);
@@ -198,6 +212,52 @@ const Search = () => {
       }
     } catch (err) {
       console.error("Error toggling favorite:", err);
+    }
+  };
+
+  const handleFavoritePharmacyToggle = async (pharmacy, isFavorite) => {
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+    const pharmacyId = pharmacy._id || pharmacy.id || pharmacy;
+    if (!pharmacyId) return;
+
+    try {
+      if (isFavorite) {
+        await userAPI.addFavoritePharmacy(userId, pharmacyId);
+        setFavoritePharmacies((prev) => [...prev, pharmacyId]);
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const favs = parsed.favoritePharmacies || [];
+          // Check if pharmacy is already in favorites
+          const exists = favs.some(
+            (p) => (p._id || p.id || p) === pharmacyId
+          );
+          if (!exists) {
+            favs.push(pharmacy);
+            parsed.favoritePharmacies = favs;
+            localStorage.setItem("user", JSON.stringify(parsed));
+            window.dispatchEvent(new Event("userUpdated"));
+          }
+        }
+      } else {
+        await userAPI.removeFavoritePharmacy(userId, pharmacyId);
+        setFavoritePharmacies((prev) => prev.filter((id) => id !== pharmacyId));
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          parsed.favoritePharmacies = (parsed.favoritePharmacies || []).filter(
+            (p) => (p._id || p.id || p) !== pharmacyId
+          );
+          localStorage.setItem("user", JSON.stringify(parsed));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite pharmacy:", err);
     }
   };
 
@@ -342,26 +402,61 @@ const Search = () => {
                       },
                     }}
                   >
-                    {sortedPharmacies.map((pharmacy, index) => (
-                      <Card
-                        key={pharmacy._id || pharmacy.id || pharmacy.name || index}
-                        sx={{
-                          height: 320,
-                          cursor: "pointer",
-                          transition: "all 0.3s",
-                          border: "2px solid transparent",
-                          display: "flex",
-                          flexDirection: "column",
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                            borderColor: "primary.main",
-                          },
-                        }}
-                        onClick={() =>
-                          navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy.name}`)
-                        }
-                      >
+                    {sortedPharmacies.map((pharmacy, index) => {
+                      const pharmacyId = pharmacy._id || pharmacy.id || pharmacy;
+                      const isFavorite = pharmacyId
+                        ? favoritePharmacies.includes(pharmacyId)
+                        : false;
+
+                      return (
+                        <Card
+                          key={pharmacy._id || pharmacy.id || pharmacy.name || index}
+                          sx={{
+                            height: 320,
+                            cursor: "pointer",
+                            transition: "all 0.3s",
+                            border: "2px solid transparent",
+                            display: "flex",
+                            flexDirection: "column",
+                            position: "relative",
+                            "&:hover": {
+                              transform: "translateY(-5px)",
+                              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                              borderColor: "primary.main",
+                            },
+                          }}
+                          onClick={() =>
+                            navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy.name}`)
+                          }
+                        >
+                          {user && (
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleFavoritePharmacyToggle(pharmacy, !isFavorite);
+                              }}
+                              sx={{
+                                position: "absolute",
+                                top: 8,
+                                right: 8,
+                                zIndex: 1,
+                                bgcolor: "rgba(255, 255, 255, 0.9)",
+                                color: isFavorite ? "error.main" : "text.secondary",
+                                "&:hover": {
+                                  bgcolor: isFavorite ? "error.main" : "rgba(244, 67, 54, 0.1)",
+                                  color: isFavorite ? "white" : "error.main",
+                                },
+                                transition: "all 0.3s",
+                              }}
+                            >
+                              {isFavorite ? (
+                                <Favorite fontSize="small" />
+                              ) : (
+                                <FavoriteBorder fontSize="small" />
+                              )}
+                            </IconButton>
+                          )}
                         <Box
                           sx={{
                             height: 150,
@@ -489,7 +584,8 @@ const Search = () => {
                           />
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </Box>
                 </Box>
               )}

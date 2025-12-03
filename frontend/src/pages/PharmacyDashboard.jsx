@@ -637,9 +637,24 @@ const PharmacyDashboard = () => {
       <Header user={user} />
 
       <Container component="section" maxWidth="xl" sx={{ py: 5 }}>
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={2.5}>
-            <Card sx={{ position: "sticky", top: 90 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 4,
+            alignItems: "flex-start",
+          }}
+        >
+          {/* Sidebar Panel */}
+          <Box
+            sx={{
+              width: { xs: "100%", md: "280px" },
+              flexShrink: 0,
+              position: { md: "sticky" },
+              top: { md: 90 },
+            }}
+          >
+            <Card>
               <CardContent>
                 <List>
                   <ListItem
@@ -776,9 +791,17 @@ const PharmacyDashboard = () => {
                 </List>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={9.5}>
+          {/* Main Content */}
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             {activeSection === "dashboard" && (
               <Card sx={{ mb: 4 }}>
                 <CardContent>
@@ -1640,8 +1663,8 @@ const PharmacyDashboard = () => {
                 </CardContent>
               </Card>
             )}
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Container>
 
       <Dialog
@@ -1656,16 +1679,30 @@ const PharmacyDashboard = () => {
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
-              <FormControl fullWidth required>
+              <FormControl fullWidth required sx={{ minWidth: 200 }} >
                 <InputLabel>Select Item</InputLabel>
                 <Select
-                  value={formData.itemId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, itemId: e.target.value })
-                  }
+                  value={formData.itemId || ""}
+                  onChange={(e) => {
+                    const selectedItemId = e.target.value;
+                    if (!selectedItemId) return; // Don't process if "Choose Item" is selected
+                    const selectedItem = allItems.find((item) => item._id === selectedItemId);
+                    setFormData({
+                      ...formData,
+                      itemId: selectedItemId,
+                      // Set price to item's basePrice if available (only for new items, not when editing)
+                      price: !selectedInventory && selectedItem?.basePrice
+                        ? selectedItem.basePrice.toString()
+                        : formData.price,
+                    });
+                  }}
                   label="Select Item"
                   disabled={!!selectedInventory}
+                  displayEmpty
                 >
+                  <MenuItem value="" disabled>
+                    <em>Choose Item</em>
+                  </MenuItem>
                   {allItems.map((item) => (
                     <MenuItem key={item._id} value={item._id}>
                       {item.name} - {item.category}
