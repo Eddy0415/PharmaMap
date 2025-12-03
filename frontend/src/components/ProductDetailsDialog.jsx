@@ -442,14 +442,14 @@ const ProductDetailsDialog = ({
                 disabled={
                   requestStatus[
                     String(
-                    entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
-                  )
-                ] === "sent" ||
+                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
+                    )
+                  ] === "sent" ||
                   requestStatus[
                     String(
-                    entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
-                  )
-                ] === "sending"
+                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
+                    )
+                  ] === "sending"
                 }
                 sx={{
                   borderRadius: 999,
@@ -458,13 +458,13 @@ const ProductDetailsDialog = ({
                   textTransform: "none",
                   fontWeight: 700,
                   backgroundColor:
-                    requestStatus[
-                      String(
+                  requestStatus[
+                    String(
                         entry.pharmacy._id ||
                           entry.pharmacy.id ||
                           entry.pharmacy
-                      )
-                    ] === "sent"
+                    )
+                  ] === "sent"
                       ? "#4caf50"
                       : "transparent",
                   border:
@@ -602,7 +602,7 @@ const ProductDetailsDialog = ({
               >
                 {product.item?.imageUrl ? (
                   <img
-                    src={product.item.imageUrl}
+                    src={product.item.imageUrl.startsWith('/') ? product.item.imageUrl : `/${product.item.imageUrl}`}
                     alt={product.item?.name}
                     style={{
                       width: "100%",
@@ -624,9 +624,9 @@ const ProductDetailsDialog = ({
                     justifyContent: "center",
                     width: "100%",
                     height: "100%",
-                  }}
-                >
-                  <LocalPharmacy sx={{ fontSize: 48, color: "primary.main" }} />
+                }}
+              >
+                <LocalPharmacy sx={{ fontSize: 48, color: "primary.main" }} />
                 </Box>
               </Box>
               <Box sx={{ flex: 1 }}>
@@ -685,16 +685,16 @@ const ProductDetailsDialog = ({
         }}
       >
         {!isSinglePharmacy && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <CheckCircle sx={{ color: "#2e7d32" }} />
-            <Typography variant="body2" fontWeight={600} color="text.secondary">
-              {pharmacyCount === 0
-                ? "No pharmacies found"
-                : isNearbySelected
-                ? `${nearbyCount} pharmacies who carry this product are less than 10km away!`
-                : `${pharmacyCount} pharmacies carry this product`}
-            </Typography>
-          </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <CheckCircle sx={{ color: "#2e7d32" }} />
+          <Typography variant="body2" fontWeight={600} color="text.secondary">
+            {pharmacyCount === 0
+              ? "No pharmacies found"
+              : isNearbySelected
+              ? `${nearbyCount} pharmacies who carry this product are less than 10km away!`
+              : `${pharmacyCount} pharmacies carry this product`}
+          </Typography>
+        </Box>
         )}
         {!isSinglePharmacy && (
           <Box sx={{ display: "flex", gap: 1 }}>

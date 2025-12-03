@@ -482,7 +482,7 @@ const Search = () => {
                         >
                           {pharmacy.logoUrl ? (
                             <img
-                              src={pharmacy.logoUrl}
+                              src={pharmacy.logoUrl.startsWith('/') ? pharmacy.logoUrl : `/${pharmacy.logoUrl}`}
                               alt={pharmacy.name}
                               style={{
                                 width: "100%",

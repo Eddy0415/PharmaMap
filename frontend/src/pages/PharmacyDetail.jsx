@@ -337,7 +337,7 @@ const PharmacyDetail = () => {
               >
                 {pharmacy?.logoUrl ? (
                   <img
-                    src={pharmacy.logoUrl}
+                    src={pharmacy.logoUrl.startsWith('/') ? pharmacy.logoUrl : `/${pharmacy.logoUrl}`}
                     alt={pharmacy.name}
                     style={{
                       width: "100%",
@@ -709,7 +709,7 @@ const PharmacyDetail = () => {
                     >
                       {inv.item?.imageUrl ? (
                         <img
-                          src={inv.item.imageUrl}
+                          src={inv.item.imageUrl.startsWith('/') ? inv.item.imageUrl : `/${inv.item.imageUrl}`}
                           alt={inv.item?.name}
                           style={{
                             width: "100%",
