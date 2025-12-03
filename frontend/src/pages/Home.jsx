@@ -750,16 +750,6 @@ const Home = () => {
             />
             Popular Products
           </Typography>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            mb={3}
-            sx={{ pl: 2, fontStyle: "italic" }}
-          >
-            Top 5 most searched products last month
-          </Typography>
-
           <Box
             sx={{
               display: "flex",
@@ -886,15 +876,6 @@ const Home = () => {
             />
             Popular Pharmacies
           </Typography>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            mb={3}
-            sx={{ pl: 2, fontStyle: "italic" }}
-          >
-            Top 5 most searched pharmacies last month
-          </Typography>
         </Box>
 
         <Box
@@ -902,6 +883,7 @@ const Home = () => {
             display: "flex",
             flexWrap: "wrap",
             gap: 2.5,
+            justifyContent: "space-between",
             mb: 6,
             "& > *": {
               flex: "0 0 calc(20% - 20px)",
