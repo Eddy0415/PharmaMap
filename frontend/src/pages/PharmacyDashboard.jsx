@@ -1858,7 +1858,16 @@ const PharmacyDashboard = () => {
               !formData.itemId || !formData.price || formData.quantity === ""
             }
             sx={{
-              background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+              px: 4,
+              py: 1.2,
+              borderRadius: 2,
+              textTransform: "none",
+              fontSize: "1rem",
+              color: "#ffffff",
+              backgroundColor: "#4ecdc4",
+              "&:hover": {
+                backgroundColor: "#3bb5ac",
+              },
             }}
           >
             {selectedInventory ? "Update" : "Add"} Inventory
