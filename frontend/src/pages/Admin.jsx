@@ -897,9 +897,24 @@ const Admin = () => {
       <Header user={user} onLogout={handleLogout} />
 
       <Container component="section" maxWidth="xl" sx={{ py: 5 }}>
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={2.5}>
-            <Card sx={{ position: "sticky", top: 90 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 4,
+            alignItems: "flex-start",
+          }}
+        >
+          {/* Sidebar Panel */}
+          <Box
+            sx={{
+              width: { xs: "100%", md: "280px" },
+              flexShrink: 0,
+              position: { md: "sticky" },
+              top: { md: 90 },
+            }}
+          >
+            <Card>
               <CardContent>
                 <Typography variant="h5" fontWeight={700} color="secondary" mb={3}>
                   Admin Panel
@@ -1095,17 +1110,25 @@ const Admin = () => {
                 </List>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={9.5}>
+          {/* Main Content */}
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             {activeSection === "dashboard" && renderDashboard()}
             {activeSection === "users" && renderUsers()}
             {activeSection === "pharmacies" && renderPharmacies()}
             {activeSection === "medications" && renderMedications()}
             {activeSection === "orders" && renderOrders()}
             {activeSection === "reviews" && renderReviews()}
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Container>
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
