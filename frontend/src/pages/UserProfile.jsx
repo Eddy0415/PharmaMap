@@ -1306,7 +1306,7 @@ const handleAvatarChange = (e) => {
 
       <Container component="section" maxWidth="xl" sx={{ py: 5, display: "flex", flexDirection: "column", minHeight: "calc(100vh - 200px)" }}>
         <Grid container spacing={4} sx={{ flex: 1 }}>
-          <Grid item xs={12} md={2.5}>
+          <Grid item xs={12} md={3}>
             <Card sx={{ position: "sticky", top: 90 }}>
               <CardContent>
                 <Box

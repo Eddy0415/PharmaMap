@@ -370,6 +370,13 @@ const PharmacyDetail = () => {
                         console.warn("Location coordinates not available");
                       }
                     }}
+                    sx={{
+                      borderRadius: 999,
+                      px: 3,
+                      py: 1,
+                      textTransform: "none",
+                      fontWeight: 700,
+                    }}
                   >
                     Get Directions
                   </Button>
@@ -727,7 +734,19 @@ const PharmacyDetail = () => {
                 <Button
                   variant="contained"
                   size="small"
-                  sx={{ ml: "auto" }}
+                  sx={{
+                    ml: "auto",
+                    borderRadius: 999,
+                    px: 3,
+                    py: 1,
+                    backgroundColor: "#4ecdc4",
+                    color: "#ffffff",
+                    textTransform: "none",
+                    fontWeight: 700,
+                    "&:hover": {
+                      backgroundColor: "#3bb5ac",
+                    },
+                  }}
                   onClick={() => setWriteReviewDialogOpen(true)}
                 >
                   Write a Review

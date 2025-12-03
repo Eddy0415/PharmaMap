@@ -48,12 +48,27 @@ const ReviewDialog = ({
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          onClick={onClose}
+          sx={{ textTransform: "none", fontWeight: 600 }}
+        >
+          Cancel
+        </Button>
         <Button
           variant="contained"
           onClick={() => onSubmit(rating, comment)}
           disabled={!rating}
-          sx={{ minWidth: 120 }}
+          sx={{
+            minWidth: 120,
+            borderRadius: 999,
+            px: 3,
+            py: 1,
+            backgroundColor: "#4ecdc4",
+            color: "#ffffff",
+            textTransform: "none",
+            fontWeight: 700,
+            "&:hover": { backgroundColor: "#3bb5ac" },
+          }}
         >
           Submit
         </Button>
