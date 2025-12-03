@@ -8,6 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node seed.js",
     "seed:inventory": "node seed-inventory.js",
+    "seed:pharmacy-logos": "node seed-pharmacy-logos.js",
+    "seed:item-images": "node seed-item-images.js",
     "migrate:coordinates": "node migrate-coordinates.js",
     "admin:create": "node scripts/createAdmin.js",
     "admin:list": "node scripts/listUsers.js",
