@@ -67,7 +67,7 @@ const Login = () => {
         maxWidth={false}
         PaperProps={{
           sx: {
-            width: "75vw",
+            width: "65vw",
             maxWidth: "1000px",
             height: "75vh",
             maxHeight: "600px",
@@ -109,7 +109,7 @@ const Login = () => {
           {/* Left Section - Login Form (1/3 width) */}
           <Box
             sx={{
-              width: { xs: "100%", md: "33.333%" },
+              width: { xs: "100%", md: "66.666%" },
               height: "100%",
               display: "flex",
               flexDirection: "column",
@@ -126,7 +126,7 @@ const Login = () => {
                 display: "flex",
                 flexDirection: "column",
                 width: "100%",
-                maxWidth: 400,
+                maxWidth: 300,
                 mx: "auto",
               }}
             >
@@ -158,7 +158,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  sx={{ mb: 3 }}
+                  sx={{ mb: 2 }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -176,7 +176,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  sx={{ mb: 3 }}
+                  sx={{ mb: 2 }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -189,7 +189,7 @@ const Login = () => {
                           onClick={() => setShowPassword(!showPassword)}
                           edge="end"
                         >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                          {showPassword ? <Visibility /> : <VisibilityOff />}
                         </IconButton>
                       </InputAdornment>
                     ),
@@ -246,10 +246,10 @@ const Login = () => {
           {/* Right Section - Image (2/3 width) */}
           <Box
             sx={{
-              width: { xs: 0, md: "66.666%" },
+              width: { xs: 0, md: "33.333%" },
               height: "100%",
               backgroundImage:
-                "url(https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=800&fit=crop)",
+                "url(/images/login_image.jpg)",
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",

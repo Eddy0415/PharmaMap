@@ -84,10 +84,6 @@ const Register = () => {
       return;
     }
 
-    if (!formData.terms) {
-      setError("You must agree to the Terms of Service");
-      return;
-    }
 
     if (accountType === "pharmacy") {
       if (
@@ -144,12 +140,13 @@ const Register = () => {
         fullWidth
         PaperProps={{
           sx: {
-            maxWidth: "900px",
+            width: "65vw",
+            maxWidth: "1000px",
+            height: "75vh",
+            maxHeight: "600px",
             margin: "auto",
             borderRadius: 2,
-            maxHeight: "95vh",
-            display: "flex",
-            flexDirection: "column",
+            overflow: "hidden",
           },
         }}
         BackdropProps={{
@@ -163,6 +160,7 @@ const Register = () => {
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
             position: "relative",
+            height: "100%",
           }}
         >
           {/* Close Button */}
@@ -189,9 +187,11 @@ const Register = () => {
               flex: { xs: "none", md: "0 0 66.666%" },
               display: "flex",
               flexDirection: "column",
+              justifyContent: "space-between",
               bgcolor: "background.paper",
               p: { xs: 3, sm: 4 },
               minWidth: 0,
+              height: "100%", 
             }}
           >
             {/* Form Container */}
@@ -201,6 +201,7 @@ const Register = () => {
                 display: "flex",
                 flexDirection: "column",
                 minHeight: "min-content",
+                flexGrow: 1,
               }}
             >
               {/* Header */}
@@ -293,6 +294,7 @@ const Register = () => {
                     required
                     sx={{ flex: 1, width: "100%" }}
                     InputProps={{
+                      sx: { height: 40 },
                       startAdornment: (
                         <InputAdornment position="start">
                           <Person sx={{ color: "primary.main" }} />
@@ -308,6 +310,7 @@ const Register = () => {
                     required
                     sx={{ flex: 1, width: "100%" }}
                     InputProps={{
+                      sx: { height: 40 },
                       startAdornment: (
                         <InputAdornment position="start">
                           <Person sx={{ color: "primary.main" }} />
@@ -317,47 +320,44 @@ const Register = () => {
                   />
                 </Box>
 
-                {/* Email Address - Full width, on its own line */}
-                <Box sx={{ width: "100%", mb: 1.5 }}>
-                  <TextField
-                    fullWidth
-                    label="Email Address"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    sx={{ width: "100%" }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Email sx={{ color: "primary.main" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Box>
+                <Box sx={{ display: "flex", gap: 2, mb: 1.5, width: "100%" }}>
+                    <TextField
+                      label="Email Address"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      sx={{ flex: 1, width: "100%" }}
+                      InputProps={{
+                        sx: { height: 40 },
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Email sx={{ color: "primary.main" }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
 
-                {/* Phone Number - Full width, on its own line */}
-                <Box sx={{ width: "100%", mb: 1.5 }}>
-                  <TextField
-                    fullWidth
-                    label="Phone Number"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                    placeholder="+961 XX XXX XXX"
-                    sx={{ width: "100%" }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Phone sx={{ color: "primary.main" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Box>
+                    <TextField
+                      label="Phone Number"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                      placeholder="+961 XX XXX XXX"
+                      sx={{ flex: 1, width: "100%" }}
+                      InputProps={{
+                        sx: { height: 40 },
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Phone sx={{ color: "primary.main" }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Box>
+
 
                 {/* Pharmacy Fields */}
                 {accountType === "pharmacy" && (
@@ -374,6 +374,7 @@ const Register = () => {
                         required={accountType === "pharmacy"}
                         sx={{ flex: 1, width: "100%" }}
                         InputProps={{
+                          sx: { height: 40 },
                           startAdornment: (
                             <InputAdornment position="start">
                               <Business sx={{ color: "primary.main" }} />
@@ -389,6 +390,7 @@ const Register = () => {
                         required={accountType === "pharmacy"}
                         sx={{ flex: 1, width: "100%" }}
                         InputProps={{
+                          sx: { height: 40 },
                           startAdornment: (
                             <InputAdornment position="start">
                               <LocationOn sx={{ color: "primary.main" }} />
@@ -410,6 +412,7 @@ const Register = () => {
                         required={accountType === "pharmacy"}
                         sx={{ flex: 1, width: "100%" }}
                         InputProps={{
+                          sx: { height: 40 },
                           startAdornment: (
                             <InputAdornment position="start">
                               <LocationOn sx={{ color: "primary.main" }} />
@@ -425,6 +428,7 @@ const Register = () => {
                         required={accountType === "pharmacy"}
                         sx={{ flex: 1, width: "100%" }}
                         InputProps={{
+                          sx: { height: 40 },
                           startAdornment: (
                             <InputAdornment position="start">
                               <Badge sx={{ color: "primary.main" }} />
@@ -436,18 +440,17 @@ const Register = () => {
                   </>
                 )}
 
-                {/* Password - Full width, on its own line */}
-                <Box sx={{ width: "100%", mb: 1.5 }}>
+                <Box sx={{ display: "flex", gap: 2, mb: 1.5, width: "100%" }}>
                   <TextField
-                    fullWidth
                     label="Password"
                     name="password"
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={handleChange}
                     required
-                    sx={{ width: "100%" }}
+                    sx={{ flex: 1, width: "100%" }}
                     InputProps={{
+                      sx: { height: 40 },
                       startAdornment: (
                         <InputAdornment position="start">
                           <Lock sx={{ color: "primary.main" }} />
@@ -459,26 +462,23 @@ const Register = () => {
                             onClick={() => setShowPassword(!showPassword)}
                             edge="end"
                           >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                            {showPassword ? <Visibility /> : <VisibilityOff />}
                           </IconButton>
                         </InputAdornment>
                       ),
                     }}
                   />
-                </Box>
 
-                {/* Confirm Password - Full width, on its own line */}
-                <Box sx={{ width: "100%", mb: 1.5 }}>
                   <TextField
-                    fullWidth
                     label="Confirm Password"
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
-                    sx={{ width: "100%" }}
+                    sx={{ flex: 1, width: "100%" }}
                     InputProps={{
+                      sx: { height: 40 },
                       startAdornment: (
                         <InputAdornment position="start">
                           <Lock sx={{ color: "primary.main" }} />
@@ -487,16 +487,10 @@ const Register = () => {
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                             edge="end"
                           >
-                            {showConfirmPassword ? (
-                              <VisibilityOff />
-                            ) : (
-                              <Visibility />
-                            )}
+                            {showConfirmPassword ? <Visibility /> : <VisibilityOff />}
                           </IconButton>
                         </InputAdornment>
                       ),
@@ -504,41 +498,8 @@ const Register = () => {
                   />
                 </Box>
 
-                {/* Terms Checkbox */}
-                <Box sx={{ width: "100%", mb: 1.5 }}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="terms"
-                        checked={formData.terms}
-                        onChange={handleChange}
-                        sx={{ color: "primary.main" }}
-                      />
-                    }
-                    label={
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ fontSize: "0.75rem" }}
-                      >
-                        I agree to the{" "}
-                        <Link
-                          href="#"
-                          sx={{ color: "primary.main", textDecoration: "none" }}
-                        >
-                          Terms
-                        </Link>{" "}
-                        and{" "}
-                        <Link
-                          href="#"
-                          sx={{ color: "primary.main", textDecoration: "none" }}
-                        >
-                          Privacy Policy
-                        </Link>
-                      </Typography>
-                    }
-                  />
-                </Box>
+
+                
 
                 <Button
                   fullWidth
@@ -595,9 +556,8 @@ const Register = () => {
             sx={{
               width: { xs: "100%", md: "33.333%" },
               flex: { xs: "none", md: "0 0 33.333%" },
-              minHeight: { xs: "200px", md: "auto" },
-              backgroundImage:
-                "url(https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=800&fit=crop)",
+              height: "100%",                 
+              backgroundImage: "url(/images/login_image.jpg)",
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
