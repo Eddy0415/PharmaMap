@@ -605,20 +605,23 @@ const handleAvatarChange = (e) => {
       {/* BUTTONS */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
         <Button
-          type="submit"
-          variant="contained"
-          sx={{
-            px: 4,
-            py: 1.2,
-            borderRadius: 2,
-            textTransform: "none",
-            fontSize: "1rem",
-            background:
-              saveStatus === "saved"
-                ? "linear-gradient(135deg, #4caf50, #388e3c)"
-                : "linear-gradient(135deg, #4ecdc4, #44a9a3)",
-          }}
-        >
+            type="submit"
+            variant="contained"
+            sx={{
+              px: 4,
+              py: 1.2,
+              borderRadius: 2,
+              textTransform: "none",
+              fontSize: "1rem",
+              color: "#ffffff",
+              backgroundColor:
+                saveStatus === "saved" ? "#4caf50" : "#4ecdc4",
+              "&:hover": {
+                backgroundColor:
+                  saveStatus === "saved" ? "#43a047" : "#3bb5ac",
+              },
+            }}
+          >
           {saveStatus === "saving"
             ? "Saving..."
             : saveStatus === "saved"
@@ -985,8 +988,16 @@ const handleAvatarChange = (e) => {
                 variant="contained"
                 onClick={() => navigate("/search")}
                 sx={{
-                  background:
-                    "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                  px: 4,
+                  py: 1.2,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  color: "#ffffff",
+                  backgroundColor: "#4ecdc4",
+                  "&:hover": {
+                    backgroundColor: "#3bb5ac",
+                  },
                 }}
               >
                 Browse Pharmacies
@@ -1083,8 +1094,16 @@ const handleAvatarChange = (e) => {
                 variant="contained"
                 onClick={() => navigate("/search")}
                 sx={{
-                  background:
-                    "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                  px: 4,
+                  py: 1.2,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontSize: "1rem",
+                  color: "#ffffff",
+                  backgroundColor: "#4ecdc4",
+                  "&:hover": {
+                    backgroundColor: "#3bb5ac",
+                  },
                 }}
               >
                 Browse Items
@@ -1170,11 +1189,12 @@ const handleAvatarChange = (e) => {
                         }
                         edge="end"
                       >
-                        {showPasswords.current ? <VisibilityOff /> : <Visibility />}
+                        {showPasswords.current ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
+
               />
             </Grid>
             <Grid item xs={12} md={4}>
@@ -1204,7 +1224,7 @@ const handleAvatarChange = (e) => {
                         }
                         edge="end"
                       >
-                        {showPasswords.next ? <VisibilityOff /> : <Visibility />}
+                        {showPasswords.next ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -1237,7 +1257,7 @@ const handleAvatarChange = (e) => {
                         }
                         edge="end"
                       >
-                        {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
+                        {showPasswords.confirm ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -1251,10 +1271,18 @@ const handleAvatarChange = (e) => {
             variant="contained"
             sx={{
               mt: 2,
-              background:
-                passwordStatus === "saved"
-                  ? "linear-gradient(135deg, #4caf50 0%, #388e3c 100%)"
-                  : "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+              px: 4,
+              py: 1.2,
+              borderRadius: 2,
+              textTransform: "none",
+              fontSize: "1rem",
+              color: "#ffffff",
+              backgroundColor:
+                passwordStatus === "saved" ? "#4caf50" : "#4ecdc4",
+              "&:hover": {
+                backgroundColor:
+                  passwordStatus === "saved" ? "#43a047" : "#3bb5ac",
+              },
             }}
           >
             {passwordStatus === "saving"
@@ -1281,6 +1309,11 @@ const handleAvatarChange = (e) => {
             sx={{
               bgcolor: "#ffebee",
               color: "#d32f2f",
+              px: 4,
+              py: 1.2,
+              borderRadius: 2,
+              textTransform: "none",
+              fontSize: "1rem",
               "&:hover": {
                 bgcolor: "#ffcdd2",
               },

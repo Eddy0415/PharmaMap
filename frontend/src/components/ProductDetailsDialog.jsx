@@ -56,6 +56,13 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c; // Distance in km
 };
 
+const formatPrice = (value) => {
+  if (value === undefined || value === null) return null;
+  const num = Number(value);
+  if (Number.isNaN(num)) return null;
+  return `$${num.toFixed(2)}`;
+};
+
 const ProductDetailsDialog = ({
   open,
   onClose,
@@ -141,6 +148,7 @@ const ProductDetailsDialog = ({
   const nearbyCount = sortedPharmacies.filter(
     (p) => p.distance !== null && p.distance !== undefined && p.distance <= 10
   ).length;
+  const singlePriceLabel = formatPrice(singlePharmacyEntry?.price);
 
   const composition = useMemo(() => {
     if (!product?.item) return null;
@@ -413,50 +421,95 @@ const ProductDetailsDialog = ({
               size="small"
               onClick={() => handleSelectEntry(entry)}
               sx={{
-                background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                borderRadius: 999,
+                px: 3,
+                py: 1,
+                backgroundColor: "#4ecdc4",
+                color: "#ffffff",
                 whiteSpace: "nowrap",
+                textTransform: "none",
+                fontWeight: 700,
+                "&:hover": { backgroundColor: "#3bb5ac" },
               }}
             >
               View Pharmacy
             </Button>
             {onRequestPharmacy && (
               <Button
-                variant={
-                  requestStatus[
-                    String(
-                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
-                    )
-                  ] === "sent"
-                    ? "contained"
-                    : "outlined"
-                }
+                variant="contained"
                 size="small"
                 onClick={() => openRequestDialog(entry)}
                 disabled={
                   requestStatus[
                     String(
-                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
-                    )
-                  ] === "sent" ||
+                    entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
+                  )
+                ] === "sent" ||
                   requestStatus[
                     String(
-                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
-                    )
-                  ] === "sending"
+                    entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
+                  )
+                ] === "sending"
                 }
-                sx={
-                  requestStatus[
-                    String(
-                      entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy
-                    )
-                  ] === "sent"
-                    ? {
-                        bgcolor: "#4caf50",
-                        color: "white",
-                        "&:hover": { bgcolor: "#43a047" },
-                      }
-                    : {}
-                }
+                sx={{
+                  borderRadius: 999,
+                  px: 3,
+                  py: 1,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  backgroundColor:
+                    requestStatus[
+                      String(
+                        entry.pharmacy._id ||
+                          entry.pharmacy.id ||
+                          entry.pharmacy
+                      )
+                    ] === "sent"
+                      ? "#4caf50"
+                      : "transparent",
+                  border:
+                    requestStatus[
+                      String(
+                        entry.pharmacy._id ||
+                          entry.pharmacy.id ||
+                          entry.pharmacy
+                      )
+                    ] === "sent"
+                      ? "none"
+                      : "1px solid #4ecdc4",
+                  color:
+                    requestStatus[
+                      String(
+                        entry.pharmacy._id ||
+                          entry.pharmacy.id ||
+                          entry.pharmacy
+                      )
+                    ] === "sent"
+                      ? "#ffffff"
+                      : "#4ecdc4",
+                  "&:hover": {
+                    backgroundColor:
+                      requestStatus[
+                        String(
+                          entry.pharmacy._id ||
+                            entry.pharmacy.id ||
+                            entry.pharmacy
+                        )
+                      ] === "sent"
+                        ? "#43a047"
+                        : "transparent",
+                    borderColor:
+                      requestStatus[
+                        String(
+                          entry.pharmacy._id ||
+                            entry.pharmacy.id ||
+                            entry.pharmacy
+                        )
+                      ] === "sent"
+                        ? undefined
+                        : "#4ecdc4",
+                  },
+                }}
               >
                 {requestStatus[
                   String(
@@ -482,9 +535,19 @@ const ProductDetailsDialog = ({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth={false}
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          width: "65vw",
+          maxWidth: "1000px",
+          height: "75vh",
+          maxHeight: "600px",
+          margin: "auto",
+          overflow: "hidden",
+        },
+      }}
     >
       <DialogTitle sx={{ pb: 1 }}>
         <Box
@@ -616,21 +679,23 @@ const ProductDetailsDialog = ({
           px: 3,
           py: 2,
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: isSinglePharmacy ? "flex-end" : "space-between",
           alignItems: "center",
           gap: 1,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <CheckCircle sx={{ color: "#2e7d32" }} />
-          <Typography variant="body2" fontWeight={600} color="text.secondary">
-            {pharmacyCount === 0
-              ? "No pharmacies found"
-              : isNearbySelected
-              ? `${nearbyCount} pharmacies who carry this product are less than 10km away!`
-              : `${pharmacyCount} pharmacies carry this product`}
-          </Typography>
-        </Box>
+        {!isSinglePharmacy && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CheckCircle sx={{ color: "#2e7d32" }} />
+            <Typography variant="body2" fontWeight={600} color="text.secondary">
+              {pharmacyCount === 0
+                ? "No pharmacies found"
+                : isNearbySelected
+                ? `${nearbyCount} pharmacies who carry this product are less than 10km away!`
+                : `${pharmacyCount} pharmacies carry this product`}
+            </Typography>
+          </Box>
+        )}
         {!isSinglePharmacy && (
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
@@ -692,7 +757,12 @@ const ProductDetailsDialog = ({
           </Box>
         )}
         {isSinglePharmacy && singlePharmacyEntry && (
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            {singlePriceLabel && (
+              <Typography variant="subtitle1" fontWeight={700} color="secondary">
+                {singlePriceLabel}
+              </Typography>
+            )}
             <Button
               variant="contained"
               onClick={() => openRequestDialog(singlePharmacyEntry)}
@@ -700,7 +770,11 @@ const ProductDetailsDialog = ({
                 borderRadius: 999,
                 px: 3,
                 py: 1,
-                background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                backgroundColor: "#4ecdc4",
+                color: "#ffffff",
+                "&:hover": {
+                  backgroundColor: "#3bb5ac",
+                },
                 textTransform: "none",
                 fontWeight: 700,
               }}
@@ -789,7 +863,10 @@ const ProductDetailsDialog = ({
               ] === "sent"
             }
             sx={{
-              background:
+              borderRadius: 999,
+              px: 3,
+              py: 1,
+              backgroundColor:
                 requestStatus[
                   requestEntry
                     ? String(
@@ -800,7 +877,24 @@ const ProductDetailsDialog = ({
                     : ""
                 ] === "sent"
                   ? "#4caf50"
-                  : "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
+                  : "#4ecdc4",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 700,
+              "&:hover": {
+                backgroundColor:
+                  requestStatus[
+                    requestEntry
+                      ? String(
+                          requestEntry.pharmacy._id ||
+                            requestEntry.pharmacy.id ||
+                            requestEntry.pharmacy
+                        )
+                      : ""
+                  ] === "sent"
+                    ? "#43a047"
+                    : "#3bb5ac",
+              },
             }}
           >
             {requestStatus[
