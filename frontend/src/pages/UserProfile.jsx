@@ -26,6 +26,7 @@ import Person from "@mui/icons-material/Person";
 import ShoppingBag from "@mui/icons-material/ShoppingBag";
 import Room from "@mui/icons-material/Room";
 import Favorite from "@mui/icons-material/Favorite";
+import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import Security from "@mui/icons-material/Security";
 import Logout from "@mui/icons-material/Logout";
 import Edit from "@mui/icons-material/Edit";
@@ -1004,70 +1005,220 @@ const handleAvatarChange = (e) => {
               </Button>
             </Box>
           ) : (
-            <Grid container spacing={2}>  
-              {favoritePharmacies.map((pharmacy) => (
-                <Grid item xs={12} sm={6} md={4} key={pharmacy._id || pharmacy}>
-                  <Paper
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(3, 1fr)",
+                  lg: "repeat(4, 1fr)",
+                  xl: "repeat(5, 1fr)",
+                },
+                gap: 2.5,
+              }}
+            >
+              {favoritePharmacies.map((pharmacy) => {
+                const rating =
+                  pharmacy.averageRating !== undefined &&
+                  pharmacy.averageRating !== null
+                    ? Number(pharmacy.averageRating)
+                    : pharmacy.rating !== undefined &&
+                      pharmacy.rating !== null
+                    ? Number(pharmacy.rating)
+                    : null;
+
+                return (
+                  <Card
+                    key={pharmacy._id || pharmacy}
                     sx={{
-                      p: 2.5,
-                      border: "2px solid #f0f0f0",
-                      borderRadius: 2,
+                      height: 320,
+                      cursor: "pointer",
                       transition: "all 0.3s",
+                      border: "2px solid transparent",
+                      display: "flex",
+                      flexDirection: "column",
+                      position: "relative",
                       "&:hover": {
+                        transform: "translateY(-5px)",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
                         borderColor: "primary.main",
-                        bgcolor: "#f8fdfd",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                       },
                     }}
+                    onClick={() =>
+                      navigate(`/pharmacy/${pharmacy._id || pharmacy}`)
+                    }
                   >
-                    <Box
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFavoritePharmacy(pharmacy._id || pharmacy);
+                      }}
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mb: 1,
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        zIndex: 1,
+                        bgcolor: "rgba(255, 255, 255, 0.9)",
+                        color: "error.main",
+                        "&:hover": {
+                          bgcolor: "error.main",
+                          color: "white",
+                        },
+                        transition: "all 0.3s",
                       }}
                     >
-                      <Typography
-                        variant="h6"
-                        fontWeight={600}
-                        color="secondary"
-                      >
-                        {pharmacy.name}
-                      </Typography>
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          handleRemoveFavoritePharmacy(pharmacy._id || pharmacy)
-                        }
-                        sx={{ color: "error.main" }}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" mb={1}>
-                      {pharmacy.address?.street}, {pharmacy.address?.city}
-                    </Typography>
-                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                      <Star sx={{ fontSize: 16, color: "warning.main" }} />
-                      <Typography variant="body2">
-                        {pharmacy.averageRating?.toFixed(1) || "0.0"} (
-                        {pharmacy.totalReviews || 0} reviews)
-                      </Typography>
-                    </Box>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() =>
-                        navigate(`/pharmacy/${pharmacy._id || pharmacy}`)
-                      }
-                      sx={{ mt: 1 }}
+                      <Favorite fontSize="small" />
+                    </IconButton>
+                    <Box
+                      sx={{
+                        height: 150,
+                        background: pharmacy.logoUrl
+                          ? "transparent"
+                          : "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        overflow: "hidden",
+                        position: "relative",
+                      }}
                     >
-                      View Details
-                    </Button>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
+                      {pharmacy.logoUrl ? (
+                        <img
+                          src={pharmacy.logoUrl}
+                          alt={pharmacy.name}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                          onError={(e) => {
+                            e.target.src = "/images/pharmacy_logo.png";
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src="/images/pharmacy_logo.png"
+                          alt={pharmacy.name}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.nextSibling.style.display = "flex";
+                          }}
+                        />
+                      )}
+                      <Box
+                        sx={{
+                          display: "none",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: "100%",
+                          height: "100%",
+                        }}
+                      >
+                        <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
+                      </Box>
+                    </Box>
+
+                    <CardContent
+                      sx={{
+                        flexGrow: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        pb: 3,
+                        pt: 2,
+                        px: 2.5,
+                      }}
+                    >
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          fontWeight={600}
+                          color="secondary"
+                          mb={1}
+                          sx={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {pharmacy.name}
+                        </Typography>
+
+                        {/* Location + Rating Row */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            flexWrap: "wrap",
+                            mb: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Room
+                              fontSize="small"
+                              sx={{ mr: 0.2, color: "primary.main" }}
+                            />
+                            {pharmacy.address?.city ||
+                              pharmacy.city ||
+                              "Lebanon"}
+                          </Typography>
+
+                          {rating !== null && Number.isFinite(rating) && (
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.3,
+                              }}
+                            >
+                              <Star
+                                fontSize="small"
+                                sx={{ color: "warning.main", fontSize: 16 }}
+                              />
+                              {rating.toFixed(1)} ({pharmacy.totalReviews || 0})
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+
+                      {/* Open / Closed Chip */}
+                      <Chip
+                        label={pharmacy.isOpen !== false ? "Open Now" : "Closed"}
+                        size="small"
+                        sx={{
+                          bgcolor:
+                            pharmacy.isOpen !== false ? "#c8e6c9" : "#ffcdd2",
+                          color:
+                            pharmacy.isOpen !== false ? "#2e7d32" : "#c62828",
+                          fontWeight: 600,
+                          width: "fit-content",
+                          mt: 2,
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Box>
           )}
         </CardContent>
       </Card>
@@ -1112,15 +1263,16 @@ const handleAvatarChange = (e) => {
           ) : (
             <Box
               sx={{
-                display: "flex",
-                flexWrap: "wrap",
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(3, 1fr)",
+                  lg: "repeat(4, 1fr)",
+                  xl: "repeat(5, 1fr)",
+                },
                 gap: 2.5,
                 mb: 6,
-                "& > *": {
-                  flex: "0 0 calc(20% - 20px)",
-                  maxWidth: "calc(20% - 20px)",
-                  minWidth: "150px",
-                },
               }}
             >
               {favoriteItems.map((item) => {

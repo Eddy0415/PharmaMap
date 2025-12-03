@@ -813,175 +813,233 @@ const PharmacyDashboard = () => {
                     today.
                   </Typography>
 
-                  <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Card
-                      sx={{
-                        transition: "all 0.3s",
-                        "&:hover": {
-                          transform: "translateY(-5px)",
-                          boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Box
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: {
+                        xs: "1fr",
+                        sm: "repeat(2, 1fr)",
+                        md: "repeat(4, 1fr)",
+                      },
+                      gap: 3,
+                    }}
+                  >
+                    <Box>
+                      <Card
+                        sx={{
+                          height: "100%",
+                          minHeight: 180,
+                          display: "flex",
+                          flexDirection: "column",
+                          transition: "all 0.3s",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+                          },
+                        }}
+                      >
+                        <CardContent
                           sx={{
-                            width: 50,
-                            height: 50,
-                            borderRadius: 3,
-                            background:
-                              "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
                             display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#1976d2",
-                            mb: 2,
+                            flexDirection: "column",
+                            height: "100%",
+                            flex: 1,
                           }}
                         >
-                          <Inventory sx={{ fontSize: 28 }} />
-                        </Box>
-                        <Typography
-                          variant="h4"
-                          fontWeight={700}
-                          color="secondary"
-                          mb={1}
-                        >
-                          {stats.totalProducts}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Total Products
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                          <Box
+                            sx={{
+                              width: 50,
+                              height: 50,
+                              borderRadius: 3,
+                              background:
+                                "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#1976d2",
+                              mb: 2,
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Inventory sx={{ fontSize: 28 }} />
+                          </Box>
+                          <Typography
+                            variant="h4"
+                            fontWeight={700}
+                            color="secondary"
+                            mb={1}
+                          >
+                            {stats.totalProducts}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Total Products
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Box>
 
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Card
-                      sx={{
-                        transition: "all 0.3s",
-                        "&:hover": {
-                          transform: "translateY(-5px)",
-                          boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Box
+                    <Box>
+                      <Card
+                        sx={{
+                          height: "100%",
+                          minHeight: 180,
+                          display: "flex",
+                          flexDirection: "column",
+                          transition: "all 0.3s",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+                          },
+                        }}
+                      >
+                        <CardContent
                           sx={{
-                            width: 50,
-                            height: 50,
-                            borderRadius: 3,
-                            background:
-                              "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
                             display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#388e3c",
-                            mb: 2,
+                            flexDirection: "column",
+                            height: "100%",
+                            flex: 1,
                           }}
                         >
-                          <ShoppingCart sx={{ fontSize: 28 }} />
-                        </Box>
-                        <Typography
-                          variant="h4"
-                          fontWeight={700}
-                          color="secondary"
-                          mb={1}
-                        >
-                          {stats.ordersThisMonth}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Orders This Month
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                          <Box
+                            sx={{
+                              width: 50,
+                              height: 50,
+                              borderRadius: 3,
+                              background:
+                                "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#388e3c",
+                              mb: 2,
+                              flexShrink: 0,
+                            }}
+                          >
+                            <ShoppingCart sx={{ fontSize: 28 }} />
+                          </Box>
+                          <Typography
+                            variant="h4"
+                            fontWeight={700}
+                            color="secondary"
+                            mb={1}
+                          >
+                            {stats.ordersThisMonth}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Orders This Month
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Box>
 
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Card
-                      sx={{
-                        transition: "all 0.3s",
-                        "&:hover": {
-                          transform: "translateY(-5px)",
-                          boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Box
+                    <Box>
+                      <Card
+                        sx={{
+                          height: "100%",
+                          minHeight: 180,
+                          display: "flex",
+                          flexDirection: "column",
+                          transition: "all 0.3s",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+                          },
+                        }}
+                      >
+                        <CardContent
                           sx={{
-                            width: 50,
-                            height: 50,
-                            borderRadius: 3,
-                            background:
-                              "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)",
                             display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#f57c00",
-                            mb: 2,
+                            flexDirection: "column",
+                            height: "100%",
+                            flex: 1,
                           }}
                         >
-                          <Warning sx={{ fontSize: 28 }} />
-                        </Box>
-                        <Typography
-                          variant="h4"
-                          fontWeight={700}
-                          color="secondary"
-                          mb={1}
-                        >
-                          {stats.lowStockItems}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Low Stock Items
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                          <Box
+                            sx={{
+                              width: 50,
+                              height: 50,
+                              borderRadius: 3,
+                              background:
+                                "linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#f57c00",
+                              mb: 2,
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Warning sx={{ fontSize: 28 }} />
+                          </Box>
+                          <Typography
+                            variant="h4"
+                            fontWeight={700}
+                            color="secondary"
+                            mb={1}
+                          >
+                            {stats.lowStockItems}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Low Stock Items
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Box>
 
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Card
-                      sx={{
-                        transition: "all 0.3s",
-                        "&:hover": {
-                          transform: "translateY(-5px)",
-                          boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Box
+                    <Box>
+                      <Card
+                        sx={{
+                          height: "100%",
+                          minHeight: 180,
+                          display: "flex",
+                          flexDirection: "column",
+                          transition: "all 0.3s",
+                          "&:hover": {
+                            transform: "translateY(-5px)",
+                            boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+                          },
+                        }}
+                      >
+                        <CardContent
                           sx={{
-                            width: 50,
-                            height: 50,
-                            borderRadius: 3,
-                            background:
-                              "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)",
                             display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#d32f2f",
-                            mb: 2,
+                            flexDirection: "column",
+                            height: "100%",
+                            flex: 1,
                           }}
                         >
-                          <Cancel sx={{ fontSize: 28 }} />
-                        </Box>
-                        <Typography
-                          variant="h4"
-                          fontWeight={700}
-                          color="secondary"
-                          mb={1}
-                        >
-                          {stats.outOfStock}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Out of Stock
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                </Grid>
+                          <Box
+                            sx={{
+                              width: 50,
+                              height: 50,
+                              borderRadius: 3,
+                              background:
+                                "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#d32f2f",
+                              mb: 2,
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Cancel sx={{ fontSize: 28 }} />
+                          </Box>
+                          <Typography
+                            variant="h4"
+                            fontWeight={700}
+                            color="secondary"
+                            mb={1}
+                          >
+                            {stats.outOfStock}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Out of Stock
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Box>
+                  </Box>
                 </CardContent>
               </Card>
             )}

@@ -14,6 +14,7 @@ import {
   Rating,
   TextField,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import ArrowBack from "@mui/icons-material/ArrowBack";
 import Directions from "@mui/icons-material/Directions";
@@ -271,7 +272,16 @@ const PharmacyDetail = () => {
       <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
         <Header user={user} />
         <Container maxWidth="xl" sx={{ py: 5 }}>
-          <Typography>Loading...</Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "60vh",
+            }}
+          >
+            <CircularProgress size={60} sx={{ color: "#4ecdc4" }} />
+          </Box>
         </Container>
         <Footer />
       </Box>

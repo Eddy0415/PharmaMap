@@ -10,6 +10,7 @@ import {
   MenuItem,
   TextField,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
 import TrendingUp from "@mui/icons-material/TrendingUp";
@@ -341,11 +342,16 @@ const Search = () => {
         </Box>
 
         {loading ? (
-          <Card sx={{ p: 6, textAlign: "center" }}>
-            <Typography variant="h6" color="text.secondary">
-              Searching...
-            </Typography>
-          </Card>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              py: 8,
+            }}
+          >
+            <CircularProgress size={60} sx={{ color: "#4ecdc4" }} />
+          </Box>
         ) : (
           <>
             {/* Products section */}
@@ -392,14 +398,17 @@ const Search = () => {
                   </Typography>
                   <Box
                     sx={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 2.5,
-                      "& > *": {
-                        flex: "0 0 calc(20% - 20px)",
-                        maxWidth: "calc(20% - 20px)",
-                        minWidth: "150px",
+                      display: "grid",
+                      gridTemplateColumns: {
+                        xs: "1fr",
+                        sm: "repeat(2, 1fr)",
+                        md: "repeat(3, 1fr)",
+                        lg: "repeat(4, 1fr)",
+                        xl: "repeat(5, 1fr)",
                       },
+                      gap: 2.5,
+                      justifyContent: "center",
+                      justifyItems: "center",
                     }}
                   >
                     {sortedPharmacies.map((pharmacy, index) => {
