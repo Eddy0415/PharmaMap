@@ -1714,9 +1714,9 @@ const PharmacyDashboard = () => {
                         </TableBody>
                       </Table>
                     </TableContainer>
-
-                    {/* SAVE BUTTON */}
-                    <Box textAlign="center" mt={4}>
+                  </Card>
+                  {/* SAVE BUTTON */}
+                  <Box textAlign="center" mt={4}>
                       <Button 
                         variant="contained" 
                         sx={{ 
@@ -1742,7 +1742,6 @@ const PharmacyDashboard = () => {
                           : "Save Changes"}
                       </Button>
                     </Box>
-                  </Card>
                 </CardContent>
               </Card>
             )}
