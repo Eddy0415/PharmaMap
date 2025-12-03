@@ -23,7 +23,8 @@ import Star from "@mui/icons-material/Star";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ProductDetailsDialog from "../components/ProductDetailsDialog";
-import { pharmacyAPI, medicationAPI, orderAPI } from "../services/api";
+import CardItem from "../components/CardItem";
+import { pharmacyAPI, medicationAPI, orderAPI, userAPI } from "../services/api";
 
 
 /* -------------------------------------------------------------------------- */
@@ -199,6 +200,7 @@ const Home = () => {
   const [productPharmacies, setProductPharmacies] = useState([]);
   const [loadingProduct, setLoadingProduct] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [favoriteItems, setFavoriteItems] = useState([]);
 
   /* -------------------------------------------------------------------------- */
   /*                             LOAD INITIAL DATA                              */
@@ -207,7 +209,11 @@ const Home = () => {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     console.log("storedUser", storedUser);
-    if (storedUser) setUser(JSON.parse(storedUser));
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      setFavoriteItems(userData.favoriteItems || []);
+    }
 
     fetchPopularProducts();
     fetchPopularPharmacies();
@@ -216,6 +222,20 @@ const Home = () => {
       setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
     }, 5000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const syncFavorites = () => {
+      const current = localStorage.getItem("user");
+      if (current) {
+        const parsed = JSON.parse(current);
+        setFavoriteItems(parsed.favoriteItems || []);
+      }
+    };
+    window.addEventListener("userUpdated", syncFavorites);
+    return () => {
+      window.removeEventListener("userUpdated", syncFavorites);
+    };
   }, []);
 
   /* -------------------------------------------------------------------------- */
@@ -454,6 +474,44 @@ const Home = () => {
       setDetailsDialogOpen(true);
     } finally {
       setLoadingProduct(false);
+    }
+  };
+
+  const handleFavoriteToggle = async (item, isFavorite) => {
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+    const itemId = item?._id || item?.id || item?.item?._id || item?.item?.id;
+    if (!itemId) return;
+
+    try {
+      if (isFavorite) {
+        await userAPI.addFavoriteItem(userId, itemId);
+        setFavoriteItems((prev) => [...prev, itemId]);
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const favs = parsed.favoriteItems || [];
+          if (!favs.includes(itemId)) favs.push(itemId);
+          parsed.favoriteItems = favs;
+          localStorage.setItem("user", JSON.stringify(parsed));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
+      } else {
+        await userAPI.removeFavoriteItem(userId, itemId);
+        setFavoriteItems((prev) => prev.filter((id) => id !== itemId));
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          parsed.favoriteItems = (parsed.favoriteItems || []).filter((id) => id !== itemId);
+          localStorage.setItem("user", JSON.stringify(parsed));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
     }
   };
 
@@ -792,76 +850,19 @@ const Home = () => {
                     )}k`
                   : `+${monthlyCount}`;
 
+              const itemId = product._id || product.id;
+              const isFavorite = itemId ? favoriteItems.includes(itemId) : false;
+
               return (
-                <Card
+                <CardItem
                   key={product._id || product.name}
-                  sx={{
-                    height: 280,
-                    cursor: "pointer",
-                    border: "2px solid transparent",
-                    transition: "0.3s",
-                    display: "flex",
-                    flexDirection: "column",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                      borderColor: "primary.main",
-                    },
-                  }}
+                  item={product}
                   onClick={() => openProductDetails(product.name)}
-                >
-                  <Box
-                    sx={{
-                      height: 150,
-                      background:
-                        "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <LocalPharmacy
-                      sx={{ fontSize: 64, color: "primary.main" }}
-                    />
-                  </Box>
-
-                  <CardContent sx={{ display: "flex", flexDirection: "column" }}>
-                    <Typography
-                      variant="h6"
-                      fontWeight={600}
-                      color="secondary"
-                      mb={1}
-                    >
-                      {product.name}
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      display="flex"
-                      gap={0.5}
-                    >
-                      <LocalPharmacy
-                        fontSize="small"
-                        sx={{ color: "primary.main" }}
-                      />
-                      {product.category || "General"}
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      color="primary.main"
-                      fontWeight={600}
-                      display="flex"
-                      alignItems="center"
-                      gap={0.5}
-                      sx={{ mt: 1 }}
-                    >
-                      <TrendingUp fontSize="small" />
-                      {formatted} searches last month
-                    </Typography>
-                  </CardContent>
-                </Card>
+                  onFavoriteToggle={handleFavoriteToggle}
+                  isFavorite={isFavorite}
+                  showFavorite={!!user}
+                  
+                />
               );
             })}
           </Box>

@@ -38,7 +38,9 @@ import Star from "@mui/icons-material/Star";
 import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { userAPI, orderAPI, authAPI } from "../services/api";
+import ProductDetailsDialog from "../components/ProductDetailsDialog";
+import CardItem from "../components/CardItem";
+import { userAPI, orderAPI, authAPI, medicationAPI } from "../services/api";
 import { auth } from "../firebase/firebase";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -50,6 +52,9 @@ const UserProfile = () => {
   const [orders, setOrders] = useState([]);
   const [favoritePharmacies, setFavoritePharmacies] = useState([]);
   const [favoriteItems, setFavoriteItems] = useState([]);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productPharmacies, setProductPharmacies] = useState([]);
   const [profileData, setProfileData] = useState({
     firstName: "",
     lastName: "",
@@ -376,6 +381,116 @@ const handleAvatarChange = (e) => {
     } catch (error) {
       console.error("Error reordering:", error);
       setReorderStatus((prev) => ({ ...prev, [order._id]: undefined }));
+    }
+  };
+
+  const collectPharmaciesForItem = (results, itemId, fallbackName) => {
+    if (!results?.length) return [];
+    const map = new Map();
+
+    results.forEach((res) => {
+      const matchesId =
+        itemId &&
+        (res.item?._id === itemId || res.item?.id === itemId);
+
+      const matchesName =
+        fallbackName &&
+        (res.item?.name === fallbackName ||
+          res.item?.name?.toLowerCase() === fallbackName?.toLowerCase());
+
+      if (!(matchesId || matchesName)) return;
+
+      res.inventory?.forEach((inv) => {
+        const phId = inv.pharmacy?._id || inv.pharmacy?.id || inv.pharmacy;
+        if (!map.has(phId)) {
+          map.set(phId, {
+            pharmacy: inv.pharmacy,
+            price: inv.price,
+            quantity: inv.quantity,
+            stockStatus: inv.stockStatus,
+          });
+        }
+      });
+    });
+
+    return Array.from(map.values());
+  };
+
+  const handleFavoriteItemClick = async (item) => {
+    const itemId = item._id || item.id || item;
+    const itemName = item.name;
+
+    try {
+      const response = await medicationAPI.getAll({
+        search: itemName,
+        inStock: "true",
+      });
+
+      const results = response.data.results || [];
+      if (results.length === 0) {
+        setSelectedProduct({ item: { name: itemName, ...item } });
+        setProductPharmacies([]);
+        setDetailsDialogOpen(true);
+        return;
+      }
+
+      const firstItem = results[0].item || { name: itemName, ...item };
+
+      const pharmacies = collectPharmaciesForItem(
+        results,
+        firstItem._id || firstItem.id || itemId,
+        firstItem.name
+      );
+
+      const primary = pharmacies[0];
+
+      setSelectedProduct({
+        item: firstItem,
+        price: primary?.price,
+        quantity: primary?.quantity,
+        stockStatus: primary?.stockStatus,
+      });
+      setProductPharmacies(pharmacies);
+      setDetailsDialogOpen(true);
+    } catch (err) {
+      setSelectedProduct({ item: { name: itemName, ...item } });
+      setProductPharmacies([]);
+      setDetailsDialogOpen(true);
+    }
+  };
+
+  const handleSelectPharmacy = (pharmacy) => {
+    navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`);
+    setDetailsDialogOpen(false);
+  };
+
+  const handleRequestPharmacy = async (entry, quantity = 1, message = "") => {
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      navigate("/login");
+      return false;
+    }
+    try {
+      const price = entry.price || 0;
+      const qty = quantity || 1;
+      await orderAPI.create({
+        customer: userId,
+        pharmacy: entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy,
+        items: [
+          {
+            item: selectedProduct?.item?._id || selectedProduct?.item?.id,
+            quantity: qty,
+            priceAtOrder: price,
+            subtotal: price * qty,
+          },
+        ],
+        totalAmount: price * qty,
+        customerNotes: message,
+      });
+      return true;
+    } catch (err) {
+      console.error("Error creating request:", err);
+      return false;
     }
   };
 
@@ -878,7 +993,7 @@ const handleAvatarChange = (e) => {
               </Button>
             </Box>
           ) : (
-            <Grid container spacing={2}>
+            <Grid container spacing={2}>  
               {favoritePharmacies.map((pharmacy) => (
                 <Grid item xs={12} sm={6} md={4} key={pharmacy._id || pharmacy}>
                   <Paper
@@ -989,86 +1104,26 @@ const handleAvatarChange = (e) => {
                 },
               }}
             >
-              {favoriteItems.map((item) => (
-                <Card
-                  key={item._id || item}
-                  sx={{
-                    height: 280,
-                    cursor: "pointer",
-                    border: "2px solid transparent",
-                    transition: "0.3s",
-                    display: "flex",
-                    flexDirection: "column",
-                    position: "relative",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                      borderColor: "primary.main",
-                    },
-                  }}
-                  onClick={() => navigate(`/medications/${item._id || item}`)}
-                >
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFavoriteItem(item._id || item);
-                    }}
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      zIndex: 1,
-                      bgcolor: "rgba(255, 255, 255, 0.9)",
-                      color: "error.main",
-                      "&:hover": {
-                        bgcolor: "error.main",
-                        color: "white",
-                      },
-                    }}
-                  >
-                    <Delete fontSize="small" />
-                  </IconButton>
-                  <Box
-                    sx={{
-                      height: 150,
-                      background:
-                        "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <LocalPharmacy
-                      sx={{ fontSize: 64, color: "primary.main" }}
-                    />
-                  </Box>
+              {favoriteItems.map((item) => {
+                const itemId = item._id || item.id || item;
+                const isFavorite = true; // Always true in favorites section
 
-                  <CardContent sx={{ display: "flex", flexDirection: "column" }}>
-                    <Typography
-                      variant="h6"
-                      fontWeight={600}
-                      color="secondary"
-                      mb={1}
-                    >
-                      {item.name}
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      display="flex"
-                      gap={0.5}
-                    >
-                      <LocalPharmacy
-                        fontSize="small"
-                        sx={{ color: "primary.main" }}
-                      />
-                      {item.category || "General"}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))}
+                return (
+                  <CardItem
+                    key={itemId}
+                    item={item}
+                    onClick={() => handleFavoriteItemClick(item)}
+                    onFavoriteToggle={async (item, isFavorite) => {
+                      if (!isFavorite) {
+                        // If unfavorited, remove it
+                        await handleRemoveFavoriteItem(itemId);
+                      }
+                    }}
+                    isFavorite={isFavorite}
+                    showFavorite={true}
+                  />
+                );
+              })}
             </Box>
           )}
         </CardContent>
@@ -1429,6 +1484,19 @@ const handleAvatarChange = (e) => {
           </Grid>
         </Grid>
       </Container>
+
+      <ProductDetailsDialog
+        open={detailsDialogOpen}
+        onClose={() => {
+          setDetailsDialogOpen(false);
+          setSelectedProduct(null);
+          setProductPharmacies([]);
+        }}
+        product={selectedProduct}
+        pharmacies={productPharmacies}
+        onSelectPharmacy={handleSelectPharmacy}
+        onRequestPharmacy={handleRequestPharmacy}
+      />
 
       <Footer />
     </Box>

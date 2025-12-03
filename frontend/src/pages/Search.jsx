@@ -17,7 +17,8 @@ import Star from "@mui/icons-material/Star";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ProductDetailsDialog from "../components/ProductDetailsDialog";
-import { medicationAPI, pharmacyAPI, orderAPI } from "../services/api";
+import CardItem from "../components/CardItem";
+import { medicationAPI, pharmacyAPI, orderAPI, userAPI } from "../services/api";
 
 const Search = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const Search = () => {
   const [productPharmacies, setProductPharmacies] = useState([]);
   const [filterMode, setFilterMode] = useState("all"); // all, products, pharmacies
   const [sortMode, setSortMode] = useState("none"); // none, az, za, proximity, price
+  const [favoriteItems, setFavoriteItems] = useState([]);
   const sortedProducts = useMemo(() => {
     const list = [...productResults];
     if (sortMode === "az") {
@@ -71,7 +73,11 @@ const Search = () => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      setFavoriteItems(userData.favoriteItems || []);
+    }
 
     const query = searchParams.get("q");
     const categoryParam = searchParams.get("category");
@@ -85,6 +91,20 @@ const Search = () => {
       performSearch("", categoryParam);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const syncFavorites = () => {
+      const current = localStorage.getItem("user");
+      if (current) {
+        const parsed = JSON.parse(current);
+        setFavoriteItems(parsed.favoriteItems || []);
+      }
+    };
+    window.addEventListener("userUpdated", syncFavorites);
+    return () => {
+      window.removeEventListener("userUpdated", syncFavorites);
+    };
+  }, []);
 
   const normalizeProducts = (results = []) =>
     results.map((res) => ({
@@ -141,6 +161,44 @@ const Search = () => {
     });
     setProductPharmacies(product.pharmacies || []);
     setDetailsDialogOpen(true);
+  };
+
+  const handleFavoriteToggle = async (item, isFavorite) => {
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+    const itemId = item?.item?._id || item?.item?.id || item?._id || item?.id;
+    if (!itemId) return;
+
+    try {
+      if (isFavorite) {
+        await userAPI.addFavoriteItem(userId, itemId);
+        setFavoriteItems((prev) => [...prev, itemId]);
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const favs = parsed.favoriteItems || [];
+          if (!favs.includes(itemId)) favs.push(itemId);
+          parsed.favoriteItems = favs;
+          localStorage.setItem("user", JSON.stringify(parsed));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
+      } else {
+        await userAPI.removeFavoriteItem(userId, itemId);
+        setFavoriteItems((prev) => prev.filter((id) => id !== itemId));
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          parsed.favoriteItems = (parsed.favoriteItems || []).filter((id) => id !== itemId);
+          localStorage.setItem("user", JSON.stringify(parsed));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+    }
   };
 
   const handleRequestPharmacy = async (entry) => {
@@ -244,110 +302,23 @@ const Search = () => {
                       gap: 2.5,
                     }}
                   >
-                    {sortedProducts.map((product, index) => (
-                      <Card
-                        key={product.item?._id || product.item?.id || product.item?.name || index}
-                        sx={{
-                          height: 320,
-                          width: 250,
-                          cursor: "pointer",
-                          transition: "all 0.3s",
-                          border: "2px solid transparent",
-                          display: "flex",
-                          flexDirection: "column",
-                          flexShrink: 0,
-                          "&:hover": {
-                            transform: "translateY(-5px)",
-                            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                            borderColor: "primary.main",
-                          },
-                        }}
-                        onClick={() => openProductDetails(product)}
-                      >
-                        <Box
-                          sx={{
-                            height: 160,
-                            width: "100%",
-                            background: "linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                            overflow: "hidden",
-                          }}
-                        >
-                          <LocalPharmacy sx={{ fontSize: 64, color: "primary.main" }} />
-                        </Box>
-                        <CardContent
-                          sx={{
-                            flexGrow: 1,
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-between",
-                            pb: 2,
-                            px: 2,
-                            pt: 2,
-                            overflow: "hidden",
-                          }}
-                        >
-                          <Box>
-                            <Typography 
-                              variant="h6" 
-                              fontWeight={600} 
-                              color="secondary" 
-                              mb={1}
-                              sx={{
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                lineHeight: 1.3,
-                              }}
-                            >
-                              {product.item?.name}
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              mb={1.5}
-                              display="flex"
-                              alignItems="center"
-                              gap={0.5}
-                            >
-                              <LocalPharmacy fontSize="small" sx={{ color: "primary.main" }} />
-                              {product.item?.category || "General"}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                            <Typography
-                              variant="body2"
-                              color="secondary.main"
-                              fontWeight={600}
-                              display="flex"
-                              alignItems="center"
-                              gap={0.5}
-                            >
-                              <Room fontSize="small" />
-                              {product.pharmacies?.length || 0} pharmacies nearby
-                            </Typography>
-                            {product.item?.currentMonthSearchCount !== undefined && (
-                              <Typography
-                                variant="body2"
-                                color="primary.main"
-                                fontWeight={600}
-                                display="flex"
-                                alignItems="center"
-                                gap={0.5}
-                              >
-                                <TrendingUp fontSize="small" />
-                                {product.item.currentMonthSearchCount || 0} searches this month
-                              </Typography>
-                            )}
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    {sortedProducts.map((product, index) => {
+                      const itemId = product.item?._id || product.item?.id;
+                      const isFavorite = itemId ? favoriteItems.includes(itemId) : false;
+
+                      return (
+                        <CardItem
+                          key={product.item?._id || product.item?.id || product.item?.name || index}
+                          item={product.item ? { ...product.item, item: product.item } : product}
+                          onClick={() => openProductDetails(product)}
+                          onFavoriteToggle={handleFavoriteToggle}
+                          isFavorite={isFavorite}
+                          showFavorite={!!user}
+                          sx={{ width: 250, flexShrink: 0 }}
+                    
+                        />
+                      );
+                    })}
                   </Box>
                 </Box>
               )}
