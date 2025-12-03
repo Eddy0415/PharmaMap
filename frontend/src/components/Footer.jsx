@@ -14,47 +14,90 @@ const Footer = () => {
       sx={{
         background: 'linear-gradient(135deg, #2f4f4f 0%, #1a3333 100%)',
         color: 'white',
-        py: 5,
+        py: 6,
         px: 3,
         mt: 8,
       }}
     >
       <Container maxWidth="xl">
-        <Grid container spacing={4}>
-          {/* About Section */}
-          <Grid item xs={12} md={4}>
-            <Box
+        <Grid
+          container
+          rowSpacing={4}
+          columnSpacing={{ xs: 3, md: 5 }}
+          justifyContent="space-between"
+        >
+          {/* Brand Section */}
+          <Grid item xs={12} md={3}>
+            <Typography
+              variant="h6"
+              sx={{ mb: 2.5, fontWeight: 700, letterSpacing: 0.3, color: '#4ecdc4' }}
+            >
+              PharmaMap
+            </Typography>
+            <Typography
+              variant="body2"
+              component="p"
               sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 1.5,
-                mb: 2,
-                px: 1,
-                py: 0.5,
-                bgcolor: 'rgba(255,255,255,0.05)',
-                borderRadius: 2,
-                boxShadow: '0 6px 12px rgba(0,0,0,0.15)',
+                color: 'rgba(255,255,255,0.8)',
+                lineHeight: 1.7,
+                maxWidth: 340,
               }}
             >
-              <Box
-                component="img"
-                src="/logo.png"
-                alt="PharmaMap"
-                sx={{ width: 56, height: 56, objectFit: 'contain' }}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            </Box>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', lineHeight: 1.8 }}>
-              Your trusted platform for finding medications across Lebanon. We connect you with
-              verified pharmacies to ensure you get what you need, when you need it.
+              Your trusted platform for finding medications across Lebanon.
             </Typography>
           </Grid>
 
+          {/* Sitemap Section */}
+          <Grid item xs={12} md={5}>
+            <Typography variant="h6" sx={{ mb: 2.5, color: '#4ecdc4', fontWeight: 700 }}>
+              Sitemap
+            </Typography>
+            <Grid container spacing={{ xs: 1.5, sm: 2 }} columnSpacing={{ xs: 2.5, sm: 3.5 }}>
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Link href="/" sx={{ color: 'white', textDecoration: 'none', '&:hover': { color: '#6ee7df' } }}>
+                    Home
+                  </Link>
+                  <Link href="/search" sx={{ color: 'white', textDecoration: 'none', '&:hover': { color: '#6ee7df' } }}>
+                    Search
+                  </Link>
+                  <Link href="/about" sx={{ color: 'white', textDecoration: 'none', '&:hover': { color: '#6ee7df' } }}>
+                    About
+                  </Link>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Link href="/#categories" sx={{ color: 'white', textDecoration: 'none', '&:hover': { color: '#6ee7df' } }}>
+                    Categories
+                  </Link>
+                  <Link href="/#featured" sx={{ color: 'white', textDecoration: 'none', '&:hover': { color: '#6ee7df' } }}>
+                    Popular Pharmacies
+                  </Link>
+                  <Link href="/dashboard" sx={{ color: 'white', textDecoration: 'none', '&:hover': { color: '#6ee7df' } }}>
+                    Pharmacy Dashboard
+                  </Link>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Link href="/customer-home" sx={{ color: 'white', textDecoration: 'none', '&:hover': { color: '#6ee7df' } }}>
+                    Customer Home
+                  </Link>
+                  <Link href="/profile" sx={{ color: 'white', textDecoration: 'none', '&:hover': { color: '#6ee7df' } }}>
+                    Profile
+                  </Link>
+                  <Link href="/register" sx={{ color: 'white', textDecoration: 'none', '&:hover': { color: '#6ee7df' } }}>
+                    Register
+                  </Link>
+                </Box>
+              </Grid>
+            </Grid>
+          </Grid>
+
           {/* Contact Section */}
-          <Grid item xs={12} md={4}>
-            <Typography variant="h6" sx={{ mb: 2, color: '#4ecdc4', fontWeight: 700 }}>
+          <Grid item xs={12} md={2}>
+            <Typography variant="h6" sx={{ mb: 2.5, color: '#4ecdc4', fontWeight: 700 }}>
               Contact Us
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -78,8 +121,8 @@ const Footer = () => {
           </Grid>
 
           {/* Social Media Section */}
-          <Grid item xs={12} md={4}>
-            <Typography variant="h6" sx={{ mb: 2, color: '#4ecdc4', fontWeight: 700 }}>
+          <Grid item xs={12} md={2}>
+            <Typography variant="h6" sx={{ mb: 2.5, color: '#4ecdc4', fontWeight: 700 }}>
               Follow Us
             </Typography>
             <Box sx={{ display: 'flex', gap: 1.5 }}>
