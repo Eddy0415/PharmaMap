@@ -723,24 +723,7 @@ const PharmacyDashboard = () => {
                     </ListItemIcon>
                     <ListItemText primary="Orders" />
                   </ListItem>
-                  <ListItem
-                    button
-                    sx={{
-                      borderRadius: 2,
-                      mb: 1,
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        bgcolor: "rgba(78, 205, 196, 0.1)",
-                        transform: "translateX(4px)",
-                      },
-                    }}
-                  >
-                    <ListItemIcon>
-                      <TrendingUp />
-                    </ListItemIcon>
-                    <ListItemText primary="Analytics" />
-                  </ListItem>
+                  
                   <ListItem
                     button
                     onClick={() => setActiveSection("pharmacySettings")}

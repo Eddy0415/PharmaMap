@@ -535,9 +535,19 @@ const ProductDetailsDialog = ({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth={false}
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3 } }}
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          width: "65vw",
+          maxWidth: "1000px",
+          height: "75vh",
+          maxHeight: "600px",
+          margin: "auto",
+          overflow: "hidden",
+        },
+      }}
     >
       <DialogTitle sx={{ pb: 1 }}>
         <Box
