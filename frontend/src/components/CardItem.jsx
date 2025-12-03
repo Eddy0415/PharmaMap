@@ -106,7 +106,7 @@ const CardItem = ({
       >
         {itemImageUrl ? (
           <img
-            src={itemImageUrl}
+            src={`../../public/itemImageUrl`}
             alt={itemName}
             style={{
               width: "100%",
