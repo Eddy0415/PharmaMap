@@ -31,6 +31,7 @@ const orderRoutes = require("./routes/orders");
 const userRoutes = require("./routes/users");
 const inventoryRoutes = require("./routes/inventory");
 const reviewRoutes = require("./routes/reviews");
+const adminRoutes = require("./routes/admin");
 const firebaseAuth = require("./middleware/firebaseAuth");
 
 // API Routes
@@ -41,6 +42,7 @@ app.use("/api/orders", firebaseAuth, orderRoutes);
 app.use("/api/users", firebaseAuth, userRoutes);
 app.use("/api/inventory", firebaseAuth, inventoryRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Root route
 app.get("/", (req, res) => {
@@ -54,6 +56,7 @@ app.get("/", (req, res) => {
       orders: "/api/orders",
       users: "/api/users",
       inventory: "/api/inventory",
+      admin: "/api/admin",
     },
   });
 });

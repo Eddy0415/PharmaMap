@@ -130,4 +130,35 @@ export const inventoryAPI = {
   delete: (id) => api.delete(`/inventory/${id}`),
 };
 
+// ==============================
+// ADMIN APIs
+// ==============================
+export const adminAPI = {
+  // Users
+  getAllUsers: (params) => api.get("/admin/users", { params }),
+  getUserById: (id) => api.get(`/admin/users/${id}`),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  
+  // Pharmacies
+  getAllPharmacies: (params) => api.get("/admin/pharmacies", { params }),
+  deletePharmacy: (id) => api.delete(`/admin/pharmacies/${id}`),
+  updatePharmacy: (id, data) => api.put(`/admin/pharmacies/${id}`, data),
+  
+  // Medications
+  getAllMedications: (params) => api.get("/admin/medications", { params }),
+  deleteMedication: (id) => api.delete(`/admin/medications/${id}`),
+  
+  // Orders
+  getAllOrders: (params) => api.get("/admin/orders", { params }),
+  deleteOrder: (id) => api.delete(`/admin/orders/${id}`),
+  
+  // Reviews
+  getAllReviews: (params) => api.get("/admin/reviews", { params }),
+  deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
+  
+  // Statistics
+  getStatistics: () => api.get("/admin/statistics"),
+};
+
 export default api;

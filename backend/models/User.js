@@ -17,8 +17,9 @@ const userSchema = new Schema({
   // User Type
   userType: {
     type: String,
-    enum: ["customer", "pharmacist"],
+    enum: ["customer", "pharmacist", "admin"],
     required: true,
+    default: "customer",
   },
 
   // Customer-specific fields

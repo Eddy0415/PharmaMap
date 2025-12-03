@@ -35,9 +35,12 @@ import Work from "@mui/icons-material/Work";
 import Add from "@mui/icons-material/Add";
 import Replay from "@mui/icons-material/Replay";
 import Star from "@mui/icons-material/Star";
+import LocalPharmacy from "@mui/icons-material/LocalPharmacy";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { userAPI, orderAPI, authAPI } from "../services/api";
+import ProductDetailsDialog from "../components/ProductDetailsDialog";
+import CardItem from "../components/CardItem";
+import { userAPI, orderAPI, authAPI, medicationAPI } from "../services/api";
 import { auth } from "../firebase/firebase";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -49,6 +52,9 @@ const UserProfile = () => {
   const [orders, setOrders] = useState([]);
   const [favoritePharmacies, setFavoritePharmacies] = useState([]);
   const [favoriteItems, setFavoriteItems] = useState([]);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productPharmacies, setProductPharmacies] = useState([]);
   const [profileData, setProfileData] = useState({
     firstName: "",
     lastName: "",
@@ -342,23 +348,149 @@ const handleAvatarChange = (e) => {
     }
     setReorderStatus((prev) => ({ ...prev, [order._id]: "sending" }));
     try {
+      const items = order.items?.map((item) => {
+        const itemId = item.item?._id || item.item?.id || item.item;
+        const quantity = Number(item.quantity);
+        // Use the original priceAtOrder from the order, or default to 0 if not available
+        const priceAtOrder = item.priceAtOrder || 0;
+        const subtotal = priceAtOrder * quantity;
+        
+        return {
+          item: itemId,
+          quantity: quantity,
+          priceAtOrder: priceAtOrder,
+          subtotal: subtotal,
+        };
+      }) || [];
+      
+      // Calculate total amount
+      const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
+      
       const payload = {
         customer: userId,
         pharmacy: order.pharmacy?._id || order.pharmacy,
-        items:
-          order.items?.map((item) => ({
-            item: item.item?._id || item.item?.id || item.item,
-            quantity: Number(item.quantity),
-          })) || [],
-        customerNotes: order.customerNotes,
+        items: items,
+        totalAmount: totalAmount,
+        customerNotes: order.customerNotes || "",
       };
+      
       const res = await orderAPI.create(payload);
-      const newOrder = res.data.order;
-      setOrders((prev) => (newOrder ? [newOrder, ...prev] : prev));
+      // Refetch all orders to ensure we have complete data with all populated fields
+      await fetchOrders(userId);
       setReorderStatus((prev) => ({ ...prev, [order._id]: "sent" }));
     } catch (error) {
       console.error("Error reordering:", error);
       setReorderStatus((prev) => ({ ...prev, [order._id]: undefined }));
+    }
+  };
+
+  const collectPharmaciesForItem = (results, itemId, fallbackName) => {
+    if (!results?.length) return [];
+    const map = new Map();
+
+    results.forEach((res) => {
+      const matchesId =
+        itemId &&
+        (res.item?._id === itemId || res.item?.id === itemId);
+
+      const matchesName =
+        fallbackName &&
+        (res.item?.name === fallbackName ||
+          res.item?.name?.toLowerCase() === fallbackName?.toLowerCase());
+
+      if (!(matchesId || matchesName)) return;
+
+      res.inventory?.forEach((inv) => {
+        const phId = inv.pharmacy?._id || inv.pharmacy?.id || inv.pharmacy;
+        if (!map.has(phId)) {
+          map.set(phId, {
+            pharmacy: inv.pharmacy,
+            price: inv.price,
+            quantity: inv.quantity,
+            stockStatus: inv.stockStatus,
+          });
+        }
+      });
+    });
+
+    return Array.from(map.values());
+  };
+
+  const handleFavoriteItemClick = async (item) => {
+    const itemId = item._id || item.id || item;
+    const itemName = item.name;
+
+    try {
+      const response = await medicationAPI.getAll({
+        search: itemName,
+        inStock: "true",
+      });
+
+      const results = response.data.results || [];
+      if (results.length === 0) {
+        setSelectedProduct({ item: { name: itemName, ...item } });
+        setProductPharmacies([]);
+        setDetailsDialogOpen(true);
+        return;
+      }
+
+      const firstItem = results[0].item || { name: itemName, ...item };
+
+      const pharmacies = collectPharmaciesForItem(
+        results,
+        firstItem._id || firstItem.id || itemId,
+        firstItem.name
+      );
+
+      const primary = pharmacies[0];
+
+      setSelectedProduct({
+        item: firstItem,
+        price: primary?.price,
+        quantity: primary?.quantity,
+        stockStatus: primary?.stockStatus,
+      });
+      setProductPharmacies(pharmacies);
+      setDetailsDialogOpen(true);
+    } catch (err) {
+      setSelectedProduct({ item: { name: itemName, ...item } });
+      setProductPharmacies([]);
+      setDetailsDialogOpen(true);
+    }
+  };
+
+  const handleSelectPharmacy = (pharmacy) => {
+    navigate(`/pharmacy/${pharmacy._id || pharmacy.id || pharmacy}`);
+    setDetailsDialogOpen(false);
+  };
+
+  const handleRequestPharmacy = async (entry, quantity = 1, message = "") => {
+    const userId = user?.id || user?._id;
+    if (!userId) {
+      navigate("/login");
+      return false;
+    }
+    try {
+      const price = entry.price || 0;
+      const qty = quantity || 1;
+      await orderAPI.create({
+        customer: userId,
+        pharmacy: entry.pharmacy._id || entry.pharmacy.id || entry.pharmacy,
+        items: [
+          {
+            item: selectedProduct?.item?._id || selectedProduct?.item?.id,
+            quantity: qty,
+            priceAtOrder: price,
+            subtotal: price * qty,
+          },
+        ],
+        totalAmount: price * qty,
+        customerNotes: message,
+      });
+      return true;
+    } catch (err) {
+      console.error("Error creating request:", err);
+      return false;
     }
   };
 
@@ -498,7 +630,6 @@ const handleAvatarChange = (e) => {
     </CardContent>
   </Card>
 );
-
   const getOrderStatusColor = (status) => {
     switch (status) {
       case "pending":
@@ -529,14 +660,14 @@ const handleAvatarChange = (e) => {
   };
 
   const renderOrdersSection = () => (
-    <Card sx={{ width: "100%" }}>
+    <Card sx={{ mb: 4 }}>
       <CardContent>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-          <ShoppingBag sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h5" fontWeight={700}>
-            My Orders
-          </Typography>
-        </Box>
+        <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
+          My Orders
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          View and track your medication orders
+        </Typography>
 
         {orders.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 6 }}>
@@ -709,22 +840,22 @@ const handleAvatarChange = (e) => {
   );
 
   const renderAddressesSection = () => (
-    <Card sx={{ width: "100%" }}>
+    <Card sx={{ mb: 4 }}>
       <CardContent>
+        <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
+          Saved Addresses
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          Manage your delivery addresses
+        </Typography>
+        
         <Box
           sx={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            justifyContent: "flex-end",
             mb: 3,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Room sx={{ mr: 1, color: "primary.main" }} />
-            <Typography variant="h5" fontWeight={700}>
-              Your Addresses
-            </Typography>
-          </Box>
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -831,15 +962,15 @@ const handleAvatarChange = (e) => {
   );
 
   const renderFavoritesSection = () => (
-    <Box sx={{ width: "100%" }}>
-      <Card sx={{ mb: 3 }}>
+    <>
+      <Card sx={{ mb: 4 }}>
         <CardContent>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <Favorite sx={{ mr: 1, color: "primary.main" }} />
-            <Typography variant="h5" fontWeight={700}>
-              Favorite Pharmacies
-            </Typography>
-          </Box>
+          <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
+            Favorite Pharmacies
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Quick access to your preferred pharmacies
+          </Typography>
 
           {favoritePharmacies.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 6 }}>
@@ -862,7 +993,7 @@ const handleAvatarChange = (e) => {
               </Button>
             </Box>
           ) : (
-            <Grid container spacing={2}>
+            <Grid container spacing={2}>  
               {favoritePharmacies.map((pharmacy) => (
                 <Grid item xs={12} sm={6} md={4} key={pharmacy._id || pharmacy}>
                   <Paper
@@ -930,14 +1061,14 @@ const handleAvatarChange = (e) => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card sx={{ mb: 4 }}>
         <CardContent>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-            <Favorite sx={{ mr: 1, color: "primary.main" }} />
-            <Typography variant="h5" fontWeight={700}>
-              Favorite Items
-            </Typography>
-          </Box>
+          <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
+            Favorite Items
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Quick access to your favorite medications
+          </Typography>
 
           {favoriteItems.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 6 }}>
@@ -960,92 +1091,55 @@ const handleAvatarChange = (e) => {
               </Button>
             </Box>
           ) : (
-            <Grid container spacing={2}>
-              {favoriteItems.map((item) => (
-                <Grid item xs={12} sm={6} md={4} key={item._id || item}>
-                  <Paper
-                    sx={{
-                      p: 2.5,
-                      border: "2px solid #f0f0f0",
-                      borderRadius: 2,
-                      transition: "all 0.3s",
-                      "&:hover": {
-                        borderColor: "primary.main",
-                        bgcolor: "#f8fdfd",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mb: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="h6"
-                        fontWeight={600}
-                        color="secondary"
-                      >
-                        {item.name}
-                      </Typography>
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          handleRemoveFavoriteItem(item._id || item)
-                        }
-                        sx={{ color: "error.main" }}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" mb={1}>
-                      {item.category} • {item.dosage || "N/A"}
-                    </Typography>
-                    {item.imageUrl && (
-                      <Box
-                        component="img"
-                        src={item.imageUrl}
-                        alt={item.name}
-                        sx={{
-                          width: "100%",
-                          height: 150,
-                          objectFit: "cover",
-                          borderRadius: 2,
-                          mb: 1,
-                        }}
-                      />
-                    )}
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() =>
-                        navigate(`/medications/${item._id || item}`)
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 2.5,
+                mb: 6,
+                "& > *": {
+                  flex: "0 0 calc(20% - 20px)",
+                  maxWidth: "calc(20% - 20px)",
+                  minWidth: "150px",
+                },
+              }}
+            >
+              {favoriteItems.map((item) => {
+                const itemId = item._id || item.id || item;
+                const isFavorite = true; // Always true in favorites section
+
+                return (
+                  <CardItem
+                    key={itemId}
+                    item={item}
+                    onClick={() => handleFavoriteItemClick(item)}
+                    onFavoriteToggle={async (item, isFavorite) => {
+                      if (!isFavorite) {
+                        // If unfavorited, remove it
+                        await handleRemoveFavoriteItem(itemId);
                       }
-                      sx={{ mt: 1 }}
-                    >
-                      View Details
-                    </Button>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
+                    }}
+                    isFavorite={isFavorite}
+                    showFavorite={true}
+                  />
+                );
+              })}
+            </Box>
           )}
         </CardContent>
       </Card>
-    </Box>
+    </>
   );
 
   const renderSecuritySection = () => (
-    <Card sx={{ width: "100%" }}>
+    <Card sx={{ mb: 4 }}>
       <CardContent>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-          <Security sx={{ mr: 1, color: "primary.main" }} />
-          <Typography variant="h5" fontWeight={700}>
-            Change Password
-          </Typography>
-        </Box>
+        <Typography variant="h4" fontWeight={700} color="secondary" mb={0.5}>
+          Security Settings
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          Manage your password and security preferences
+        </Typography>
 
         <form onSubmit={handlePasswordUpdate}>
           <Grid container spacing={2}>
@@ -1203,16 +1297,6 @@ const handleAvatarChange = (e) => {
     return null;
   }
 
-  const sidebarButtonSx = {
-    borderRadius: 2,
-    mb: 1,
-    "&.Mui-selected": {
-      background: "linear-gradient(135deg, #4ecdc4 0%, #44a9a3 100%)",
-      color: "white",
-      "& .MuiListItemIcon-root": { color: "white" },
-    },
-  };
-
   return (
     <Box
       component="main"
@@ -1220,23 +1304,10 @@ const handleAvatarChange = (e) => {
     >
       <Header user={user} onLogout={handleLogout} />
 
-      <Container component="section" maxWidth="xl" sx={{ py: 5 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            alignItems: "flex-start",
-            gap: 4,
-          }}
-        >
-          {/* Sidebar */}
-          <Box
-            sx={{
-              width: { xs: "100%", md: 300 },
-              flexShrink: 0,
-            }}
-          >
-            <Card sx={{ position: { md: "sticky" }, top: 90 }}>
+      <Container component="section" maxWidth="xl" sx={{ py: 5, display: "flex", flexDirection: "column", minHeight: "calc(100vh - 200px)" }}>
+        <Grid container spacing={4} sx={{ flex: 1 }}>
+          <Grid item xs={12} md={2.5}>
+            <Card sx={{ position: "sticky", top: 90 }}>
               <CardContent>
                 <Box
                   sx={{
@@ -1269,108 +1340,163 @@ const handleAvatarChange = (e) => {
                 </Box>
 
                 <List>
-                  <ListItem disablePadding>
-                    <ListItemButton
-                      selected={activeSection === "profile"}
-                      onClick={() => setActiveSection("profile")}
-                      sx={sidebarButtonSx}
-                    >
-                      <ListItemIcon>
-                        <Person />
-                      </ListItemIcon>
-                      <ListItemText primary="Profile Info" />
-                    </ListItemButton>
+                  <ListItem
+                    button
+                    onClick={() => setActiveSection("profile")}
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      bgcolor: activeSection === "profile" ? "#4ecdc4" : "transparent",
+                      color: activeSection === "profile" ? "white" : "inherit",
+                      "& .MuiListItemIcon-root": {
+                        color: activeSection === "profile" ? "white" : "inherit",
+                      },
+                      "& .MuiListItemText-primary": {
+                        color: activeSection === "profile" ? "white" : "inherit",
+                      },
+                      "&:hover": {
+                        bgcolor: activeSection === "profile" ? "#44a9a3" : "rgba(78, 205, 196, 0.1)",
+                        transform: "translateX(4px)",
+                      },
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Person />
+                    </ListItemIcon>
+                    <ListItemText primary="Profile Info" />
                   </ListItem>
 
-                  <ListItem disablePadding>
-                    <ListItemButton
-                      selected={activeSection === "orders"}
-                      onClick={() => setActiveSection("orders")}
-                      sx={sidebarButtonSx}
-                    >
-                      <ListItemIcon>
-                        <ShoppingBag />
-                      </ListItemIcon>
-                      <ListItemText primary="My Orders" />
-                    </ListItemButton>
+                  <ListItem
+                    button
+                    onClick={() => setActiveSection("orders")}
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      bgcolor: activeSection === "orders" ? "#4ecdc4" : "transparent",
+                      color: activeSection === "orders" ? "white" : "inherit",
+                      "& .MuiListItemIcon-root": {
+                        color: activeSection === "orders" ? "white" : "inherit",
+                      },
+                      "& .MuiListItemText-primary": {
+                        color: activeSection === "orders" ? "white" : "inherit",
+                      },
+                      "&:hover": {
+                        bgcolor: activeSection === "orders" ? "#44a9a3" : "rgba(78, 205, 196, 0.1)",
+                        transform: "translateX(4px)",
+                      },
+                    }}
+                  >
+                    <ListItemIcon>
+                      <ShoppingBag />
+                    </ListItemIcon>
+                    <ListItemText primary="My Orders" />
                   </ListItem>
 
-                  <ListItem disablePadding>
-                    <ListItemButton
-                      selected={activeSection === "favorites"}
-                      onClick={() => setActiveSection("favorites")}
-                      sx={sidebarButtonSx}
-                    >
-                      <ListItemIcon>
-                        <Favorite />
-                      </ListItemIcon>
-                      <ListItemText primary="Favorites" />
-                    </ListItemButton>
+                  <ListItem
+                    button
+                    onClick={() => setActiveSection("favorites")}
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      bgcolor: activeSection === "favorites" ? "#4ecdc4" : "transparent",
+                      color: activeSection === "favorites" ? "white" : "inherit",
+                      "& .MuiListItemIcon-root": {
+                        color: activeSection === "favorites" ? "white" : "inherit",
+                      },
+                      "& .MuiListItemText-primary": {
+                        color: activeSection === "favorites" ? "white" : "inherit",
+                      },
+                      "&:hover": {
+                        bgcolor: activeSection === "favorites" ? "#44a9a3" : "rgba(78, 205, 196, 0.1)",
+                        transform: "translateX(4px)",
+                      },
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Favorite />
+                    </ListItemIcon>
+                    <ListItemText primary="Favorites" />
                   </ListItem>
 
-                  <ListItem disablePadding>
-                    <ListItemButton
-                      selected={activeSection === "security"}
-                      onClick={() => setActiveSection("security")}
-                      sx={sidebarButtonSx}
-                    >
-                      <ListItemIcon>
-                        <Security />
-                      </ListItemIcon>
-                      <ListItemText primary="Security" />
-                    </ListItemButton>
+                  <ListItem
+                    button
+                    onClick={() => setActiveSection("security")}
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      bgcolor: activeSection === "security" ? "#4ecdc4" : "transparent",
+                      color: activeSection === "security" ? "white" : "inherit",
+                      "& .MuiListItemIcon-root": {
+                        color: activeSection === "security" ? "white" : "inherit",
+                      },
+                      "& .MuiListItemText-primary": {
+                        color: activeSection === "security" ? "white" : "inherit",
+                      },
+                      "&:hover": {
+                        bgcolor: activeSection === "security" ? "#44a9a3" : "rgba(78, 205, 196, 0.1)",
+                        transform: "translateX(4px)",
+                      },
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Security />
+                    </ListItemIcon>
+                    <ListItemText primary="Security" />
                   </ListItem>
 
-                  <ListItem disablePadding>
-                    <ListItemButton onClick={handleLogout} sx={{ borderRadius: 2 }}>
-                      <ListItemIcon>
-                        <Logout />
-                      </ListItemIcon>
-                      <ListItemText primary="Logout" />
-                    </ListItemButton>
+                  <ListItem
+                    button
+                    onClick={handleLogout}
+                    sx={{
+                      borderRadius: 2,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        bgcolor: "rgba(244, 67, 54, 0.1)",
+                        transform: "translateX(4px)",
+                      },
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Logout />
+                    </ListItemIcon>
+                    <ListItemText primary="Logout" />
                   </ListItem>
                 </List>
               </CardContent>
             </Card>
-          </Box>
+          </Grid>
 
-          {/* Main Content */}
-          <Box sx={{ flexGrow: 1, width: "100%", display: "block" }}>
-            <Box sx={{ mb: 3 }}>
-              <Typography
-                variant="h4"
-                fontWeight={700}
-                color="secondary"
-                mb={0.5}
-              >
-                {activeSection === "profile" && "Profile Information"}
-                {activeSection === "orders" && "My Orders"}
-                {activeSection === "addresses" && "Saved Addresses"}
-                {activeSection === "favorites" && "Favorite Pharmacies"}
-                {activeSection === "security" && "Security Settings"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {activeSection === "profile" &&
-                  "Manage your personal information and preferences"}
-                {activeSection === "orders" &&
-                  "View and track your medication orders"}
-                {activeSection === "addresses" &&
-                  "Manage your delivery addresses"}
-                {activeSection === "favorites" &&
-                  "Quick access to your preferred pharmacies"}
-                {activeSection === "security" &&
-                  "Manage your password and security preferences"}
-              </Typography>
-            </Box>
-
+          <Grid item xs={12} md={9.5} sx={{ display: "flex", flexDirection: "column" }}>
             {activeSection === "profile" && renderProfileSection()}
             {activeSection === "orders" && renderOrdersSection()}
             {activeSection === "addresses" && renderAddressesSection()}
             {activeSection === "favorites" && renderFavoritesSection()}
             {activeSection === "security" && renderSecuritySection()}
-          </Box>
-        </Box>
+          </Grid>
+        </Grid>
       </Container>
+
+      <ProductDetailsDialog
+        open={detailsDialogOpen}
+        onClose={() => {
+          setDetailsDialogOpen(false);
+          setSelectedProduct(null);
+          setProductPharmacies([]);
+        }}
+        product={selectedProduct}
+        pharmacies={productPharmacies}
+        onSelectPharmacy={handleSelectPharmacy}
+        onRequestPharmacy={handleRequestPharmacy}
+      />
 
       <Footer />
     </Box>
