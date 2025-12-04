@@ -50,7 +50,6 @@ const CardItem = ({
       ? `+${(monthlyCount / 1000).toFixed(monthlyCount % 1000 === 0 ? 0 : 1)}k`
       : `+${monthlyCount}`
     : null;
-    // console.log(imageUrl)
 
   return (
     <Card

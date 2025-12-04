@@ -1783,7 +1783,6 @@ const PharmacyDashboard = () => {
                   displayEmpty
                 >
                   <MenuItem value="" disabled>
-                    <em>Choose Item</em>
                   </MenuItem>
                   {allItems.map((item) => (
                     <MenuItem key={item._id} value={item._id}>
