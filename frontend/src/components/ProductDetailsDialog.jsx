@@ -12,6 +12,7 @@ import {
   TextField,
   Menu,
   MenuItem,
+  Alert,
 } from "@mui/material";
 import Close from "@mui/icons-material/Close";
 import ArrowBack from "@mui/icons-material/ArrowBack";
@@ -23,6 +24,7 @@ import Remove from "@mui/icons-material/Remove";
 import Sort from "@mui/icons-material/Sort";
 import Favorite from "@mui/icons-material/Favorite";
 import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
+import ErrorOutline from "@mui/icons-material/ErrorOutline";
 import { useGeolocation } from "../hooks/useGeolocation";
 import { userAPI } from "../services/api";
 
@@ -84,6 +86,7 @@ const ProductDetailsDialog = ({
   const [listMode, setListMode] = useState("all");
   const [sortMode, setSortMode] = useState("distance");
   const [sortMenuAnchor, setSortMenuAnchor] = useState(null);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const isAllSelected = showPharmacies && listMode === "all";
   const isNearbySelected = showPharmacies && listMode === "nearby";
 
@@ -231,10 +234,15 @@ const ProductDetailsDialog = ({
         setRequestDialogOpen(false);
       } else {
         setRequestStatus((prev) => ({ ...prev, [id]: undefined }));
+        
+        setErrorDialogOpen(true);
+        setRequestDialogOpen(false)
+
       }
     } catch (err) {
       console.error("Request error", err);
       setRequestStatus((prev) => ({ ...prev, [id]: undefined }));
+      
     }
   };
 
@@ -920,6 +928,89 @@ const ProductDetailsDialog = ({
               : "Send Request"}
           </Button>
         </DialogActions>
+      </Dialog>
+      
+      {/* Error Dialog */}
+      <Dialog
+        open={errorDialogOpen}
+        onClose={() => setErrorDialogOpen(false)}
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+          },
+        }}
+      >
+        <Box sx={{ position: "relative", p: 0 }}>
+          <DialogContent sx={{ pt: 4, pb: 2, px: 3, textAlign: "center" }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mb: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  backgroundColor: (theme) => theme.palette.error.light,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mb: 1,
+                }}
+              >
+                <ErrorOutline
+                  sx={{
+                    color: "error.main",
+                    fontSize: 36,
+                  }}
+                />
+              </Box>
+            </Box>
+            
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                mb: 1,
+                color: "text.primary",
+              }}
+            >
+              Not enough in stock
+            </Typography>
+            
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                mb: 2,
+              }}
+            >
+              The requested quantity is not available at this pharmacy.
+            </Typography>
+          </DialogContent>
+          
+          <DialogActions sx={{ px: 3, pb: 3, justifyContent: "center" }}>
+            <Button
+              onClick={() => setErrorDialogOpen(false)}
+              variant="contained"
+              color="error"
+              sx={{
+                minWidth: 120,
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+                px: 3,
+              }}
+            >
+              OK
+            </Button>
+          </DialogActions>
+        </Box>
       </Dialog>
     </Dialog>
   );

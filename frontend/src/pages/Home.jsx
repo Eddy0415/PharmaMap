@@ -886,7 +886,7 @@ const Home = () => {
             }}
           >
             {popularProducts.map((product) => {
-              console.log(product);
+              
               // Use current month search count if available, otherwise fallback to total searchCount
               const monthlyCount = product.currentMonthSearchCount !== undefined 
                 ? product.currentMonthSearchCount 
